@@ -1,0 +1,49 @@
+import io
+from blk.binary.constructor import Names
+
+
+rpath = "game.vromfs.bin_u/gamedata/scenes/tank_compatibility_test_level.blk"
+
+names_bs = bytes.fromhex(
+    '2BA106656E74697479005F74656D706C617465006C6576656C2E62696E006C6576656C2E77656174686572006C6576656C2E656E7669726F6E'
+    '6D656E74007761795F706F696E742E7472616E73666F726D007761795F706F696E742E6E616D65007761795F706F696E742E6D6F7665547970'
+    '65007761795F706F696E742E737065656400726F7574652E726F757465496400726F7574652E776179506F696E74734E616D65733A6C697374'
+    '3C743E006E0073657474696E672E756E6974547970650073657474696E672E706C617965724E6F0073657474696E672E636C6173734E616D65'
+    '0073657474696E672E756E69745F636C6173730073657474696E672E6E616D650073657474696E672E6F626A4C617965720073657474696E67'
+    '2E636C6F7365645F776179706F696E74730073657474696E672E69735368697053706C696E650073657474696E672E736869705475726E5261'
+    '646975730073657474696E672E776561706F6E730073657474696E672E61726D790073657474696E672E636F756E740073657474696E672E66'
+    '6F726D6174696F6E5F747970650073657474696E672E666F726D6174696F6E5F6469760073657474696E672E666F726D6174696F6E5F737465'
+    '700073657474696E672E666F726D6174696F6E5F6E6F6973650073657474696E672E756E697175654E616D650073657474696E672E61747461'
+    '636B5F747970650073657474696E672E746D0073657474696E672E62756C6C6574733A6C6973743C743E0073657474696E672E62756C6C6574'
+    '73436F756E743A6C6973743C693E0073657474696E672E726F7574654E616D650073657474696E672E736B696E0073657474696E672E737065'
+    '6564006261636B67726F756E645F6D6F64656C2E746D006261636B67726F756E645F6D6F64656C2E6D6F64656C006261636B67726F756E645F'
+    '6D6F64656C2E756E69744E616D65006261636B67726F756E645F6D6F64656C2E736B696E006261636B67726F756E645F6D6F64656C2E776561'
+    '706F6E006261636B67726F756E645F6D6F64656C2E6E656564416E696D006261636B67726F756E645F6D6F64656C2E62756C6C6574733A6C69'
+    '73743C743E00'
+)
+
+names = [bs.decode() for bs in (
+    b'entity', b'_template', b'level.bin', b'level.weather', b'level.environment', b'way_point.transform',
+    b'way_point.name', b'way_point.moveType', b'way_point.speed', b'route.routeId', b'route.wayPointsNames:list<t>',
+    b'n', b'setting.unitType', b'setting.playerNo', b'setting.className', b'setting.unit_class', b'setting.name',
+    b'setting.objLayer', b'setting.closed_waypoints', b'setting.isShipSpline', b'setting.shipTurnRadius',
+    b'setting.weapons', b'setting.army', b'setting.count', b'setting.formation_type', b'setting.formation_div',
+    b'setting.formation_step', b'setting.formation_noise', b'setting.uniqueName', b'setting.attack_type', b'setting.tm',
+    b'setting.bullets:list<t>', b'setting.bulletsCount:list<i>', b'setting.routeName', b'setting.skin',
+    b'setting.speed', b'background_model.tm', b'background_model.model', b'background_model.unitName',
+    b'background_model.skin', b'background_model.weapon', b'background_model.needAnim',
+    b'background_model.bullets:list<t>'
+)]
+
+
+def test_parse_rpath():
+    stream = io.BytesIO(names_bs)
+    parsed = Names.parse_stream(stream)
+    assert stream.tell() == len(names_bs)
+    assert parsed == names
+
+
+def test_build_rpath():
+    stream = io.BytesIO()
+    Names.build_stream(names, stream)
+    assert stream.getvalue() == names_bs
