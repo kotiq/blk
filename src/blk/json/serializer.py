@@ -59,6 +59,8 @@ class Mapper:
             return cls._map_section(value)
         elif isinstance(value, Float12):
             return tuple(Var(Float3(value[i:i+3])) for i in range(0, 10, 3))
+        elif isinstance(value, Color):
+            return f"#{''.join(format(x, '02x') for x in value)}"
         elif isinstance(value, Vector):
             return Var(value)
         elif isinstance(value, Float):

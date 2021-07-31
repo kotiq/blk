@@ -29,7 +29,12 @@ Long.con = ct.Int64sl
 Float.con = ct.Float32l
 Bool.con = ct.Int32ul
 
-for c in (Float12, Float4, Float3, Float2, Color, Int3, Int2):
+Color.con = ct.ExprSymmetricAdapter(
+    UByte.con[4],
+    lambda o, c: tuple(reversed(o[:-1])) + (o[-1], ),
+)
+
+for c in (Float12, Float4, Float3, Float2, Int3, Int2):
     c.con = c.type.con[c.size]
 
 RawCString = ct.NullTerminated(ct.GreedyBytes)
