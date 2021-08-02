@@ -79,6 +79,7 @@ class StrictDialect(DefaultDialect):
     bool_format = ANS
     float_format = DGEN
     ubyte_format = DEC
+    long_format = DEC
     type_value_sep = '='
     name_opener_sep = ''
     sec_opener = '\n'

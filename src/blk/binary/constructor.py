@@ -8,7 +8,7 @@ from blk.binary import codes_map
 
 __all__ = ['TaggedOffset', 'bfs', 'FileStruct', 'RawCString', 'Names',
            'serialize_fat', 'serialize_fat_s', 'compose_fat', 'compose_names', 'compose_slim', 'serialize_slim',
-           'ConstructError', 'ComposeError', 'SerializeError']
+           'ConstructError', 'ComposeError', 'SerializeError', 'update_names_map', 'serialize_names']
 
 
 class ConstructError(Exception):
@@ -284,8 +284,11 @@ def serialize_fat(section, ostream):
     Все строковые параметры находятся в своем блоке."""
 
     names_map = {name: None for name in section.names()}
-    Names.build_stream(names_map.keys(), ostream)
-    FileAdapter(FileStruct, list(names_map.keys())).build_stream(section, ostream)
+    try:
+        Names.build_stream(names_map.keys(), ostream)
+        FileAdapter(FileStruct, list(names_map.keys())).build_stream(section, ostream)
+    except (TypeError, ValueError, ct.ConstructError) as e:
+        raise SerializeError(str(e))
 
 
 def serialize_fat_s(section, ostream):
@@ -293,20 +296,12 @@ def serialize_fat_s(section, ostream):
     Все строковые параметры находятся в блоке имен"""
 
     names_map = {}
-    for name in section.names():
-        if name not in names_map:
-            names_map[name] = len(names_map)
-
-    def on_visit(item):
-        value = item[1]
-        if isinstance(value, Str):
-            if value not in names_map:
-                names_map[value] = len(names_map)
-
-    root_item = (None, section)
-    bfs(root_item, on_visit)
-    Names.build_stream(names_map.keys(), ostream)
-    FileAdapter(FileStruct, names_map).build_stream(section, ostream)
+    update_names_map(names_map, section)
+    try:
+        Names.build_stream(names_map.keys(), ostream)
+        FileAdapter(FileStruct, names_map).build_stream(section, ostream)
+    except (TypeError, ValueError, ct.ConstructError) as e:
+        raise SerializeError(str(e))
 
 
 def compose_slim(names: t.Sequence[Name], istream) -> Section:
@@ -341,4 +336,29 @@ def serialize_slim(section, names_map: t.MutableMapping[EncodedStr, int], ostrea
 
     root_item = (None, section)
     bfs(root_item, on_visit)
-    FileAdapter(SlimFile, names_map).build_stream(section, ostream)
+    try:
+        FileAdapter(SlimFile, names_map).build_stream(section, ostream)
+    except (TypeError, ValueError, ct.ConstructError) as e:
+        raise SerializeError(str(e))
+
+
+def update_names_map(names_map: t.MutableMapping[EncodedStr, int], section: Section):
+    for name in section.names():
+        if name not in names_map:
+            names_map[name] = len(names_map)
+
+    def on_visit(item):
+        value = item[1]
+        if isinstance(value, Str):
+            if value not in names_map:
+                names_map[value] = len(names_map)
+
+    root_item = (None, section)
+    bfs(root_item, on_visit)
+
+
+def serialize_names(names: t.Iterable[EncodedStr], ostream):
+    try:
+        Names.build_stream(names, ostream)
+    except (TypeError, ValueError, ct.ConstructError) as e:
+        raise SerializeError(str(e))
