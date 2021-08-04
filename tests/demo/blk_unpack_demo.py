@@ -41,7 +41,7 @@ def names_path(file_path: str, nm: str):
     return None
 
 
-def process_file(file_path: str, out_type: int, is_sorted: bool):
+def process_file(file_path: str, names: t.Optional[t.Sequence], out_type: int, is_sorted: bool):
     if not file_path.endswith('.blk'):
         return
 
@@ -64,17 +64,20 @@ def process_file(file_path: str, out_type: int, is_sorted: bool):
                 bs = bbf3_parser.unpack(out_type, is_sorted=False)
                 with open(out_path, 'w', newline='', encoding='utf8') as ostream:
                     ostream.write(bs)
+            # файл с именами в nm
             elif not bs[0]:
-                if (nm_path := names_path(file_path, 'nm')) is not None:  # файл с именами в nm
+                if (names is None) and ((nm_path := names_path(file_path, 'nm')) is not None):
                     with open(nm_path, 'rb') as nm_istream:
                         names = bin.compose_names(nm_istream)
+                if names:
                     istream.seek(0)
                     root = bin.compose_slim(names, istream)
                     with open(out_path, 'w') as ostream:
                         serialize_text(root, ostream, out_type, is_sorted)
                 else:  # не найдена таблица имен
                     print(f"{INDENT}NameMap not found")
-            else:  # файл с именами внутри или текст
+            # файл с именами внутри или текст
+            else:
                 istream.seek(0)
                 try:
                     root = bin.compose_fat(istream)
@@ -82,7 +85,7 @@ def process_file(file_path: str, out_type: int, is_sorted: bool):
                         serialize_text(root, ostream, out_type, is_sorted)
                 except bin.ComposeError:  # текст
                     # рабочей грамматики у меня пока нет
-                    # есть парсер тескта на parsy, но без строк в тройных кавычках и вложенных комментариев
+                    # есть парсер текста на parsy, но без строк в тройных кавычках и вложенных комментариев
                     # поэтому, считаю, что текст корректный
                     # выполняется только простая проверка на мелкие значения
                     istream.seek(0)
@@ -120,49 +123,15 @@ def process_dir(dir_path: str, out_type: int, is_sorted: bool):
         if entry.is_dir():
             process_dir(entry.path, out_type, is_sorted)
         elif entry.is_file():
-            process_file(entry.path, out_type, is_sorted)
+            process_file(entry.path, None, out_type, is_sorted)
 
 
-def process_slim_dir(dir_path: str, names: t.Sequence, out_type: int, is_sorted: bool):
-    # В предположении, что директория содержит пустые файлы, текст или slim-файлы .blk
+def process_slim_dir(dir_path: str, names: t.Sequence, out_type: int, is_sorted: bool, ):
     for entry in os.scandir(dir_path):
         if entry.is_dir():
             process_slim_dir(entry.path, names, out_type, is_sorted)
         elif entry.is_file():
-            process_slim_file(entry.path, names, out_type, is_sorted)
-
-
-def process_slim_file(file_path: str, names: t.Sequence, out_type: int, is_sorted: bool):
-    if not file_path.endswith('.blk'):
-        return
-
-    out_path = file_path + 'x'
-    print(file_path)
-
-    try:
-        stat = os.stat(file_path)
-        if not stat.st_size:
-            print(f'{INDENT}Empty file')
-            with open(out_path, 'wb') as _:
-                pass
-        else:
-            with open(file_path, 'rb') as istream:
-                try:
-                    root = bin.compose_slim(names, istream)
-                    with open(out_path, 'w') as ostream:
-                        serialize_text(root, ostream, out_type, is_sorted)
-                except bin.ComposeError:
-                    istream.seek(0)
-                    bs = istream.read()
-                    if is_text(bs):
-                        print(f'{INDENT}Copied as is')
-                        with open(out_path, 'wb') as ostream:
-                            ostream.write(bs)
-                    else:
-                        print(f'{INDENT}Unknown file format')
-    except (EnvironmentError, bin.ComposeError) as e:
-        print(f'{INDENT}{e}')
-        print_exc(file=sys.stdout)
+            process_file(entry.path, names, out_type, is_sorted)
 
 
 @click.command()
@@ -174,7 +143,7 @@ def main(path: str, out_format: str, is_sorted: bool):
     out_type = bbf3.BLK.output_type[out_format]
 
     if os.path.isfile(path):
-        process_file(path, out_type, is_sorted)
+        process_file(path, None, out_type, is_sorted)
     else:
         process_dir(path, out_type, is_sorted)
 
