@@ -147,7 +147,8 @@ def serialize_pair(name, value, stream, indent, level, context):
         context['fst'] = False
     else:
         if isinstance(value, Section):
-            if sec_opener := context['sec_opener']:
+            sec_opener = context['sec_opener']
+            if sec_opener:
                 stream.write(sec_opener)
         stream.write('\n')
 

@@ -40,7 +40,8 @@ class NoIndentEncoder(FloatEncoder):
 
     def iterencode(self, o, _one_shot=False):
         for s in super().iterencode(o):
-            if m := self.regex.search(s):
+            m = self.regex.search(s)
+            if m:
                 id_ = int(m.group(1))
                 var_ = PyObj_FromPtr(id_)
                 text = json.dumps(var_.value, cls=FloatEncoder, **self.kwargs)
@@ -78,7 +79,8 @@ class Mapper:
 class JSONMapper(Mapper):
     @classmethod
     def _map_section(cls, section: Section) -> t.Union[t.Sequence, t.Mapping]:
-        if not (items := section.items()):
+        items = section.items()
+        if not items:
             return []
         else:
             m: t.Union[list, dict] = {}
@@ -99,7 +101,8 @@ class JSONMapper(Mapper):
 class JSON2Mapper(Mapper):
     @classmethod
     def _map_section(cls, section: Section) -> t.Union[t.Sequence, t.Mapping]:
-        if not (items := section.items()):
+        items = section.items()
+        if not items:
             return []
         else:
             return {n: list(map(cls._map_value, vs)) for n, vs in items}

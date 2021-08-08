@@ -10,7 +10,8 @@ from .blk_unpack_demo import names_path
 ])
 def test_find_nm(binrespath, rpath, nm_rpath):
     path = os.path.join(binrespath, rpath)
-    if (maybe_nm_path := (names_path(path, 'nm'))) is None:
+    maybe_nm_path = (names_path(path, 'nm'))
+    if maybe_nm_path is None:
         assert maybe_nm_path == nm_rpath
     else:
         assert maybe_nm_path == os.path.join(binrespath, nm_rpath)

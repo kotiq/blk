@@ -30,12 +30,14 @@ def names_path(file_path: str, nm: str):
     root = drive + os.path.sep
 
     dir_path = os.path.dirname(file_path)
-    if (nm_path := os.path.join(dir_path, nm)) and os.path.isfile(nm_path):
+    nm_path = os.path.join(dir_path, nm)
+    if nm_path and os.path.isfile(nm_path):
         return nm_path
 
     while dir_path != root:
         dir_path = os.path.dirname(dir_path)
-        if (nm_path := os.path.join(dir_path, nm)) and os.path.isfile(nm_path):
+        nm_path = os.path.join(dir_path, nm)
+        if nm_path and os.path.isfile(nm_path):
             return nm_path
 
     return None
@@ -66,9 +68,11 @@ def process_file(file_path: str, names: t.Optional[t.Sequence], out_type: int, i
                     ostream.write(bs)
             # файл с именами в nm
             elif not bs[0]:
-                if (names is None) and ((nm_path := names_path(file_path, 'nm')) is not None):
-                    with open(nm_path, 'rb') as nm_istream:
-                        names = bin.compose_names(nm_istream)
+                if names is None:
+                    nm_path = names_path(file_path, 'nm')
+                    if nm_path:
+                        with open(nm_path, 'rb') as nm_istream:
+                            names = bin.compose_names(nm_istream)
                 if names:
                     istream.seek(0)
                     root = bin.compose_slim(names, istream)

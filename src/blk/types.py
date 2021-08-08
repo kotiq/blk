@@ -177,7 +177,8 @@ class Float(float, Scalar):
     def validated(cls, x):
         if not isinstance(x, (float, int)):
             raise TypeError('x: ожидалось float | int: {!r}'.format(type(x)))
-        if not isfinite(y := c_float(x).value):
+        y = c_float(x).value
+        if not isfinite(y):
             raise ValueError('x: разрешены только конечные числа')
         return y
 
@@ -205,7 +206,8 @@ class Vector(tuple, Parameter):
 
     @classmethod
     def of(cls, xs):
-        if (sz := len(xs)) != cls.size:
+        sz = len(xs)
+        if sz != cls.size:
             raise TypeError('Ожидалось {} компонент: {}'.format(cls.size, sz))
         return cls(map(cls.type.validated, xs))
 

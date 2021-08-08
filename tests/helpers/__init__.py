@@ -15,3 +15,10 @@ def make_outpath(name):
 
     return outpath
 
+
+def make_tmppath(name):
+    @pytest.fixture(scope='module')
+    def tmppath(tmpdir_factory):
+        return str(tmpdir_factory.mktemp(name))
+
+    return tmppath
