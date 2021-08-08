@@ -4,17 +4,14 @@ import pytest
 def pytest_addoption(parser):
     binrespath = {
         'name': 'binrespath',
-        'type': 'string',
         'help': 'Директория с образцами двоичных blk.',
     }
     buildpath = {
         'name': 'buildpath',
-        'type': 'string',
         'help': 'Директория для построения тестами.'
     }
     cdkpath = {
         'name': 'cdkpath',
-        'type': 'string',
         'help': 'Директория WarThunderCDK.'
     }
     for m in binrespath, buildpath, cdkpath:
