@@ -255,7 +255,7 @@ m_text = v_text(' ')
 def text(self, context):
     fmt = context['float']
     if fmt == dgen_fmt:
-        format_ = lambda x: f'{text}.0' if '.' not in (text := f'{x:g}') else text
+        format_ = floatstr
     else:
         format_ = lambda x: format(x, fmt)
     xs = map(format_, self)
