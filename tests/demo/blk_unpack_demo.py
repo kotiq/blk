@@ -24,6 +24,10 @@ def is_text(bs: bytes) -> bool:
     return not any(b in restricted for b in bs)
 
 
+def creat_text(path):
+    return open(path, 'w', newline='', encoding='utf8')
+
+
 def names_path(file_path: str, nm: str):
     file_path = os.path.abspath(file_path)
     drive, _ = os.path.splitdrive(file_path)
@@ -64,7 +68,7 @@ def process_file(file_path: str, names: t.Optional[t.Sequence], out_type: int, i
                 bs = istream.read()
                 bbf3_parser = bbf3.BLK(bs)
                 bs = bbf3_parser.unpack(out_type, is_sorted=False)
-                with open(out_path, 'w', newline='', encoding='utf8') as ostream:
+                with creat_text(out_path) as ostream:
                     ostream.write(bs)
             # файл с именами в nm
             elif not bs[0]:
@@ -76,7 +80,7 @@ def process_file(file_path: str, names: t.Optional[t.Sequence], out_type: int, i
                 if names:
                     istream.seek(0)
                     root = bin.compose_slim(names, istream)
-                    with open(out_path, 'w') as ostream:
+                    with creat_text(out_path) as ostream:
                         serialize_text(root, ostream, out_type, is_sorted)
                 else:  # не найдена таблица имен
                     print(f"{INDENT}NameMap not found")
@@ -85,7 +89,7 @@ def process_file(file_path: str, names: t.Optional[t.Sequence], out_type: int, i
                 istream.seek(0)
                 try:
                     root = bin.compose_fat(istream)
-                    with open(out_path, 'w') as ostream:
+                    with creat_text(out_path) as ostream:
                         serialize_text(root, ostream, out_type, is_sorted)
                 except bin.ComposeError:  # текст
                     # рабочей грамматики у меня пока нет

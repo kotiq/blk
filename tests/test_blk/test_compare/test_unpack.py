@@ -22,7 +22,8 @@ def test_strict_blk(binrespath, outpath, format_):
     assert os.path.isdir(new_path)
 
     unpacker = os.path.join(demo_prefix, 'blk_unpack_demo.py')
-    os.system(f'python {unpacker} --format={format_} {new_path}')
+    out = os.path.join(outpath, f'{format_}.log')
+    os.system(f'python {unpacker} --format={format_} {new_path} > {out}')
 
     diff = os.path.join(outpath, f'{format_}.diff')
     os.system(f'diff -r {new_path} {old_path} > {diff}')
