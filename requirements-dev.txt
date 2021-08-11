@@ -1,6 +1,6 @@
 attrs==21.2.0
 click==7.1.2
-construct==2.9.40
+construct==2.9.44  # https://github.com/construct/construct/issues/705
 iniconfig==1.1.1
 lark==0.11.3
 packaging==20.9

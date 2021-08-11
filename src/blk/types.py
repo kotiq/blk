@@ -1,5 +1,6 @@
+import typing as t
 from ctypes import c_float
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from math import isfinite, isclose
 
 
@@ -290,12 +291,12 @@ SafeName = Name.of
 
 
 class Section(OrderedDict, Value):
-    def append(self, name, value):
+    def append(self, name: Name, value: Value):
         if name not in self:
             self[name] = []
         self[name].append(value)
 
-    def add(self, name, value):
+    def add(self, name: str, value: Value):
         if not isinstance(name, EncodedStr):
             name = Name.of(name)
         elif isinstance(name, Str):
@@ -303,44 +304,76 @@ class Section(OrderedDict, Value):
 
         self.append(name, value)
 
-    def getf(self, name, default=None):
+    def getf(self, name: Name, default=None) -> t.Optional[Value]:
         try:
             return self[name][0]
         except (IndexError, KeyError):
             return default
 
     def pairs(self):
-        """items, dfs"""
+        """(name, value) items"""
 
         return ((n, v) for n, vs in self.items() for v in vs)
 
+    def reversed_pairs(self):
+        """(name, value) reversed items"""
+
+        return ((n, v) for n, vs in reversed(self.items()) for v in reversed(vs))
+
     def sorted_pairs(self):
-        """sorted items, dfs"""
+        """sorted (name, value) items,
+        parameters then sections
+        """
 
         sections_pairs = []
-        for n, v in self.pairs():
-            if isinstance(v, Section):
-                sections_pairs.append((n, v))
+        for item in self.pairs():
+            value = item[1]
+            if isinstance(value, Section):
+                sections_pairs.append(item)
             else:
-                yield n, v
+                yield item
 
         yield from sections_pairs
 
-    def names_nlr(self):
-        for n, vs in self.items():
-            yield n
-            for v in vs:
-                if isinstance(v, Section):
-                    yield from v.names_nlr()
+    def bfs_pairs(self):
+        queue = deque()
+        queue.append((None, self))
 
-    names = names_nlr
+        while queue:
+            item = queue.popleft()
+            yield item
+            value = item[1]
+            if isinstance(value, Section):
+                for item in value.sorted_pairs():
+                    queue.append(item)
 
-    def size(self):
+    def dfs_nlr_pairs(self):
+        stack = deque()
+        stack.append((None, self))
+
+        while stack:
+            item = stack.popleft()
+            yield item
+            value = item[1]
+            if isinstance(value, Section):
+                for item in value.reversed_pairs():
+                    stack.insert(0, item)
+
+    def names_dfs_nlr(self):
+        """names, preorder dfs"""
+
+        ps = self.dfs_nlr_pairs()
+        next(ps)
+        return (p[0] for p in ps)
+
+    names = names_dfs_nlr
+
+    def size(self) -> t.Tuple[int, int]:
         params_count, sections_count = 0, 0
-        for n, v in self.pairs():
-            if isinstance(v, Parameter):
+        for name, value in self.pairs():
+            if isinstance(value, Parameter):
                 params_count += 1
-            elif isinstance(v, Section):
+            elif isinstance(value, Section):
                 sections_count += 1
 
         return params_count, sections_count

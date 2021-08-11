@@ -1,16 +1,12 @@
 import os
+from collections import OrderedDict
 from blk.types import *
 import blk.binary as bin
 import blk.text as txt
 import pytest
-from helpers import outdir_rpath
+from helpers import make_outpath
 
-
-@pytest.fixture(scope='module')
-def outpath(buildpath):
-    path = os.path.join(buildpath, outdir_rpath(__name__))
-    os.makedirs(path, exist_ok=True)
-    return path
+outpath = make_outpath(__name__)
 
 
 @pytest.fixture(scope='module')
@@ -50,22 +46,22 @@ def test_pack_slim(outpath, section: Section):
     with open(txtname, 'w') as ostream:
         txt.serialize(section, ostream, dialect=txt.StrictDialect)
 
-    names_map = {}
+    names_map = OrderedDict()
     bin.update_names_map(names_map, section)
 
-    binname = os.path.join(outpath, 'simple.bin')
-    with open(binname, 'wb') as ostream:
+    path = os.path.join(outpath, 'simple.bin')
+    with open(path, 'wb') as ostream:
         bin.serialize_slim(section, names_map, ostream)
 
-    namesname = os.path.join(outpath, 'simple_nm.bin')
-    with open(namesname, 'wb') as ostream:
+    nm_path = os.path.join(outpath, 'simple_nm.bin')
+    with open(nm_path, 'wb') as ostream:
         names = names_map.keys()
         bin.serialize_names(names, ostream)
 
-    with open(namesname, 'rb') as istream:
+    with open(nm_path, 'rb') as istream:
         names = bin.compose_names(istream)
 
-    with open(binname, 'rb') as istream:
+    with open(path, 'rb') as istream:
         root = bin.compose_slim(names, istream)
 
     assert root == section
