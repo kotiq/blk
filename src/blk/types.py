@@ -31,7 +31,7 @@ def floatstr(o):
     if int(o) == o:
         return float.__repr__(o)
     else:
-        return format(round(o, 13), '.7g')  # здесь должна быть какая-то простая функция
+        return format(o, '.7g')
 
 
 class Value:

@@ -312,7 +312,7 @@ def compose_slim(names: NamesT, istream) -> Section:
         raise ComposeError(str(e))
 
 
-def compose_names(istream) -> NamesT:
+def compose_names(istream) -> t.Sequence[EncodedStr]:
     """Сборка списка имен из потока."""
 
     try:

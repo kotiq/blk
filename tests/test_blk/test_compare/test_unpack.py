@@ -1,5 +1,4 @@
 import os
-import sys
 import pytest
 from helpers import make_outpath
 import demo
@@ -13,7 +12,7 @@ outpath = make_outpath(__name__)
     'json',
     'json_2',
 ])
-def test_strict_blk(binrespath, outpath, format_):
+def test_unpack(binrespath, outpath, format_):
     old_rpath = f'aces_old.vromfs.bin_u_{format_}'
     old_path = os.path.join(binrespath, old_rpath)
     assert os.path.isdir(old_path)

@@ -5,7 +5,7 @@ from json.encoder import _make_iterencode, encode_basestring_ascii, encode_bases
 import typing as t
 from blk.types import *
 
-__all__ = ['serialize', 'JSON', 'JSON_MIN', 'JSON_2']
+__all__ = ['serialize', 'JSON', 'JSON_2']
 
 
 class FloatEncoder(json.JSONEncoder):
