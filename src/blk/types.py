@@ -288,9 +288,14 @@ class Name(EncodedStr):
 
 
 SafeName = Name.of
+ItemT = t.Tuple[Name, Value]
+ItemsGenT = t.Generator[ItemT, None, None]
+NamesGenT = t.Generator[Name, None, None]
+ItemsGenOfT = t.Callable[['Section'], t.Iterable[ItemT]]
 
 
 class Section(OrderedDict, Value):
+    # todo: избежать цикла
     def append(self, name: Name, value: Value):
         if name not in self:
             self[name] = []
@@ -310,17 +315,17 @@ class Section(OrderedDict, Value):
         except (IndexError, KeyError):
             return default
 
-    def pairs(self):
+    def pairs(self) -> t.Generator[ItemT, None, None]:
         """(name, value) items"""
 
         return ((n, v) for n, vs in self.items() for v in vs)
 
-    def reversed_pairs(self):
+    def reversed_pairs(self) -> t.Generator[ItemT, None, None]:
         """(name, value) reversed items"""
 
         return ((n, v) for n, vs in reversed(self.items()) for v in reversed(vs))
 
-    def sorted_pairs(self):
+    def sorted_pairs(self) -> t.Generator[ItemT, None, None]:
         """sorted (name, value) items,
         parameters then sections
         """
@@ -335,7 +340,7 @@ class Section(OrderedDict, Value):
 
         yield from sections_pairs
 
-    def bfs_pairs(self):
+    def bfs_pairs_gen(self, pairs_of: ItemsGenOfT) -> ItemsGenT:
         queue = deque()
         queue.append((None, self))
 
@@ -344,10 +349,13 @@ class Section(OrderedDict, Value):
             yield item
             value = item[1]
             if isinstance(value, Section):
-                for item in value.sorted_pairs():
+                for item in pairs_of(value):
                     queue.append(item)
 
-    def dfs_nlr_pairs(self):
+    def bfs_sorted_pairs(self) -> ItemsGenT:
+        yield from self.bfs_pairs_gen(lambda s: s.sorted_pairs())
+
+    def dfs_nlr_pairs_gen(self, reversed_pairs_of: ItemsGenOfT) -> ItemsGenT:
         stack = deque()
         stack.append((None, self))
 
@@ -356,10 +364,13 @@ class Section(OrderedDict, Value):
             yield item
             value = item[1]
             if isinstance(value, Section):
-                for item in value.reversed_pairs():
+                for item in reversed_pairs_of(value):
                     stack.insert(0, item)
 
-    def names_dfs_nlr(self):
+    def dfs_nlr_pairs(self) -> ItemsGenT:
+        yield from self.dfs_nlr_pairs_gen(lambda s: s.reversed_pairs())
+
+    def names_dfs_nlr(self) -> NamesGenT:
         """names, preorder dfs"""
 
         ps = self.dfs_nlr_pairs()

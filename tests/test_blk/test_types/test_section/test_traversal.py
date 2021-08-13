@@ -41,7 +41,7 @@ def test_sorted_pairs(section: Section):
 
 
 def test_bfs_pairs(section: Section):
-    all_names = ans(section.bfs_pairs())
+    all_names = ans(section.bfs_sorted_pairs())
     assert all_names == [
         None,
         'a1', 'b1', 'c1', 'a', 'b', 'c',
