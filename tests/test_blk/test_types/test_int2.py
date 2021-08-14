@@ -22,6 +22,16 @@ def test_of_non_ints_raises_type_error(sample):
 
 
 @pytest.mark.parametrize('sample', [
+    pytest.param((1, ), id='less'),
+    pytest.param((1, 2, 3), id='great'),
+])
+def test_of_wrong_init_size_raises_type_error(sample):
+    with pytest.raises(TypeError) as ei:
+        Int2.of(sample)
+    print(ei.value)
+
+
+@pytest.mark.parametrize('sample', [
     pytest.param((-0x8000_0001, 1), id='prev min'),
     pytest.param((1, 0x8000_0000), id='next_max'),
 ])

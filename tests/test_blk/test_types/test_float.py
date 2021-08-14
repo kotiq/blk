@@ -26,7 +26,7 @@ def test_of_non_number_raises_type_error(sample):
 
 @pytest.mark.parametrize('sample', [
     pytest.param(3.4028236e+38, id='over max'),
-    pytest.param(--3.4028236e+38, id='under min'),
+    pytest.param(-3.4028236e+38, id='under min'),
 ])
 def test_out_of_range_raises_value_error(sample):
     with pytest.raises(ValueError) as ei:

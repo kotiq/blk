@@ -188,7 +188,7 @@ class Float(float, Scalar):
             return True
         if not isinstance(other, (float, int)):
             return NotImplemented
-        return isclose(self, other, rel_tol=self.rel_tol, abs_tol=self.abs_tol)
+        return isclose(self, other, rel_tol=Float.rel_tol, abs_tol=Float.abs_tol)
 
 
 SafeFloat = Float.of
@@ -218,7 +218,7 @@ class Vector(tuple, Parameter):
         if len(self) != len(other):
             return False
         for x, y in zip(self, other):
-            if x != y:
+            if not self.type.__eq__(x, y):
                 return False
         return True
 
