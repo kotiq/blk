@@ -19,7 +19,7 @@ class Var:
         return f'{self.__class__.__name__}({self.value!r})'
 
 
-def method(cls):
+def method(cls: type) -> t.Callable[[type], type]:
     def decorator(f):
         setattr(cls, f.__name__, f)
         return f
@@ -27,7 +27,9 @@ def method(cls):
     return decorator
 
 
-def floatstr(o):
+def floatstr(o: float) -> str:
+    """Текстовое представление float32"""
+
     if int(o) == o:
         return float.__repr__(o)
     else:
@@ -59,7 +61,7 @@ class EncodedStr(str):
     encodings = ('utf8', 'cp1251')
 
     @classmethod
-    def of(cls, xs, encodings=None):
+    def of(cls, xs: t.Union[bytes, str], encodings: t.Optional[t.Tuple[str, ...]] = None):
         if isinstance(xs, bytes):
             if isinstance(encodings, str):
                 try:
@@ -91,20 +93,17 @@ SafeStr = Str.of
 
 
 class Integer(int, Scalar):
-    signed = NotImplemented
-    max_bit_length = NotImplemented
-    min = NotImplemented
-    max = NotImplemented
-
-    def __new__(cls, x):
-        return super().__new__(cls, x)
+    signed: bool = NotImplemented
+    max_bit_length: int = NotImplemented
+    min: int = NotImplemented
+    max: int = NotImplemented
 
     @classmethod
-    def of(cls, x):
+    def of(cls, x: int):
         return cls(cls.validated(x))
 
     @classmethod
-    def validated(cls, x):
+    def validated(cls, x: int):
         if not isinstance(x, int):
             raise TypeError('x: ожидалось int: {!r}'.format(type(x)))
         if not cls.min <= x <= cls.max:
@@ -137,7 +136,6 @@ SafeInt = Int.of
 
 @ranged
 class UByte(Integer):
-    format = '#x'
     signed = False
     max_bit_length = 8
     fmt = '#x'
@@ -160,6 +158,7 @@ class Long(Integer):
 
 
 SafeLong = Long.of
+NumberT = t.Union[float, int]
 
 
 class Float(float, Scalar):
@@ -171,11 +170,11 @@ class Float(float, Scalar):
         return f'{self.__class__.__name__}({float.__format__(self, self.fmt)})'
 
     @classmethod
-    def of(cls, x):
+    def of(cls, x: NumberT):
         return cls(cls.validated(x))
 
     @classmethod
-    def validated(cls, x):
+    def validated(cls, x: NumberT):
         if not isinstance(x, (float, int)):
             raise TypeError('x: ожидалось float | int: {!r}'.format(type(x)))
         y = c_float(x).value
@@ -183,7 +182,7 @@ class Float(float, Scalar):
             raise ValueError('x: разрешены только конечные числа')
         return y
 
-    def __eq__(self, other):
+    def __eq__(self, other: NumberT):
         if self is other:
             return True
         if not isinstance(other, (float, int)):
@@ -195,8 +194,8 @@ SafeFloat = Float.of
 
 
 class Vector(tuple, Parameter):
-    type = NotImplemented
-    size = NotImplemented
+    type: t.Type[t.Union[Float, Int, UByte]] = NotImplemented
+    size: int = NotImplemented
 
     def __new__(cls, xs):
         return super().__new__(cls, xs)
@@ -206,21 +205,14 @@ class Vector(tuple, Parameter):
         return f'{self.__class__.__name__}(({", ".join(map(lambda x: format(x, fmt), self))}))'
 
     @classmethod
-    def of(cls, xs):
+    def of(cls, xs: t.Sequence[t.Union[float, int]]):
         sz = len(xs)
         if sz != cls.size:
             raise TypeError('Ожидалось {} компонент: {}'.format(cls.size, sz))
         return cls(map(cls.type.validated, xs))
 
-    def __eq__(self, other):
-        if self is other:
-            return True
-        if len(self) != len(other):
-            return False
-        for x, y in zip(self, other):
-            if not self.type.__eq__(x, y):
-                return False
-        return True
+    def __eq__(self, other: t.Sequence[t.Union[float, int]]):
+        return (self is other) or len(self) == len(other) and all(self.type.__eq__(x, y) for x, y in zip(self, other))
 
     def __hash__(self):
         return super().__hash__()
@@ -297,11 +289,15 @@ ItemsGenOfT = t.Callable[['Section'], t.Iterable[ItemT]]
 class Section(OrderedDict, Value):
     # todo: избежать цикла
     def append(self, name: Name, value: Value):
+        """Небезопасное добавление пары в секцию."""
+
         if name not in self:
             self[name] = []
         self[name].append(value)
 
     def add(self, name: str, value: Value):
+        """Добавление пары в секцию."""
+
         if not isinstance(name, EncodedStr):
             name = Name.of(name)
         elif isinstance(name, Str):
@@ -310,25 +306,26 @@ class Section(OrderedDict, Value):
         self.append(name, value)
 
     def getf(self, name: Name, default=None) -> t.Optional[Value]:
+        """Первое значение в мультизначении по имени."""
+
         try:
             return self[name][0]
         except (IndexError, KeyError):
             return default
 
     def pairs(self) -> t.Generator[ItemT, None, None]:
-        """(name, value) items"""
+        """Пары в порядке добавления первого имени."""
 
         return ((n, v) for n, vs in self.items() for v in vs)
 
     def reversed_pairs(self) -> t.Generator[ItemT, None, None]:
-        """(name, value) reversed items"""
+        """Пары обращенном порядке добавления первого имени."""
 
         return ((n, v) for n, vs in reversed(self.items()) for v in reversed(vs))
 
     def sorted_pairs(self) -> t.Generator[ItemT, None, None]:
-        """sorted (name, value) items,
-        parameters then sections
-        """
+        """Пары в порядке появления в двоичном файле.
+        Сначала все параметры на уровне затем все секции на уровне, в порядке добавления первого имени."""
 
         sections_pairs = []
         for item in self.pairs():
@@ -341,6 +338,13 @@ class Section(OrderedDict, Value):
         yield from sections_pairs
 
     def bfs_pairs_gen(self, pairs_of: ItemsGenOfT) -> ItemsGenT:
+        """
+        Генератор пар при обходе секции в ширину с параметром.
+
+        :param pairs_of: генератор потомков на уровне
+        :return: генератор пар при обходе секции в ширину
+        """
+
         queue = deque()
         queue.append((None, self))
 
@@ -353,9 +357,18 @@ class Section(OrderedDict, Value):
                     queue.append(item)
 
     def bfs_sorted_pairs(self) -> ItemsGenT:
+        """Генератор пар при обходе секции в ширину."""
+
         yield from self.bfs_pairs_gen(lambda s: s.sorted_pairs())
 
     def dfs_nlr_pairs_gen(self, reversed_pairs_of: ItemsGenOfT) -> ItemsGenT:
+        """
+        Генератор пар при обходе секции в глубину с параметром.
+
+        :param reversed_pairs_of: обращенный генератор потомков на уровне
+        :return: генератор пар при обходе секции в глубину
+        """
+
         stack = deque()
         stack.append((None, self))
 
@@ -368,10 +381,12 @@ class Section(OrderedDict, Value):
                     stack.insert(0, item)
 
     def dfs_nlr_pairs(self) -> ItemsGenT:
+        """Генератор пар при обходе секции в глубину"""
+
         yield from self.dfs_nlr_pairs_gen(lambda s: s.reversed_pairs())
 
     def names_dfs_nlr(self) -> NamesGenT:
-        """names, preorder dfs"""
+        """Генератор имен при обходе секции в глубину."""
 
         ps = self.dfs_nlr_pairs()
         next(ps)
@@ -380,6 +395,11 @@ class Section(OrderedDict, Value):
     names = names_dfs_nlr
 
     def size(self) -> t.Tuple[int, int]:
+        """Размер секции на уровне.
+
+        :return: (число параметров, число секций)
+        """
+
         params_count, sections_count = 0, 0
         for name, value in self.pairs():
             if isinstance(value, Parameter):

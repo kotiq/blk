@@ -34,6 +34,15 @@ def test_out_of_range_raises_value_error(sample):
     print(ei.value)
 
 
+@pytest.mark.parametrize(['x', 'y'], [
+    pytest.param(Float(0.0), 1e-8, id='abs'),
+    pytest.param(Float(1.0), 1 + 1e-5, id='rel'),
+    pytest.param(Float(1234.5678), 1234.568, id='usual'),
+])
+def test_eq(x, y):
+    assert x == y
+
+
 @pytest.mark.parametrize(['value', 'text'], [
     pytest.param(Float(1234.5678), 'Float(1234.568)', id='usual')
 ])
