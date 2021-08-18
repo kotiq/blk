@@ -197,15 +197,12 @@ class Vector(tuple, Parameter):
     type: t.Type[t.Union[Float, Int, UByte]] = NotImplemented
     size: int = NotImplemented
 
-    def __new__(cls, xs):
-        return super().__new__(cls, xs)
-
     def __repr__(self):
         fmt = self.type.fmt
         return f'{self.__class__.__name__}(({", ".join(map(lambda x: format(x, fmt), self))}))'
 
     @classmethod
-    def of(cls, xs: t.Sequence[t.Union[float, int]]):
+    def of(cls, xs: t.Sequence[NumberT]):
         sz = len(xs)
         if sz != cls.size:
             raise TypeError('Ожидалось {} компонент: {}'.format(cls.size, sz))
