@@ -1,4 +1,5 @@
 import os
+import json
 from contextlib import contextmanager
 from shutil import copytree
 import multiprocessing as mp
@@ -8,6 +9,7 @@ from datetime import datetime
 import pytest
 import blk.binary as bin
 import blk.text as txt
+import blk.json as jsn
 from helpers import make_tmppath, create_text
 
 
@@ -94,8 +96,14 @@ def test_unpack_fat_dir(tmprespath, dir_rpath, request):
         process_dir(dir_path, log)
 
 
+@pytest.mark.parametrize(['serializer', 'ext'], [
+    pytest.param(lambda root, ostream: txt.serialize(root, ostream, txt.StrictDialect), '.blkx', id='strict_blk'),
+    pytest.param(lambda root, ostream: json.dump(root, ostream), '.identity.json', id='json_as_is'),
+    pytest.param(lambda root, ostream: jsn.serialize(root, ostream, jsn.JSON), '.default.json', id='json'),
+    pytest.param(lambda root, ostream: jsn.serialize(root, ostream, jsn.JSON_2), '.alternate.json', id='json_2'),
+])
 @pytest.mark.parametrize('dir_rpath', slim_dir_rpaths)
-def test_unpack_slim_dir(tmprespath, dir_rpath, request):
+def test_unpack_slim_dir(tmprespath, dir_rpath, request, serializer, ext):
     dir_path = os.path.join(tmprespath, dir_rpath)
     names_path = os.path.join(dir_path, 'nm')
     try:
@@ -105,12 +113,12 @@ def test_unpack_slim_dir(tmprespath, dir_rpath, request):
         pytest.fail(str(e))
 
     def process_file(path, log):
-        out_path = path + 'x'
+        out_path = os.path.splitext(path)[0] + ext
         try:
             with open(path, 'rb') as istream:
                 root = bin.compose_slim(names, istream)
             with create_text(out_path) as ostream:
-                txt.serialize(root, ostream, dialect=txt.StrictDialect)
+                serializer(root, ostream)
             print(f'[ OK ] {os.path.relpath(path, tmprespath)!r}', file=log)
         except Exception as e:
             print(f'[FAIL] {os.path.relpath(path, tmprespath)!r}: {e}', file=log)

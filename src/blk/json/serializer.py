@@ -1,52 +1,88 @@
-from _ctypes import PyObj_FromPtr
+import platform
 import re
 import json
-from json.encoder import _make_iterencode, encode_basestring_ascii, encode_basestring
 import typing as t
 from blk.types import *
 
 __all__ = ['serialize', 'JSON', 'JSON_2']
 
+implementation = platform.python_implementation()
+if implementation == 'CPython':
+    from _ctypes import PyObj_FromPtr
+    from json.encoder import _make_iterencode, encode_basestring_ascii, encode_basestring
 
-class FloatEncoder(json.JSONEncoder):
-    def iterencode(self, o, _one_shot=False):
-        markers = {} if self.check_circular else None
-        _encoder = encode_basestring_ascii if self.ensure_ascii else encode_basestring
-        encoder = _make_iterencode(
-            markers, self.default, _encoder, self.indent, floatstr,
-            self.key_separator, self.item_separator, self.sort_keys,
-            self.skipkeys, False)
-        return encoder(o, 0)
+    class FloatEncoder(json.JSONEncoder):
+        def iterencode(self, o, _one_shot=False):
+            markers = {} if self.check_circular else None
+            _encoder = encode_basestring_ascii if self.ensure_ascii else encode_basestring
+            encoder = _make_iterencode(
+                markers, self.default, _encoder, self.indent, floatstr,
+                self.key_separator, self.item_separator, self.sort_keys,
+                self.skipkeys, False)
+            return encoder(o, 0)
 
+    class NoIndentEncoder(FloatEncoder):
+        # https://stackoverflow.com/questions/13249415/how-to-implement-custom-indentation-when-pretty-printing-with-the-json-module
 
-class NoIndentEncoder(FloatEncoder):
-    # https://stackoverflow.com/questions/13249415/how-to-implement-custom-indentation-when-pretty-printing-with-the-json-module
+        fmt = r'@@{}@@'
+        regex = re.compile(fmt.format(r'(\d+)'))
 
-    fmt = r'@@{}@@'
-    regex = re.compile(fmt.format(r'(\d+)'))
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.kwargs = dict(kwargs)
+            del self.kwargs['indent']
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.kwargs = dict(kwargs)
-        del self.kwargs['indent']
+        def default(self, o):
+            if isinstance(o, Var):
+                value = o.value
+                if isinstance(value, Vector):
+                    return self.fmt.format(id(value))
+                return value
+            return super().default(o)
 
-    def default(self, o):
-        if isinstance(o, Var):
-            value = o.value
-            if isinstance(value, Vector):
-                return self.fmt.format(id(o))
-            return value
-        return super().default(o)
+        def iterencode(self, o, _one_shot=False):
+            for s in super().iterencode(o):
+                m = self.regex.search(s)
+                if m:
+                    id_ = int(m.group(1))
+                    value = PyObj_FromPtr(id_)
+                    text = json.dumps(value, cls=FloatEncoder, **self.kwargs)
+                    s = s.replace(f'"{self.fmt.format(id_)}"', text)
+                yield s
+elif implementation == 'PyPy':
+    class FloatEncoder(json.JSONEncoder):
+        def __floatstr(self, o):
+            return floatstr(o)
 
-    def iterencode(self, o, _one_shot=False):
-        for s in super().iterencode(o):
-            m = self.regex.search(s)
-            if m:
-                id_ = int(m.group(1))
-                var_ = PyObj_FromPtr(id_)
-                text = json.dumps(var_.value, cls=FloatEncoder, **self.kwargs)
-                s = s.replace(f'"{self.fmt.format(id_)}"', text)
-            yield s
+    class NoIndentEncoder(FloatEncoder):
+        fmt = r'@@{}@@'
+        regex = re.compile(fmt.format(r'(\d+)'))
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.kwargs = dict(kwargs)
+            del self.kwargs['indent']
+            self._objects_map = {}
+
+        def default(self, o):
+            if isinstance(o, Var):
+                value = o.value
+                if isinstance(value, Vector):
+                    key = id(value)
+                    self._objects_map[key] = value
+                    return self.fmt.format(key)
+                return value
+            return super().default(o)
+
+        def iterencode(self, o, _one_shot=False):
+            for s in super().iterencode(o):
+                m = self.regex.search(s)
+                if m:
+                    id_ = int(m.group(1))
+                    value = self._objects_map[id_]
+                    text = json.dumps(value, cls=FloatEncoder, **self.kwargs)
+                    s = s.replace(f'"{self.fmt.format(id_)}"', text)
+                yield s
 
 
 class Mapper:
