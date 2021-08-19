@@ -207,8 +207,7 @@ for cls in Int, Long:
 def text(self, context):
     fmt = context['float']
     if fmt == dgen_fmt:
-        x = round(self, 4)
-        return floatstr(x)
+        return repr(round(self, 4))
     else:
         return format(self, fmt)
 
@@ -226,6 +225,10 @@ for cls in Int2, Int3, Color:
     register_ints_text(cls)
 
 
+def vec_float_repr(x):
+    return repr(float(format(x, 'e')))
+
+
 def register_floats_text(cls):
     key = cls.type.__name__.lower()
 
@@ -233,9 +236,10 @@ def register_floats_text(cls):
     def text(self, context):
         fmt = context[key]
         if fmt == dgen_fmt:
-            format_ = floatstr
+            format_ = vec_float_repr
         else:
-            format_ = lambda x: format(x, fmt)
+            def format_(x):
+                return format(x, fmt)
 
         return ', '.join(map(format_, self))
 
@@ -256,9 +260,10 @@ m_text = v_text(' ')
 def text(self, context):
     fmt = context['float']
     if fmt == dgen_fmt:
-        format_ = floatstr
+        format_ = vec_float_repr
     else:
-        format_ = lambda x: format(x, fmt)
+        def format_(x):
+            return format(x, fmt)
     xs = map(format_, self)
     ts = zip(*[iter(xs)]*3)
 

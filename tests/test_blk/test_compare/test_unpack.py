@@ -20,7 +20,7 @@ def test_unpack(binrespath, outpath, format_):
     new_path = os.path.join(binrespath, new_rpath)
     assert os.path.isdir(new_path)
 
-    unpacker = os.path.join(demo_prefix, 'blk_unpack_demo.py')
+    unpacker = os.path.join(demo_prefix, 'blk_unpack_demo_mp.py')
     out = os.path.join(outpath, f'{format_}.log')
     os.system(f'python {unpacker} --format={format_} {new_path} > {out}')
 

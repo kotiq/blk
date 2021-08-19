@@ -6,7 +6,7 @@ from math import isfinite, isclose
 
 __all__ = ['Value', 'Parameter', 'Vector', 'Bool', 'true', 'false', 'Str', 'Float', 'Float2', 'Float3', 'Float4',
            'Name', 'Section', 'Int', 'Long', 'UByte', 'Int2', 'Int3', 'Color', 'Float2', 'Float3', 'Float4', 'Float12',
-           'EncodedStr', 'Var', 'method', 'floatstr']
+           'EncodedStr', 'Var', 'method']
 
 
 class Var:
@@ -25,15 +25,6 @@ def method(cls: type) -> t.Callable[[type], type]:
         return f
 
     return decorator
-
-
-def floatstr(o: float) -> str:
-    """Текстовое представление float32"""
-
-    if int(o) == o:
-        return float.__repr__(o)
-    else:
-        return format(o, '.7g')
 
 
 class Value:

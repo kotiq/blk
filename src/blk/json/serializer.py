@@ -9,19 +9,8 @@ __all__ = ['serialize', 'JSON', 'JSON_2']
 implementation = platform.python_implementation()
 if implementation == 'CPython':
     from _ctypes import PyObj_FromPtr
-    from json.encoder import _make_iterencode, encode_basestring_ascii, encode_basestring
 
-    class FloatEncoder(json.JSONEncoder):
-        def iterencode(self, o, _one_shot=False):
-            markers = {} if self.check_circular else None
-            _encoder = encode_basestring_ascii if self.ensure_ascii else encode_basestring
-            encoder = _make_iterencode(
-                markers, self.default, _encoder, self.indent, floatstr,
-                self.key_separator, self.item_separator, self.sort_keys,
-                self.skipkeys, False)
-            return encoder(o, 0)
-
-    class NoIndentEncoder(FloatEncoder):
+    class NoIndentEncoder(json.JSONEncoder):
         # https://stackoverflow.com/questions/13249415/how-to-implement-custom-indentation-when-pretty-printing-with-the-json-module
 
         fmt = r'@@{}@@'
@@ -35,9 +24,7 @@ if implementation == 'CPython':
         def default(self, o):
             if isinstance(o, Var):
                 value = o.value
-                if isinstance(value, Vector):
-                    return self.fmt.format(id(value))
-                return value
+                return self.fmt.format(id(value))
             return super().default(o)
 
         def iterencode(self, o, _one_shot=False):
@@ -46,15 +33,11 @@ if implementation == 'CPython':
                 if m:
                     id_ = int(m.group(1))
                     value = PyObj_FromPtr(id_)
-                    text = json.dumps(value, cls=FloatEncoder, **self.kwargs)
+                    text = json.dumps(value, **self.kwargs)
                     s = s.replace(f'"{self.fmt.format(id_)}"', text)
                 yield s
 elif implementation == 'PyPy':
-    class FloatEncoder(json.JSONEncoder):
-        def __floatstr(self, o):
-            return floatstr(o)
-
-    class NoIndentEncoder(FloatEncoder):
+    class NoIndentEncoder(json.JSONEncoder):
         fmt = r'@@{}@@'
         regex = re.compile(fmt.format(r'(\d+)'))
 
@@ -67,11 +50,9 @@ elif implementation == 'PyPy':
         def default(self, o):
             if isinstance(o, Var):
                 value = o.value
-                if isinstance(value, Vector):
-                    key = id(value)
-                    self._objects_map[key] = value
-                    return self.fmt.format(key)
-                return value
+                key = id(value)
+                self._objects_map[key] = value
+                return self.fmt.format(key)
             return super().default(o)
 
         def iterencode(self, o, _one_shot=False):
@@ -80,7 +61,7 @@ elif implementation == 'PyPy':
                 if m:
                     id_ = int(m.group(1))
                     value = self._objects_map[id_]
-                    text = json.dumps(value, cls=FloatEncoder, **self.kwargs)
+                    text = json.dumps(value, **self.kwargs)
                     s = s.replace(f'"{self.fmt.format(id_)}"', text)
                 yield s
 
@@ -95,11 +76,11 @@ class Mapper:
         if isinstance(value, (Section, t.Mapping)):
             return cls._map_section(value)
         elif isinstance(value, Float12):
-            return tuple(Var(Float3(value[i:i+3])) for i in range(0, 10, 3))
+            return tuple(Var(tuple(float(format(x, 'e')) for x in value[i:i+3])) for i in range(0, 10, 3))
         elif isinstance(value, Color):
             return f"#{''.join(format(x, '02x') for x in value)}"
         elif isinstance(value, Vector):
-            return Var(value)
+            return Var(tuple(float(format(x, 'e')) for x in value))
         elif isinstance(value, Float):
             return round(value, 4)
         elif isinstance(value, Bool):
