@@ -1,14 +1,18 @@
 import os
-import sys
-from traceback import print_exc
+import logging
+import multiprocessing as mp
 import typing as t
+from functools import partial
 import click
+from multiprocessing_logging import install_mp_handler
 import blk_unpack as bbf3
 import blk.binary as bin
 import blk.text as txt
 import blk.json as jsn
 
 
+logging.basicConfig(format='[%(levelname)s] %(message)s', level=logging.DEBUG)
+install_mp_handler()
 INDENT = ' '*4
 
 
@@ -52,14 +56,14 @@ def process_file(file_path: str, names: t.Optional[t.Sequence], out_type: int, i
         return
 
     out_path = file_path + 'x'
-    print(file_path)
+    logging.info(file_path)
 
     try:
         with open(file_path, 'rb') as istream:
             bs = istream.read(4)
             # пустой файл
             if not bs:
-                print(f'{INDENT}Empty file')
+                logging.info(f'{INDENT}Empty file')
                 with open(out_path, 'wb') as _:
                     pass
             # файл прежнего формата
@@ -75,7 +79,7 @@ def process_file(file_path: str, names: t.Optional[t.Sequence], out_type: int, i
                 if names is None:
                     nm_path = names_path(file_path, 'nm')
                     if nm_path:
-                        print(f'Loading NameMap from {nm_path!r}')
+                        logging.info(f'Loading NameMap from {nm_path!r}')
                         with open(nm_path, 'rb') as nm_istream:
                             names = bin.compose_names(nm_istream)
                 if names:
@@ -84,7 +88,7 @@ def process_file(file_path: str, names: t.Optional[t.Sequence], out_type: int, i
                     with create_text(out_path) as ostream:
                         serialize_text(root, ostream, out_type, is_sorted)
                 else:  # не найдена таблица имен
-                    print(f"{INDENT}NameMap not found")
+                    logging.error(f"{INDENT}NameMap not found")
             # файл с именами внутри или текст
             else:
                 istream.seek(0)
@@ -100,54 +104,69 @@ def process_file(file_path: str, names: t.Optional[t.Sequence], out_type: int, i
                     istream.seek(0)
                     bs = istream.read()
                     if is_text(bs):
-                        print(f'{INDENT}Copied as is')
+                        logging.info(f'{INDENT}Copied as is')
                         with open(out_path, 'wb') as ostream:
                             ostream.write(bs)
                     else:
-                        print(f'{INDENT}Unknown file format')
+                        logging.info(f'{INDENT}Unknown file format')
 
     except (TypeError, EnvironmentError, bin.ComposeError) as e:
-        print(f'{INDENT}{e}')
-        print_exc(file=sys.stdout)
+        logging.exception(f'{INDENT}{e}', exc_info=True)
 
 
-def process_dir(dir_path: str, out_type: int, is_sorted: bool):
+def process_dir(dir_path: str, out_type: int, is_sorted: bool, pool: mp.Pool):
     entries = tuple(os.scandir(dir_path))
 
     for entry in entries:
         if entry.is_file() and os.path.basename(entry.path) == 'nm':
             nm_path = entry.path
             try:
-                print(f'Loading NameMap from {nm_path!r}')
+                logging.info(f'Loading NameMap from {nm_path!r}')
                 with open(nm_path, 'rb') as nm_istream:
                     names = bin.compose_names(nm_istream)
 
-                process_slim_dir(dir_path, names, out_type, is_sorted)
+                process_slim_dir(dir_path, names, out_type, is_sorted, pool)
                 return
             except bin.ComposeError as e:
-                print(f'{nm_path}')
-                print(f'{INDENT}{e}')
+                logging.error(f'{nm_path}')
+                logging.exception(f'{INDENT}{e}', exc_info=True)
                 return
+
+    dir_paths = []
+    file_paths = []
 
     for entry in entries:
         if entry.is_dir():
-            process_dir(entry.path, out_type, is_sorted)
+            dir_paths.append(entry.path)
         elif entry.is_file():
-            process_file(entry.path, None, out_type, is_sorted)
+            file_paths.append(entry.path)
+
+    for dir_path in dir_paths:
+        process_dir(dir_path, out_type, is_sorted, pool)
+
+    pool.map(partial(process_file, names=None, out_type=out_type, is_sorted=is_sorted), file_paths)
 
 
-def process_slim_dir(dir_path: str, names: t.Sequence, out_type: int, is_sorted: bool, ):
+def process_slim_dir(dir_path: str, names: t.Sequence, out_type: int, is_sorted: bool, pool: mp.Pool):
+    dir_paths = []
+    file_paths = []
+
     for entry in os.scandir(dir_path):
         if entry.is_dir():
-            process_slim_dir(entry.path, names, out_type, is_sorted)
+            dir_paths.append(entry.path)
         elif entry.is_file():
-            process_file(entry.path, names, out_type, is_sorted)
+            file_paths.append(entry.path)
+
+    for dir_path in dir_paths:
+        process_slim_dir(dir_path, names, out_type, is_sorted, pool)
+
+    pool.map(partial(process_file, names=names, out_type=out_type, is_sorted=is_sorted), file_paths)
 
 
 @click.command()
 @click.argument('path', type=click.Path(exists=True))
-@click.option('--format', 'out_format', type=click.Choice(['strict_blk', 'json', 'json_2'], case_sensitive=False), default='json',
-              show_default=True)
+@click.option('--format', 'out_format', type=click.Choice(['strict_blk', 'json', 'json_2'], case_sensitive=False),
+              default='json', show_default=True)
 @click.option('--sort', 'is_sorted', is_flag=True, default=False)
 def main(path: str, out_format: str, is_sorted: bool):
     out_type = bbf3.BLK.output_type[out_format]
@@ -155,7 +174,10 @@ def main(path: str, out_format: str, is_sorted: bool):
     if os.path.isfile(path):
         process_file(path, None, out_type, is_sorted)
     else:
-        process_dir(path, out_type, is_sorted)
+        with mp.Pool(None) as pool:
+            process_dir(path, out_type, is_sorted, pool)
+            pool.close()
+            pool.join()
 
 
 if __name__ == '__main__':
