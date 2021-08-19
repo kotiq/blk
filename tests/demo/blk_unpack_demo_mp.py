@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import multiprocessing as mp
 import typing as t
@@ -11,7 +12,7 @@ import blk.text as txt
 import blk.json as jsn
 
 
-logging.basicConfig(format='[%(levelname)s] %(message)s', level=logging.DEBUG)
+logging.basicConfig(format='[%(levelname)s] %(message)s', level=logging.DEBUG, stream=sys.stdout)
 install_mp_handler()
 INDENT = ' '*4
 
@@ -114,7 +115,7 @@ def process_file(file_path: str, names: t.Optional[t.Sequence], out_type: int, i
         logging.exception(f'{INDENT}{e}', exc_info=True)
 
 
-def process_dir(dir_path: str, out_type: int, is_sorted: bool, pool: mp.Pool):
+def process_dir(dir_path: str, out_type: int, is_sorted: bool):
     entries = tuple(os.scandir(dir_path))
 
     for entry in entries:
@@ -125,7 +126,7 @@ def process_dir(dir_path: str, out_type: int, is_sorted: bool, pool: mp.Pool):
                 with open(nm_path, 'rb') as nm_istream:
                     names = bin.compose_names(nm_istream)
 
-                process_slim_dir(dir_path, names, out_type, is_sorted, pool)
+                process_slim_dir(dir_path, names, out_type, is_sorted)
                 return
             except bin.ComposeError as e:
                 logging.error(f'{nm_path}')
@@ -142,25 +143,50 @@ def process_dir(dir_path: str, out_type: int, is_sorted: bool, pool: mp.Pool):
             file_paths.append(entry.path)
 
     for dir_path in dir_paths:
-        process_dir(dir_path, out_type, is_sorted, pool)
+        process_dir(dir_path, out_type, is_sorted)
 
-    pool.map(partial(process_file, names=None, out_type=out_type, is_sorted=is_sorted), file_paths)
+    with mp.Pool(None) as pool:
+        pool.map(partial(process_file, names=None, out_type=out_type, is_sorted=is_sorted), file_paths)
+        pool.close()
+        pool.join()
 
 
-def process_slim_dir(dir_path: str, names: t.Sequence, out_type: int, is_sorted: bool, pool: mp.Pool):
-    dir_paths = []
-    file_paths = []
-
+def file_paths_r(dir_path: str) -> t.Generator[str, None, None]:
     for entry in os.scandir(dir_path):
         if entry.is_dir():
-            dir_paths.append(entry.path)
+            yield from file_paths_r(entry.path)
         elif entry.is_file():
-            file_paths.append(entry.path)
+            yield entry.path
 
-    for dir_path in dir_paths:
-        process_slim_dir(dir_path, names, out_type, is_sorted, pool)
 
-    pool.map(partial(process_file, names=names, out_type=out_type, is_sorted=is_sorted), file_paths)
+def slim_dir_worker(queue: mp.JoinableQueue, names: t.Sequence, out_type: int, is_sorted: bool):
+    for path in iter(queue.get, None):
+        process_file(path, names, out_type, is_sorted)
+        queue.task_done()
+    queue.task_done()
+
+
+def process_slim_dir(dir_path: str, names: t.Sequence, out_type: int, is_sorted: bool):
+    file_paths = file_paths_r(dir_path)
+    queue = mp.JoinableQueue()
+    for path in file_paths:
+        queue.put(path)
+    ps = []
+    for _ in range(mp.cpu_count()):
+        p = mp.Process(target=slim_dir_worker, args=(queue, names, out_type, is_sorted))
+        ps.append(p)
+        p.daemon = True
+        p.start()
+
+    queue.join()
+
+    for _ in ps:
+        queue.put(None)
+
+    queue.join()
+
+    for p in ps:
+        p.join()
 
 
 @click.command()
@@ -174,10 +200,7 @@ def main(path: str, out_format: str, is_sorted: bool):
     if os.path.isfile(path):
         process_file(path, None, out_type, is_sorted)
     else:
-        with mp.Pool(None) as pool:
-            process_dir(path, out_type, is_sorted, pool)
-            pool.close()
-            pool.join()
+        process_dir(path, out_type, is_sorted)
 
 
 if __name__ == '__main__':
