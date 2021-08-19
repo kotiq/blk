@@ -23,41 +23,41 @@ class SerializeError(ConstructError):
     pass
 
 
-UByte.con = ct.Byte
-Int.con = ct.Int32sl
-Long.con = ct.Int64sl
-Float.con = ct.Float32l
-Bool.con = ct.Int32ul
+UByte.con = ct.Byte.compile()
+Int.con = ct.Int32sl.compile()
+Long.con = ct.Int64sl.compile()
+Float.con = ct.Float32l.compile()
+Bool.con = ct.Int32ul.compile()
 
 Color.con = ct.ExprSymmetricAdapter(
     UByte.con[4],
     lambda o, c: tuple(reversed(o[:-1])) + (o[-1], ),
-)
+).compile()
 
 for c in (Float12, Float4, Float3, Float2, Int3, Int2):
-    c.con = c.type.con[c.size]
+    c.con = c.type.con[c.size].compile()
 
-RawCString = ct.NullTerminated(ct.GreedyBytes)
+RawCString = ct.NullTerminated(ct.GreedyBytes).compile()
 
 Name.con = ct.ExprAdapter(
     RawCString,
     lambda obj, ctx: Name.of(obj),
     lambda obj, ctx: obj.encode()
-)
+).compile()
 
 Str.con = ct.ExprAdapter(
     RawCString,
     lambda obj, ctx: Str.of(obj),
     lambda obj, ctx: obj.encode()
-)
+).compile()
 
 Names = ct.FocusedSeq(
     'names',
     'names_count' / ct.Rebuild(ct.VarInt, ct.len_(ct.this.names)),
     'names' / ct.Prefixed(ct.VarInt, Name.con[ct.this.names_count])
-)
+).compile()
 
-TaggedOffset = ct.ByteSwapped(ct.Bitwise(ct.Sequence(ct.Bit, ct.BitsInteger(31))))
+TaggedOffset = ct.ByteSwapped(ct.Bitwise(ct.Sequence(ct.Bit, ct.BitsInteger(31)))).compile()
 
 ParamInfo = ct.NamedTuple(
     'ParamInfo',
@@ -67,7 +67,7 @@ ParamInfo = ct.NamedTuple(
         'type_id' / ct.Byte,
         'data' / ct.Bytes(4)
     )
-)
+).compile()
 
 BlockInfo = ct.NamedTuple(
     'BlockInfo',
@@ -82,7 +82,7 @@ BlockInfo = ct.NamedTuple(
         'blocks_count' / ct.VarInt,
         'block_offset' / ct.IfThenElse(this.blocks_count > 0, ct.VarInt, ct.Computed(None))
     )
-)
+).compile()
 
 
 FileStruct = """Структура файла, за исключением таблицы имен имен""" * ct.Struct(
@@ -91,13 +91,13 @@ FileStruct = """Структура файла, за исключением та�
     'params_data' / ct.Prefixed(ct.VarInt, ct.GreedyBytes),
     'params' / ParamInfo[this.params_count],
     'blocks' / BlockInfo[this.blocks_count],
-)
+).compile()
 
 SlimFile = """"Файл с таблицей имен в другом файле""" * ct.FocusedSeq(
     'file',
     ct.Const(b'\x00'),
     'file' / FileStruct,
-)
+).compile()
 
 ItemT = t.Tuple[Name, Value]
 NamesIT = t.Iterable[Name]

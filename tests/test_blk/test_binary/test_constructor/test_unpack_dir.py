@@ -45,7 +45,7 @@ fat_dir_rpaths = [
 ]
 
 slim_dir_rpaths = [
-    # 'aces.vromfs.bin_u',
+    'aces.vromfs.bin_u',
     'char.vromfs.bin_u',
 ]
 
@@ -150,19 +150,42 @@ def process_file_mp(file_path, names, log, tmprespath):
         os.write(log, fail_msg.encode('utf8'))
 
 
-def process_dir_mp(dir_path, names, log, tmprespath, pool):
-    dir_paths = []
-    file_paths = []
+def file_paths_r(dir_path):
     for entry in os.scandir(dir_path):
         if entry.is_dir():
-            dir_paths.append(entry.path)
-        elif is_slim_blk_entry(entry):
-            file_paths.append(entry.path)
+            yield from file_paths_r(entry.path)
+        elif entry.is_file():
+            yield entry.path
 
-    for dir_path in dir_paths:
-        process_dir_mp(dir_path, names, log, tmprespath, pool)
 
-    pool.map(partial(process_file_mp, names=names, log=log, tmprespath=tmprespath), file_paths)
+def slim_dir_worker(queue, names, log, tmprespath):
+    for path in iter(queue.get, None):
+        process_file_mp(path, names, log, tmprespath)
+        queue.task_done()
+    queue.task_done()
+
+
+def process_dir_mp(dir_path, names, log, tmprespath):
+    file_paths = file_paths_r(dir_path)
+    queue = mp.JoinableQueue()
+    for path in file_paths:
+        queue.put(path)
+    ps = []
+    for _ in range(mp.cpu_count()):
+        p = mp.Process(target=slim_dir_worker, args=(queue, names, log, tmprespath))
+        ps.append(p)
+        p.daemon = True
+        p.start()
+
+    queue.join()
+
+    for _ in ps:
+        queue.put(None)
+
+    queue.join()
+
+    for p in ps:
+        p.join()
 
 
 @contextmanager
@@ -188,7 +211,4 @@ def test_unpack_slim_dir_mp(tmprespath, slim_dir_rpath, request):
     log_name = '_'.join([utc.strftime(time_fmt), request.node.name, 'unpack.log'])
     flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND
     with os_open(os.path.join(slim_dir_path, log_name), flags=flags, mode=0o644) as log:
-        with mp.Pool(None) as pool:
-            process_dir_mp(slim_dir_path, names, log, tmprespath, pool)
-            pool.close()
-            pool.join()
+        process_dir_mp(slim_dir_path, names, log, tmprespath)
