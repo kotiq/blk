@@ -115,7 +115,7 @@ def process_file(file_path: str, names: t.Optional[t.Sequence], out_type: int, i
         logging.exception(f'{INDENT}{e}', exc_info=True)
 
 
-def process_dir(dir_path: str, out_type: int, is_sorted: bool):
+def process_dir(dir_path: str, out_type: int, is_sorted: bool, pool: mp.Pool):
     entries = tuple(os.scandir(dir_path))
 
     for entry in entries:
@@ -143,12 +143,9 @@ def process_dir(dir_path: str, out_type: int, is_sorted: bool):
             file_paths.append(entry.path)
 
     for dir_path in dir_paths:
-        process_dir(dir_path, out_type, is_sorted)
+        process_dir(dir_path, out_type, is_sorted, pool)
 
-    with mp.Pool(None) as pool:
-        pool.map(partial(process_file, names=None, out_type=out_type, is_sorted=is_sorted), file_paths)
-        pool.close()
-        pool.join()
+    pool.map(partial(process_file, names=None, out_type=out_type, is_sorted=is_sorted), file_paths)
 
 
 def file_paths_r(dir_path: str) -> t.Generator[str, None, None]:
@@ -200,7 +197,10 @@ def main(path: str, out_format: str, is_sorted: bool):
     if os.path.isfile(path):
         process_file(path, None, out_type, is_sorted)
     else:
-        process_dir(path, out_type, is_sorted)
+        with mp.Pool(None) as pool:
+            process_dir(path, out_type, is_sorted, pool)
+            pool.close()
+            pool.join()
 
 
 if __name__ == '__main__':

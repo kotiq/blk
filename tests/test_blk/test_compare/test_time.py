@@ -6,8 +6,8 @@ demo_prefix = demo.__path__[0]
 
 
 @pytest.mark.parametrize('rpath', [
-    # 'char.vromfs.bin_u',
     'aces.vromfs.bin_u',
+    'aces.vromfs.bin_u_old',
 ])
 @pytest.mark.parametrize('runpacker', [
     'blk_unpack_demo.py',
