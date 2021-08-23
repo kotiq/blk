@@ -1,8 +1,15 @@
+"""Скрипт для запуска тестов продолжительности распаковки и построения гистограммы по результатам.
+Используют numpy и matplotlib.
+Предполагается, что версии интерпретаторов установлены в виртуальные окружения
+cpython_venv и pypy_venv с общим корнем venv_home
+"""
+
 import os
 from functools import reduce
 import itertools as itt
 import subprocess
 import shlex
+import shutil
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,13 +27,11 @@ with open(log, 'w'):
     pass
 
 venv_home = os.path.expanduser('~/.virtualenvs')
-venvs = (
-    'blk',
-    'blk_pypy3',
-)
+cpython_venv = 'blk'
+pypy_venv = 'blk_pypy3'
 lang = 'en_US.UTF-8'
 
-for venv in venvs:
+for venv in (cpython_venv, pypy_venv):
     path = os.path.join(venv_home, venv, 'bin')
     args = shlex.split(f'python -m pytest {test} --durations=0 -vs')
     subprocess.run(args, env=dict(PATH=path, LANG=lang))
@@ -34,8 +39,8 @@ for venv in venvs:
 with open(log) as istream:
     rs = [json.loads(line) for line in istream]
 
-rs_new = [r for r in rs if r['path'].endswith('.bin_u')]
-rs_old = [r for r in rs if r['path'].endswith('.bin_u_old')]
+rs_new = tuple(r for r in rs if r['path'].endswith('.bin_u'))
+rs_old = tuple(r for r in rs if r['path'].endswith('.bin_u_old'))
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
@@ -56,14 +61,15 @@ ax.set_ylim(0, max_call+4*ystep)
 ax.set_ylabel('Время, с')
 ax.set_title('Время распаковки aces по форматам, интерпретаторам и распаковщикам', loc='center', wrap=True)
 
+cpu_count = os.cpu_count()
 marks = []
 for r in rs_new:
     impl = r['impl']
     unpacker = r['unpacker']
     if unpacker == 'blk_unpack_demo.py':
-        ps = '1 процесс'
+        ps = '1 process'
     elif unpacker == 'blk_unpack_demo_mp.py':
-        ps = '4 процесса'
+        ps = f'{cpu_count} processes'
     marks.append('\n'.join([impl, ps]))
 
 ax.set_xticks(ind+width/2)
@@ -76,4 +82,6 @@ for rect, label in zip(rects, labels):
     ax.text(rect.get_x() + rect.get_width() / 2, height + ystep, label, ha="center", va="bottom")
 
 ax.legend((rects1[0], rects2[0]), ('Новый формат', 'Старый формат'))
-plt.savefig(os.path.join(out, 'time.svg'))
+svg = os.path.join(out, 'time.svg')
+plt.savefig(svg)
+shutil.copy2(svg, os.path.join(tests, 'demo'))

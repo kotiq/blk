@@ -4,7 +4,7 @@ from subprocess import DEVNULL
 import platform
 import time
 import json
-from shutil import copytree
+import shutil
 from functools import partial
 import itertools as itt
 import pytest
@@ -36,7 +36,7 @@ def tmprespath(binrespath, tmppath):
     for dir_rpath in dir_rpaths:
         src = os.path.join(binrespath, dir_rpath)
         dst = os.path.join(tmppath, dir_rpath)
-        copytree(src, dst, ignore=pass_dir_nm_blk)
+        shutil.copytree(src, dst, ignore=pass_dir_nm_blk)
     return tmppath
 
 

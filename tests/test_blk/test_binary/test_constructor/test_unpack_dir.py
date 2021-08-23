@@ -1,6 +1,7 @@
 import os
+import time
 from contextlib import contextmanager
-from shutil import copytree
+import shutil
 import multiprocessing as mp
 import itertools as itt
 from functools import partial
@@ -61,7 +62,7 @@ def tmprespath(binrespath, tmppath):
     for dir_rpath in itt.chain(fat_dir_rpaths, slim_dir_rpaths):
         src = os.path.join(binrespath, dir_rpath)
         dst = os.path.join(tmppath, dir_rpath)
-        copytree(src, dst, ignore=pass_dir_nm_blk)
+        shutil.copytree(src, dst, ignore=pass_dir_nm_blk)
     return tmppath
 
 
@@ -97,11 +98,8 @@ def test_unpack_fat_dir(tmprespath, dir_rpath, request):
 def test_unpack_slim_dir(tmprespath, dir_rpath, request):
     dir_path = os.path.join(tmprespath, dir_rpath)
     names_path = os.path.join(dir_path, 'nm')
-    try:
-        with open(names_path, 'rb') as istream:
-            names = bin.compose_names(istream)
-    except EnvironmentError as e:
-        pytest.fail(str(e))
+    with open(names_path, 'rb') as istream:
+        names = bin.compose_names(istream)
 
     def process_file(path, log):
         out_path = path + 'x'
@@ -156,7 +154,7 @@ def slim_dir_worker(queue, names, log, tmprespath):
     queue.task_done()
 
 
-def process_dir_mp(dir_path, names, log, tmprespath):
+def process_dir_mp_queue(dir_path, names, log, tmprespath):
     file_paths = file_paths_r(dir_path)
     queue = mp.JoinableQueue()
     for path in file_paths:
@@ -179,6 +177,15 @@ def process_dir_mp(dir_path, names, log, tmprespath):
         p.join()
 
 
+def process_dir_mp_pool(dir_path, names, log, tmprespath):
+    file_paths = file_paths_r(dir_path)
+    with mp.Pool(None) as pool:
+        process_file = partial(process_file_mp, names=names, log=log, tmprespath=tmprespath)
+        pool.map(process_file, file_paths)
+        pool.close()
+        pool.join()
+
+
 @contextmanager
 def os_open(*args, **kwargs):
     fd = os.open(*args, **kwargs)
@@ -188,15 +195,16 @@ def os_open(*args, **kwargs):
         os.close(fd)
 
 
+@pytest.mark.parametrize('process_dir_mp', [
+    process_dir_mp_queue,
+    process_dir_mp_pool,
+])
 @pytest.mark.parametrize('slim_dir_rpath', slim_dir_rpaths)
-def test_unpack_slim_dir_mp(tmprespath, slim_dir_rpath, request):
+def test_unpack_slim_dir_mp(tmprespath, slim_dir_rpath, request, process_dir_mp):
     slim_dir_path = os.path.join(tmprespath, slim_dir_rpath)
     names_path = os.path.join(slim_dir_path, 'nm')
-    try:
-        with open(names_path, 'rb') as istream:
-            names = bin.compose_names(istream)
-    except EnvironmentError as e:
-        pytest.fail(str(e))
+    with open(names_path, 'rb') as istream:
+        names = bin.compose_names(istream)
 
     utc = datetime.utcnow()
     log_name = '_'.join([utc.strftime(time_fmt), request.node.name, 'unpack.log'])
