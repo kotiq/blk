@@ -1,7 +1,7 @@
 import re
 from blk.types import *
 
-__all__ = ['serialize', 'serialize_pair', 'serialize_pairs', 'DefaultDialect', 'StrictDialect']
+__all__ = ['serialize', 'serialize_pairs', 'DefaultDialect', 'StrictDialect']
 
 
 EXP = 'exp'
@@ -130,46 +130,50 @@ class Serializer:
     def indent(self, level):
         self.stream.write(' ' * self.scale * level)
 
-    def serialize(self, root):
+    def serialize(self, root: Section):
         if root:
             self.context['fst'] = True
-            serialize_pairs(root.pairs(), self.stream, self.indent, 0, self.context)
+            serialize_pairs(root.dfs_nlr_pairs(), self.stream, self.indent, 0, self.context)
         if self.eof_newline:
             self.stream.write('\n')
 
 
-@method(Section)
-def serialize_text(self, stream, indent, level, context):
-    name_opener_sep = context['name_opener_sep']
-    if name_opener_sep:
-        stream.write(name_opener_sep)
-    stream.write('{')
-    level += 1
-    serialize_pairs(self.pairs(), stream, indent, level, context)
-    level -= 1
-    stream.write('\n')
-    indent(level)
-    stream.write('}')
-
-
-def serialize_pair(name, value, stream, indent, level, context):
-    if context['fst']:
-        context['fst'] = False
-    else:
-        stream.write('\n')
-        if isinstance(value, Section):
-            sec_opener = context['sec_opener']
-            if sec_opener:
-                stream.write(sec_opener)
-
-    indent(level)
-    name.serialize_text(stream, context)
-    value.serialize_text(stream, indent, level, context)
-
-
 def serialize_pairs(pairs, stream, indent, level, context):
-    for n, v in pairs:
-        serialize_pair(n, v, stream, indent, level, context)
+    sections = 0
+    next(pairs)  # skip root header
+    for pair in pairs:
+        if pair is Section.end:
+            if sections > 0:
+                level -= 1
+                stream.write('\n')
+                indent(level)
+                stream.write('}')
+                sections -= 1
+            else:
+                return  # skip root footer
+        else:
+            name, value = pair
+            is_section = isinstance(value, Section)
+            if context['fst']:
+                context['fst'] = False
+            else:
+                stream.write('\n')
+                if is_section:
+                    sec_opener = context['sec_opener']
+                    if sec_opener:
+                        stream.write(sec_opener)
+
+            indent(level)
+            name.serialize_text(stream, context)
+            if is_section:
+                name_opener_sep = context['name_opener_sep']
+                if name_opener_sep:
+                    stream.write(name_opener_sep)
+                stream.write('{')
+                sections += 1
+                level += 1
+            else:
+                value.serialize_text(stream, context)
 
 
 @method(Name)
@@ -179,7 +183,7 @@ def serialize_text(self, stream, context):
 
 
 @method(Parameter)
-def serialize_text(self, stream, indent, level, context):
+def serialize_text(self, stream, context):
     name_type_sep = context['name_type_sep']
     type_value_sep = context['type_value_sep']
     stream.write(f'{name_type_sep}{self.tag}{type_value_sep}{self.text(context)}')

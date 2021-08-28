@@ -143,7 +143,7 @@ def file_paths_r(dir_path):
     for entry in os.scandir(dir_path):
         if entry.is_dir():
             yield from file_paths_r(entry.path)
-        elif entry.is_file():
+        elif is_slim_blk_entry(entry):
             yield entry.path
 
 
@@ -181,7 +181,7 @@ def process_dir_mp_pool(dir_path, names, log, tmprespath):
     file_paths = file_paths_r(dir_path)
     with mp.Pool(None) as pool:
         process_file = partial(process_file_mp, names=names, log=log, tmprespath=tmprespath)
-        pool.map(process_file, file_paths)
+        pool.map_async(process_file, file_paths)
         pool.close()
         pool.join()
 

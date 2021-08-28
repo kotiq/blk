@@ -263,6 +263,8 @@ SafeFloat12 = Float12.of
 
 
 class Name(EncodedStr):
+    of_root = None
+
     def __repr__(self):
         return f'{self.__class__.__name__}({str.__repr__(self)})'
 
@@ -349,6 +351,9 @@ class Section(OrderedDict, Value):
 
         yield from self.bfs_pairs_gen(lambda s: s.sorted_pairs())
 
+    end = None
+    """Маркер конца секции."""
+
     def dfs_nlr_pairs_gen(self, reversed_pairs_of: ItemsGenOfT) -> ItemsGenT:
         """
         Генератор пар при обходе секции в глубину с параметром.
@@ -363,10 +368,12 @@ class Section(OrderedDict, Value):
         while stack:
             item = stack.popleft()
             yield item
-            value = item[1]
-            if isinstance(value, Section):
-                for item in reversed_pairs_of(value):
-                    stack.insert(0, item)
+            if item is not Section.end:
+                value = item[1]
+                if isinstance(value, Section):
+                    stack.insert(0, Section.end)
+                    for item in reversed_pairs_of(value):
+                        stack.insert(0, item)
 
     def dfs_nlr_pairs(self) -> ItemsGenT:
         """Генератор пар при обходе секции в глубину"""
@@ -378,7 +385,7 @@ class Section(OrderedDict, Value):
 
         ps = self.dfs_nlr_pairs()
         next(ps)
-        return (p[0] for p in ps)
+        return (p[0] for p in ps if p is not Section.end)
 
     names = names_dfs_nlr
 

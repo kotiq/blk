@@ -69,14 +69,16 @@ ParamInfo = ct.NamedTuple(
     )
 ).compile()
 
+Id_of_root = None
+
 BlockInfo = ct.NamedTuple(
     'BlockInfo',
     'name_id params_count blocks_count block_offset',
     ct.Sequence(
         'name_id' / ct.ExprAdapter(
             ct.VarInt,
-            lambda obj, ctx: obj - 1 if obj else None,
-            lambda obj, ctx: 0 if obj is None else obj + 1
+            lambda obj, ctx: obj - 1 if obj else Id_of_root,
+            lambda obj, ctx: 0 if obj is Name.of_root else obj + 1
         ),
         'params_count' / ct.VarInt,
         'blocks_count' / ct.VarInt,
@@ -167,7 +169,7 @@ class FileAdapter(ct.Adapter):
             params.append((name, value))
 
         for name_id, *_ in obj.blocks:
-            name = None if name_id is None else names[name_id]
+            name = Name.of_root if name_id is Id_of_root else names[name_id]
             value = Section()
             blocks.append((name, value))
 
@@ -231,7 +233,7 @@ class FileAdapter(ct.Adapter):
     def build_item(self, item: ItemT, names_map: NamesMapT, values_maps: ValuesMapT,
                    params: ParameterInfosT, blocks: BlockInfosT, block_offset_var: Var):
         name, value = item
-        name_id = names_map.get(name)  # None для root
+        name_id = names_map.get(name, Name.of_root)
 
         if isinstance(value, Parameter):
             cls = value.__class__
@@ -262,7 +264,7 @@ class FileAdapter(ct.Adapter):
             if not blocks_count:
                 block_offset = None
             else:
-                if name_id is None:  # root
+                if name_id is Name.of_root:  # root
                     block_offset_var.value = 1
                 block_offset = block_offset_var.value
                 block_offset_var.value += blocks_count
