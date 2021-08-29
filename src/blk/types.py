@@ -270,10 +270,14 @@ class Name(EncodedStr):
 
 
 SafeName = Name.of
-ItemT = t.Tuple[Name, Value]
-ItemsGenT = t.Generator[ItemT, None, None]
-NamesGenT = t.Generator[Name, None, None]
-ItemsGenOfT = t.Callable[['Section'], t.Iterable[ItemT]]
+
+Pair = t.Tuple[Name, Value]
+EOS = None
+Item = t.Union[EOS, t.Tuple[Name, Value]]
+PairsGen = t.Generator[Pair, None, None]
+ItemsGen = t.Generator[Item, None, None]
+NamesGen = t.Generator[Name, None, None]
+PairsGenOf = t.Callable[['Section'], t.Iterable[Pair]]
 
 
 class Section(OrderedDict, Value):
@@ -303,17 +307,17 @@ class Section(OrderedDict, Value):
         except (IndexError, KeyError):
             return default
 
-    def pairs(self) -> t.Generator[ItemT, None, None]:
+    def pairs(self) -> PairsGen:
         """Пары в порядке добавления первого имени."""
 
         return ((n, v) for n, vs in self.items() for v in vs)
 
-    def reversed_pairs(self) -> t.Generator[ItemT, None, None]:
+    def reversed_pairs(self) -> PairsGen:
         """Пары обращенном порядке добавления первого имени."""
 
         return ((n, v) for n, vs in reversed(self.items()) for v in reversed(vs))
 
-    def sorted_pairs(self) -> t.Generator[ItemT, None, None]:
+    def sorted_pairs(self) -> PairsGen:
         """Пары в порядке появления в двоичном файле.
         Сначала все параметры на уровне затем все секции на уровне, в порядке добавления первого имени."""
 
@@ -327,7 +331,7 @@ class Section(OrderedDict, Value):
 
         yield from sections_pairs
 
-    def bfs_pairs_gen(self, pairs_of: ItemsGenOfT) -> ItemsGenT:
+    def bfs_pairs_gen(self, pairs_of: PairsGenOf) -> PairsGen:
         """
         Генератор пар при обходе секции в ширину с параметром.
 
@@ -336,7 +340,7 @@ class Section(OrderedDict, Value):
         """
 
         queue = deque()
-        queue.append((None, self))
+        queue.append((Name.of_root, self))
 
         while queue:
             item = queue.popleft()
@@ -346,24 +350,24 @@ class Section(OrderedDict, Value):
                 for item in pairs_of(value):
                     queue.append(item)
 
-    def bfs_sorted_pairs(self) -> ItemsGenT:
+    def bfs_sorted_pairs(self) -> PairsGen:
         """Генератор пар при обходе секции в ширину."""
 
         yield from self.bfs_pairs_gen(lambda s: s.sorted_pairs())
 
-    end = None
+    end: EOS = None
     """Маркер конца секции."""
 
-    def dfs_nlr_pairs_gen(self, reversed_pairs_of: ItemsGenOfT) -> ItemsGenT:
+    def dfs_nlr_items_gen(self, reversed_pairs_of: PairsGenOf) -> ItemsGen:
         """
-        Генератор пар при обходе секции в глубину с параметром.
+        Генератор пар или маркеров конца секции при обходе секции в глубину с параметром.
 
         :param reversed_pairs_of: обращенный генератор потомков на уровне
         :return: генератор пар при обходе секции в глубину
         """
 
         stack = deque()
-        stack.append((None, self))
+        stack.append((Name.of_root, self))
 
         while stack:
             item = stack.popleft()
@@ -375,15 +379,15 @@ class Section(OrderedDict, Value):
                     for item in reversed_pairs_of(value):
                         stack.insert(0, item)
 
-    def dfs_nlr_pairs(self) -> ItemsGenT:
-        """Генератор пар при обходе секции в глубину"""
+    def dfs_nlr_items(self) -> ItemsGen:
+        """Генератор пар или маркеров конца секции при обходе секции в глубину"""
 
-        yield from self.dfs_nlr_pairs_gen(lambda s: s.reversed_pairs())
+        yield from self.dfs_nlr_items_gen(lambda s: s.reversed_pairs())
 
-    def names_dfs_nlr(self) -> NamesGenT:
+    def names_dfs_nlr(self) -> NamesGen:
         """Генератор имен при обходе секции в глубину."""
 
-        ps = self.dfs_nlr_pairs()
+        ps = self.dfs_nlr_items()
         next(ps)
         return (p[0] for p in ps if p is not Section.end)
 

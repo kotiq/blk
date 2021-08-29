@@ -18,25 +18,29 @@ def wpcost(binrespath):
     return root
 
 
-def test_unpack_text(wpcost):
-    ostream1 = io.StringIO()
-    ostream2 = io.StringIO()
-    n = 10
+def _test_unpack_text(wpcost):
+    modules = []
+    try:
+        n = 10
+        fmt = '{}: {} x dt = {:.3f}'
+        print()
 
-    serializer1 = importlib.import_module(f'blk.text.serializer')
-    t0 = time.perf_counter()
-    for _ in range(n):
-        serializer1.serialize(wpcost, ostream1, serializer1.StrictDialect)
-        ostream1.truncate(0)
-    t1 = time.perf_counter()
-    print(f'dt1 = {t1 - t0:.3f}')
+        names = ['serializer', 'serializer2']
+        ostreams = [io.StringIO() for _ in names]
 
-    serializer2 = importlib.import_module(f'blk.text.serializer2')
-    t0 = time.perf_counter()
-    for _ in range(n):
-        serializer2.serialize(wpcost, ostream2, serializer2.StrictDialect)
-        ostream2.truncate(0)
-    t1 = time.perf_counter()
-    print(f'dt2 = {t1 - t0:.3f}')
+        for name, ostream in zip(names, ostreams):
+            module = importlib.import_module(f'blk.text.{name}')
+            modules.append(module)
+            t0 = time.perf_counter()
+            for _ in range(n):
+                module.serialize(wpcost, ostream, module.StrictDialect)
+                ostream.seek(0)
+            t1 = time.perf_counter()
+            print(fmt.format(name, n, t1 - t0))
 
-    assert ostream1.getvalue() == ostream2.getvalue()
+        head, *tail = ostreams
+        for i, other in enumerate(tail, 1):
+            assert head.getvalue() == other.getvalue(), names[i]
+    finally:
+        if modules:
+            importlib.reload(modules[0])

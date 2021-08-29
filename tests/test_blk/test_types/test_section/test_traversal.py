@@ -52,7 +52,7 @@ def test_bfs_pairs(section: Section):
 
 
 def test_dfs_nlr_pairs(section: Section):
-    all_names = ans(section.dfs_nlr_pairs())
+    all_names = ans(section.dfs_nlr_items())
     assert all_names == [
         None,
         'a',

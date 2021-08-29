@@ -133,7 +133,7 @@ class Serializer:
     def serialize(self, root: Section):
         if root:
             self.context['fst'] = True
-            serialize_pairs(root.dfs_nlr_pairs(), self.stream, self.indent, 0, self.context)
+            serialize_pairs(root.dfs_nlr_items(), self.stream, self.indent, 0, self.context)
         if self.eof_newline:
             self.stream.write('\n')
 
