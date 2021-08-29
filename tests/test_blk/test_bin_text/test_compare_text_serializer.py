@@ -1,5 +1,6 @@
 import io
 import os
+import sys
 import time
 import importlib
 import pytest
@@ -18,7 +19,7 @@ def wpcost(binrespath):
     return root
 
 
-def _test_unpack_text(wpcost):
+def test_unpack_text(wpcost):
     modules = []
     try:
         n = 10
@@ -29,7 +30,9 @@ def _test_unpack_text(wpcost):
         ostreams = [io.StringIO() for _ in names]
 
         for name, ostream in zip(names, ostreams):
-            module = importlib.import_module(f'blk.text.{name}')
+            name = f'blk.text.{name}'
+            maybe_module = sys.modules.get(name)
+            module = importlib.import_module(name) if maybe_module is None else importlib.reload(maybe_module)
             modules.append(module)
             t0 = time.perf_counter()
             for _ in range(n):
@@ -42,5 +45,5 @@ def _test_unpack_text(wpcost):
         for i, other in enumerate(tail, 1):
             assert head.getvalue() == other.getvalue(), names[i]
     finally:
-        if modules:
+        if len(modules) > 1:
             importlib.reload(modules[0])

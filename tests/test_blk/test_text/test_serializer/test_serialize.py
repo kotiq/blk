@@ -1,4 +1,5 @@
 import io
+import sys
 from blk.types import *
 import importlib
 import pytest
@@ -113,10 +114,19 @@ sections_only_section_ = pytest.lazy_fixture('sections_only_section')
     pytest.param('serializer2', id='serializer2'),
 ])
 def serializer(request):
-    rname = request.param
-    return importlib.import_module(f'blk.text.{rname}')
+    name = f'blk.text.{request.param}'
+    maybe_module = sys.modules.get(name)
+    return importlib.import_module(name) if maybe_module is None else importlib.reload(maybe_module)
 
 
+@pytest.fixture(scope='module')
+def restore_serializer():
+    serializer = sys.modules['blk.text.serializer']
+    yield
+    importlib.reload(serializer)
+
+
+@pytest.mark.usefixtures('restore_serializer')
 @pytest.mark.parametrize(['section', 'dialect', 'text'], [
     pytest.param(mixed_section_,
                  'DefaultDialect', text_mixed_default, id='mixed-default'),
