@@ -23,23 +23,27 @@ def test_unpack_text(wpcost):
     modules = []
     try:
         n = 10
-        fmt = '{}: {} x dt = {:.3f}'
         print()
 
-        names = ['serializer', 'serializer2']
+        names = ['serializer', 'serializer2', 'serializer3', 'serializer4']
         ostreams = [io.StringIO() for _ in names]
+        dts = []
 
         for name, ostream in zip(names, ostreams):
             name = f'blk.text.{name}'
             maybe_module = sys.modules.get(name)
             module = importlib.import_module(name) if maybe_module is None else importlib.reload(maybe_module)
             modules.append(module)
+            desc = module.__doc__
             t0 = time.perf_counter()
             for _ in range(n):
                 module.serialize(wpcost, ostream, module.StrictDialect)
                 ostream.seek(0)
             t1 = time.perf_counter()
-            print(fmt.format(name, n, t1 - t0))
+            dt = t1 - t0
+            dts.append(dt)
+            p = round(100*dt/dts[0])
+            print(f'{name}, {desc}: {n} x dt = {dt:.3f}, {p}%')
 
         head, *tail = ostreams
         for i, other in enumerate(tail, 1):

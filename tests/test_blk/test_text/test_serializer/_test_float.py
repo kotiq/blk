@@ -1,9 +1,10 @@
 from io import StringIO
-import pytest
-from blk.types import Name, Float
-from blk.text.serializer import serialize_pair
-from . import simple_context
 
+import pytest
+
+from blk.text.serializer import serialize_pair
+from blk.types import Name, Float
+from . import simple_context
 
 context_exp = simple_context({'float': '.7e'})
 context_gen = simple_context({'float': '.7g'})

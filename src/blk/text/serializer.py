@@ -1,40 +1,14 @@
+"""cls dispatch, rec serialize"""
+
 import re
 from blk.types import *
+from .dialect import *
 
-__all__ = ['serialize', 'serialize_pair', 'serialize_pairs', 'DefaultDialect', 'StrictDialect']
+__all__ = ['serialize', 'serialize_pair', 'serialize_pairs']
 
 
-EXP = 'exp'
-GEN = 'gen'
-DGEN = 'dgen'
-
-LOG = 'log'
-ANS = 'ans'
-SW = 'sw'
-ALG = 'alg'
-
-HEX = '#x'
-DEC = 'd'
-
-bool_map = {
-    LOG: ('false', 'true'),
-    ANS: ('no', 'yes'),
-    SW: ('off', 'on'),
-    ALG: ('0', '1'),
-}
-
-dgen_fmt = object()
-
-float_map = {
-    EXP: '.7e',
-    GEN: '.7g',
-    DGEN: dgen_fmt,
-}
-
-int_map = {
-    HEX: '#x',
-    DEC: 'd',
-}
+for cls, tag in types_tags_map.items():
+    cls.tag = tag
 
 
 def quoted_text(inst, quote):
@@ -58,51 +32,27 @@ def quoted_text(inst, quote):
 quoteless_name = re.compile(r"^[\w.\-]+$")
 
 
-class DefaultDialect:
-    scale = 2
-    float_format = GEN
-    bool_format = LOG
-    ubyte_format = HEX
-    long_format = HEX
-    int_format = DEC
-    name_type_sep = ':'
-    type_value_sep = ' = '
-    name_opener_sep = ' '
-    sec_opener = ''
-    eof_newline = True
-
-    @staticmethod
-    def str_text(inst):
-        return quoted_text(inst, '"')
-
-    name_text = str_text
+def dq_str_text(x):
+    return quoted_text(x, '"')
 
 
-class StrictDialect(DefaultDialect):
-    bool_format = ANS
-    float_format = DGEN
-    ubyte_format = DEC
-    long_format = DEC
-    type_value_sep = '='
-    name_opener_sep = ''
-    sec_opener = '\n'
-    eof_newline = False
+dq_name_text = dq_str_text
 
-    @staticmethod
-    def name_text(inst):
-        return inst if quoteless_name.match(inst) else quoted_text(inst, '"')
 
-    @staticmethod
-    def str_text(inst):
-        dq = '"' in inst
-        sq = "'" in inst
-        if dq and sq:
-            quote = '"'
-        elif dq:
-            quote = "'"
-        else:
-            quote = '"'
-        return quoted_text(inst, quote)
+def vq_str_text(x):
+    dq = '"' in x
+    sq = "'" in x
+    if dq and sq:
+        quote = '"'
+    elif dq:
+        quote = "'"
+    else:
+        quote = '"'
+    return quoted_text(x, quote)
+
+
+def vq_name_text(x):
+    return x if quoteless_name.match(x) else quoted_text(x, '"')
 
 
 class Serializer:
@@ -114,6 +64,8 @@ class Serializer:
         self.context = {}
         self.context.update(zip(('false', 'true'), bool_map[dialect.bool_format]))
         self.context.update({
+            'name': dialect.name_format,
+            'str': dialect.str_format,
             'int': int_map[dialect.int_format],
             'long': int_map[dialect.long_format],
             'ubyte': int_map[dialect.ubyte_format],
@@ -123,9 +75,6 @@ class Serializer:
         self.context['type_value_sep'] = dialect.type_value_sep
         self.context['name_opener_sep'] = dialect.name_opener_sep
         self.context['sec_opener'] = dialect.sec_opener
-
-        self.context['str_text'] = dialect.str_text
-        self.context['name_text'] = dialect.name_text
 
     def indent(self, level):
         self.stream.write(' ' * self.scale * level)
@@ -174,8 +123,15 @@ def serialize_pairs(pairs, stream, indent, level, context):
 
 @method(Name)
 def serialize_text(self, stream, context):
-    name_text = context['name_text']
-    stream.write(name_text(self))
+    fmt = context['name']
+    if fmt == DQN:
+        txt = dq_name_text(self)
+    elif fmt == VQN:
+        txt = vq_name_text(self)
+    else:
+        raise ValueError('Неизвестный формат: {}'.format(fmt))
+
+    stream.write(txt)
 
 
 @method(Parameter)
@@ -192,8 +148,13 @@ def serialize(root, stream, dialect=DefaultDialect):
 
 @method(Str)
 def text(self, context):
-    str_text = context['str_text']
-    return str_text(self)
+    fmt = context['str']
+    if fmt == DQS:
+        return dq_str_text(self)
+    elif fmt == VQS:
+        return vq_str_text(self)
+    else:
+        raise ValueError('Неизвестный формат: {}'.format(fmt))
 
 
 @method(Bool)
@@ -213,11 +174,15 @@ for cls in Int, Long:
     register_int_text(cls)
 
 
+def dgen_float_text(x):
+    return repr(round(x, 4))
+
+
 @method(Float)
 def text(self, context):
     fmt = context['float']
-    if fmt == dgen_fmt:
-        return repr(round(self, 4))
+    if fmt == DGEN:
+        return dgen_float_text(self)
     else:
         return format(self, fmt)
 
@@ -235,7 +200,7 @@ for cls in Int2, Int3, Color:
     register_ints_text(cls)
 
 
-def vec_float_repr(x):
+def dgen_floats_text(x):
     return repr(float(format(x, 'e')))
 
 
@@ -245,8 +210,8 @@ def register_floats_text(cls):
     @method(cls)
     def text(self, context):
         fmt = context[key]
-        if fmt == dgen_fmt:
-            format_ = vec_float_repr
+        if fmt == DGEN:
+            format_ = dgen_floats_text
         else:
             def format_(x):
                 return format(x, fmt)
@@ -269,8 +234,8 @@ m_text = v_text(' ')
 @method(Float12)
 def text(self, context):
     fmt = context['float']
-    if fmt == dgen_fmt:
-        format_ = vec_float_repr
+    if fmt == DGEN:
+        format_ = dgen_floats_text
     else:
         def format_(x):
             return format(x, fmt)

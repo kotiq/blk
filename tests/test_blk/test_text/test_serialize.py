@@ -10,6 +10,7 @@ def mixed_section():
     root = Section()
     root.add('bool', true)
     root.add('str', Str('hello'))
+    root.add('int', Int(0))
     root.add('int', Int(1))
     root.add('long', Int(2))
     root.add('float', Float(3.0))
@@ -36,6 +37,7 @@ def mixed_section():
 text_mixed_default = """\
 "bool":b = true
 "str":t = "hello"
+"int":i = 0
 "int":i = 1
 "long":i = 2
 "float":r = 3
@@ -55,6 +57,7 @@ text_mixed_default = """\
 text_mixed_strict = """\
 bool:b=yes
 str:t="hello"
+int:i=0
 int:i=1
 long:i=2
 float:r=3.0
@@ -112,6 +115,7 @@ sections_only_section_ = pytest.lazy_fixture('sections_only_section')
 @pytest.fixture(scope='module', params=[
     pytest.param('serializer', id='serializer1'),
     pytest.param('serializer2', id='serializer2'),
+    pytest.param('serializer3', id='serializer3'),
 ])
 def serializer(request):
     name = f'blk.text.{request.param}'

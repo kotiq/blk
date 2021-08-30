@@ -310,12 +310,28 @@ class Section(OrderedDict, Value):
     def pairs(self) -> PairsGen:
         """Пары в порядке добавления первого имени."""
 
-        return ((n, v) for n, vs in self.items() for v in vs)
+        for name, values in self.items():
+            sz = len(values)
+            if sz == 1:
+                yield name, values[0]
+            elif sz == 0:
+                continue
+            else:
+                for value in values:
+                    yield name, value
 
     def reversed_pairs(self) -> PairsGen:
         """Пары обращенном порядке добавления первого имени."""
 
-        return ((n, v) for n, vs in reversed(self.items()) for v in reversed(vs))
+        for name, values in reversed(self.items()):
+            sz = len(values)
+            if sz == 1:
+                yield name, values[0]
+            elif sz == 0:
+                continue
+            else:
+                for value in reversed(values):
+                    yield name, value
 
     def sorted_pairs(self) -> PairsGen:
         """Пары в порядке появления в двоичном файле.
@@ -384,14 +400,33 @@ class Section(OrderedDict, Value):
 
         yield from self.dfs_nlr_items_gen(lambda s: s.reversed_pairs())
 
-    def names_dfs_nlr(self) -> NamesGen:
-        """Генератор имен при обходе секции в глубину."""
+    def dfs_nlr_items_rec(self) -> ItemsGen:
+        """Генератор пар или маркеров конца секции при обходе секции в глубину, рекурсивная версия."""
 
-        ps = self.dfs_nlr_items()
-        next(ps)
-        return (p[0] for p in ps if p is not Section.end)
+        def items(root: Section) -> ItemsGen:
+            for pair in root.pairs():
+                value = pair[1]
+                if isinstance(value, Section):
+                    yield pair
+                    yield from items(value)  # @r
+                    yield Section.end
+                else:
+                    yield pair
 
-    names = names_dfs_nlr
+        yield Name.of_root, self
+        yield from items(self)
+        yield Section.end
+
+    def names_dfs_nlr_rec(self) -> NamesGen:
+        """Генератор имен при обходе секции в глубину, рекурсивная версия."""
+
+        for name, values in self.items():
+            yield name
+            for value in values:
+                if isinstance(value, Section):
+                    yield from Section.names_dfs_nlr_rec(value)  # @r
+
+    names = names_dfs_nlr_rec
 
     def size(self) -> t.Tuple[int, int]:
         """Размер секции на уровне.
