@@ -13,9 +13,9 @@ INDENT = ' '*4
 
 
 def serialize_text(root, ostream, out_type, is_sorted):
-    if out_type == bbf3.BLK.output_type['strict_blk']:
+    if out_type == txt.STRICT_BLK:
         return txt.serialize(root, ostream, dialect=txt.StrictDialect)
-    elif out_type in map(bbf3.BLK.output_type.__getitem__, ('json', 'json_2')):
+    elif out_type in (jsn.JSON, jsn.JSON_2, jsn.JSON_3):
         return jsn.serialize(root, ostream, out_type, is_sorted)
 
 
@@ -146,11 +146,17 @@ def process_slim_dir(dir_path: str, names: t.Sequence, out_type: int, is_sorted:
 
 @click.command()
 @click.argument('path', type=click.Path(exists=True))
-@click.option('--format', 'out_format', type=click.Choice(['strict_blk', 'json', 'json_2'], case_sensitive=False), default='json',
+@click.option('--format', 'out_format',
+              type=click.Choice(['strict_blk', 'json', 'json_2', 'json_3'], case_sensitive=False), default='json',
               show_default=True)
 @click.option('--sort', 'is_sorted', is_flag=True, default=False)
 def main(path: str, out_format: str, is_sorted: bool):
-    out_type = bbf3.BLK.output_type[out_format]
+    out_type = {
+        'strict_blk': txt.STRICT_BLK,
+        'json': jsn.JSON,
+        'json_2': jsn.JSON_2,
+        'json_3': jsn.JSON_3,
+    }[out_format]
 
     if os.path.isfile(path):
         process_file(path, None, out_type, is_sorted)

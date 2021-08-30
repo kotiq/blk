@@ -1,7 +1,7 @@
 import io
 import pytest
 from blk.types import *
-from blk.json.serializer import serialize, JSON, JSON_2, JSON_MIN
+from blk.json.serializer import serialize, JSON, JSON_2, JSON_3
 
 json_text = """\
 [
@@ -103,6 +103,41 @@ json_2_text = """\
 }\
 """
 
+json_3_text = """\
+{
+  "entity": [
+    {
+      "_template": "level",
+      "level.bin": "content/pkg_dev/levels/hangar_field.bin",
+      "level.weather": "hazy",
+      "level.environment": "night"
+    },
+    {
+      "_template": "way_point",
+      "way_point.transform": [
+        [1.0,0.0,0.0],
+        [0.0,1.0,0.0],
+        [0.0,0.0,1.0],
+        [14.74,46.53,-625.89]
+      ],
+      "waypoint.name": "wp_01",
+      "way_point.moveType": "MOVE_TO_STRAIGHT",
+      "way_point.speed": 30.0
+    },
+    {
+      "_template": "route",
+      "route.routeId": "route_01",
+      "route.wayPointsNames:list<t>": {
+        "n": [
+          "wp_01",
+          "wp_02"
+        ]
+      }
+    }
+  ]
+}\
+"""
+
 
 @pytest.fixture(scope='module')
 def section():
@@ -138,12 +173,17 @@ def section():
     return root
 
 
+@pytest.fixture()
+def ostream():
+    return io.StringIO()
+
+
 @pytest.mark.parametrize(['out_type', 'text'], [
     pytest.param(JSON, json_text, id='json'),
     pytest.param(JSON_2, json_2_text, id='json_2'),
+    pytest.param(JSON_3, json_3_text, id='json_3'),
 ])
-def test_serialize(section, out_type, text):
-    ostream = io.StringIO()
-    serialize(section, ostream, 0)
-    text = ostream.getvalue()
-    assert text == json_text
+def test_serialize(ostream, section, out_type, text):
+    serialize(section, ostream, out_type)
+    given = ostream.getvalue()
+    assert given == text

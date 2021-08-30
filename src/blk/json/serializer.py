@@ -4,7 +4,7 @@ import json
 import typing as t
 from blk.types import *
 
-__all__ = ['serialize', 'JSON', 'JSON_2']
+__all__ = ['serialize', 'JSON', 'JSON_2', 'JSON_3']
 
 implementation = platform.python_implementation()
 if implementation == 'CPython':
@@ -125,6 +125,16 @@ class JSON2Mapper(Mapper):
             return {n: list(map(cls._map_value, vs)) for n, vs in items}
 
 
+class JSON3Mapper(Mapper):
+    @classmethod
+    def _map_section(cls, section: Section) -> t.Mapping:
+        items = section.items()
+        if not items:
+            return {}
+        else:
+            return {n: (list(map(cls._map_value, vs)) if len(vs) > 1 else cls._map_value(vs[0])) for n, vs in items}
+
+
 class JSONMinMapper(Mapper):
     pass
 
@@ -132,6 +142,7 @@ class JSONMinMapper(Mapper):
 JSON = 0
 JSON_MIN = 1
 JSON_2 = 3
+JSON_3 = 4
 
 
 def serialize(root: Section, ostream, out_type: int, is_sorted=False):
@@ -139,6 +150,7 @@ def serialize(root: Section, ostream, out_type: int, is_sorted=False):
         JSON: JSONMapper,
         JSON_MIN: JSONMinMapper,
         JSON_2: JSON2Mapper,
+        JSON_3: JSON3Mapper,
     }[out_type]
     if root:
         json.dump(mapper.map(root), ostream, cls=NoIndentEncoder, ensure_ascii=False, indent=2, separators=(',', ': '),

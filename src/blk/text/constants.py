@@ -1,6 +1,6 @@
 from blk.types import *
 
-__all__ = ['types_tags_map']
+__all__ = ['types_tags_map', 'STRICT_BLK']
 
 types_tags_map = {
     Bool: 'b',
@@ -16,3 +16,5 @@ types_tags_map = {
     Float4: 'p4',
     Float12: 'm',
 }
+
+STRICT_BLK = 2

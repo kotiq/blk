@@ -1,3 +1,3 @@
-from .serializer import serialize, JSON, JSON_2
+from .serializer import *
 
-__all__ = ['serialize', 'JSON', 'JSON_2']
+__all__ = ['serialize', 'JSON', 'JSON_2', 'JSON_3']
