@@ -1,14 +1,11 @@
-"""cls dispatch, rec serialize"""
+"""dict dispatch, rec serialize"""
 
 import re
+from functools import partial
 from blk.types import *
 from .dialect import *
 
-__all__ = ['serialize', 'serialize_pair', 'serialize_pairs']
-
-
-for cls, tag in types_tags_map.items():
-    cls.tag = tag
+__all__ = ['serialize']
 
 
 def quoted_text(inst, quote):
@@ -55,191 +52,175 @@ def vq_name_text(x):
     return x if quoteless_name.match(x) else quoted_text(x, '"')
 
 
-class Serializer:
-    def __init__(self, stream, dialect):
-        self.stream = stream
-        self.scale = dialect.scale
-        self.eof_newline = dialect.eof_newline
-
-        self.context = {}
-        self.context.update(zip(('false', 'true'), bool_map[dialect.bool_format]))
-        self.context.update({
-            'name': dialect.name_format,
-            'str': dialect.str_format,
-            'int': int_map[dialect.int_format],
-            'long': int_map[dialect.long_format],
-            'ubyte': int_map[dialect.ubyte_format],
-            'float': float_map[dialect.float_format]
-        })
-        self.context['name_type_sep'] = dialect.name_type_sep
-        self.context['type_value_sep'] = dialect.type_value_sep
-        self.context['name_opener_sep'] = dialect.name_opener_sep
-        self.context['sec_opener'] = dialect.sec_opener
-
-    def indent(self, level):
-        self.stream.write(' ' * self.scale * level)
-
-    def serialize(self, root):
-        if root:
-            self.context['fst'] = True
-            serialize_pairs(root.pairs(), self.stream, self.indent, 0, self.context)
-        if self.eof_newline:
-            self.stream.write('\n')
-
-
-@method(Section)
-def serialize_text(self, stream, indent, level, context):
-    name_opener_sep = context['name_opener_sep']
-    if name_opener_sep:
-        stream.write(name_opener_sep)
-    stream.write('{')
-    level += 1
-    serialize_pairs(self.pairs(), stream, indent, level, context)
-    level -= 1
-    stream.write('\n')
-    indent(level)
-    stream.write('}')
-
-
-def serialize_pair(name, value, stream, indent, level, context):
-    if context['fst']:
-        context['fst'] = False
-    else:
-        stream.write('\n')
-        if isinstance(value, Section):
-            sec_opener = context['sec_opener']
-            if sec_opener:
-                stream.write(sec_opener)
-
-    indent(level)
-    name.serialize_text(stream, context)
-    value.serialize_text(stream, indent, level, context)
-
-
-def serialize_pairs(pairs, stream, indent, level, context):
-    for n, v in pairs:
-        serialize_pair(n, v, stream, indent, level, context)
-
-
-@method(Name)
-def serialize_text(self, stream, context):
-    fmt = context['name']
-    if fmt == DQN:
-        txt = dq_name_text(self)
-    elif fmt == VQN:
-        txt = vq_name_text(self)
-    else:
-        raise ValueError('Неизвестный формат: {}'.format(fmt))
-
-    stream.write(txt)
-
-
-@method(Parameter)
-def serialize_text(self, stream, indent, level, context):
-    name_type_sep = context['name_type_sep']
-    type_value_sep = context['type_value_sep']
-    stream.write(f'{name_type_sep}{self.tag}{type_value_sep}{self.text(context)}')
-
-
-def serialize(root, stream, dialect=DefaultDialect):
-    s = Serializer(stream, dialect)
-    s.serialize(root)
-
-
-@method(Str)
-def text(self, context):
-    fmt = context['str']
-    if fmt == DQS:
-        return dq_str_text(self)
-    elif fmt == VQS:
-        return vq_str_text(self)
-    else:
-        raise ValueError('Неизвестный формат: {}'.format(fmt))
-
-
-@method(Bool)
-def text(self, context):
-    return context['true'] if self else context['false']
-
-
-def register_int_text(cls):
+def make_int_text(cls):
     key = cls.__name__.lower()
 
-    @method(cls)
-    def text(self, context):
-        return format(self, context[key])
+    def text(self, value):
+        return format(value, getattr(self, key))
 
-
-for cls in Int, Long:
-    register_int_text(cls)
+    return text
 
 
 def dgen_float_text(x):
     return repr(round(x, 4))
 
 
-@method(Float)
-def text(self, context):
-    fmt = context['float']
-    if fmt == DGEN:
-        return dgen_float_text(self)
-    else:
-        return format(self, fmt)
-
-
-def register_ints_text(cls):
+def make_ints_text(cls):
     key = cls.type.__name__.lower()
 
-    @method(cls)
-    def text(self, context):
-        fmt = context[key]
-        return ', '.join(map(lambda x: format(x, fmt), self))
+    def text(self, value):
+        fmt = getattr(self, key)
+        return ', '.join(map(lambda x: format(x, fmt), value))
 
-
-for cls in Int2, Int3, Color:
-    register_ints_text(cls)
+    return text
 
 
 def dgen_floats_text(x):
     return repr(float(format(x, 'e')))
 
 
-def register_floats_text(cls):
+def make_floats_text(cls):
     key = cls.type.__name__.lower()
 
-    @method(cls)
-    def text(self, context):
-        fmt = context[key]
+    def text(self, value):
+        fmt = getattr(self, key)
         if fmt == DGEN:
             format_ = dgen_floats_text
         else:
             def format_(x):
                 return format(x, fmt)
 
-        return ', '.join(map(format_, self))
+        return ', '.join(map(format_, value))
 
-
-for cls in Float2, Float3, Float4:
-    register_floats_text(cls)
+    return text
 
 
 def v_text(sep):
-    return lambda xs: f"[{sep.join(xs)}]"
+    def text(xs):
+        return f"[{sep.join(xs)}]"
+
+    return text
 
 
 r_text = v_text(', ')
 m_text = v_text(' ')
 
 
-@method(Float12)
-def text(self, context):
-    fmt = context['float']
-    if fmt == DGEN:
-        format_ = dgen_floats_text
-    else:
-        def format_(x):
-            return format(x, fmt)
-    xs = map(format_, self)
-    ts = zip(*[iter(xs)]*3)
+class Serializer:
+    def __init__(self, stream, dialect):
+        self.stream = stream
+        self.scale = dialect.scale
+        self.eof_newline = dialect.eof_newline
+        self.false, self.true = bool_map[dialect.bool_format]
+        self.int = int_map[dialect.int_format]
+        self.long = int_map[dialect.long_format]
+        self.ubyte = int_map[dialect.ubyte_format]
+        self.float = float_map[dialect.float_format]
+        self.str = dialect.str_format
+        self.name = dialect.name_format
+        self.name_type_sep = dialect.name_type_sep
+        self.type_value_sep = dialect.type_value_sep
+        self.name_opener_sep = dialect.name_opener_sep
+        self.sec_opener = dialect.sec_opener
+        self.fst = ...
+        self.level = 0
 
-    return m_text(map(r_text, ts))
+        self.types_text_map = {
+            Bool: self.bool_text,
+            Str: self.str_text,
+            Int: partial(make_int_text(Int), self),
+            Long: partial(make_int_text(Long), self),
+            Float: self.float_text,
+            Int2: partial(make_ints_text(Int2), self),
+            Int3: partial(make_ints_text(Int3), self),
+            Color: partial(make_ints_text(Color), self),
+            Float2: partial(make_floats_text(Float2), self),
+            Float3: partial(make_floats_text(Float3), self),
+            Float4: partial(make_floats_text(Float4), self),
+            Float12: self.mat_text,
+        }
+
+    def indent(self):
+        self.stream.write(' ' * self.scale * self.level)
+
+    def serialize(self, root: Section):
+        if root:
+            self.fst = True
+            self.serialize_pairs(root.pairs(), self.stream)
+        if self.eof_newline:
+            self.stream.write('\n')
+
+    def str_text(self, value):
+        fmt = self.str
+        if fmt == DQS:
+            return dq_str_text(value)
+        elif fmt == VQS:
+            return vq_str_text(value)
+        else:
+            raise ValueError('Неизвестный формат: {}'.format(fmt))
+
+    def name_text(self, value):
+        fmt = self.name
+        if fmt == DQN:
+            return dq_name_text(value)
+        elif fmt == VQN:
+            return vq_name_text(value)
+        else:
+            raise ValueError('Неизвестный формат: {}'.format(fmt))
+
+    def bool_text(self, value):
+        return self.true if value else self.false
+
+    def float_text(self, value):
+        fmt = self.float
+        if fmt == DGEN:
+            return dgen_float_text(value)
+        else:
+            return format(value, fmt)
+
+    def mat_text(self, value):
+        fmt = self.float
+        if fmt == DGEN:
+            format_ = dgen_floats_text
+        else:
+            def format_(x):
+                return format(x, fmt)
+        xs = map(format_, value)
+        ts = zip(*[iter(xs)]*3)
+
+        return m_text(map(r_text, ts))
+
+    def serialize_pairs(self, pairs, stream):
+        for name, value in pairs:
+            is_section = isinstance(value, Section)
+
+            if self.fst:
+                self.fst = False
+            else:
+                stream.write('\n')
+                if is_section:
+                    if self.sec_opener:
+                        stream.write(self.sec_opener)
+
+            self.indent()
+            stream.write(self.name_text(name))
+            if is_section:
+                if self.name_opener_sep:
+                    stream.write(self.name_opener_sep)
+                stream.write('{')
+                self.level += 1
+                self.serialize_pairs(value.pairs(), stream)  # @r
+                self.level -= 1
+                stream.write('\n')
+                self.indent()
+                stream.write('}')
+            else:
+                type_ = value.__class__
+                value_text = self.types_text_map[type_](value)
+                tag = types_tags_map[type_]
+                stream.write(f'{self.name_type_sep}{tag}{self.type_value_sep}{value_text}')
+
+
+def serialize(root, stream, dialect=DefaultDialect):
+    s = Serializer(stream, dialect)
+    s.serialize(root)

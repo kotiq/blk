@@ -1,8 +1,8 @@
 import io
 import sys
-from blk.types import *
-import importlib
 import pytest
+from blk.types import *
+import blk.text as txt
 
 
 @pytest.fixture(scope='module')
@@ -112,38 +112,14 @@ mixed_section_ = pytest.lazy_fixture('mixed_section')
 sections_only_section_ = pytest.lazy_fixture('sections_only_section')
 
 
-@pytest.fixture(scope='module', params=[
-    pytest.param('serializer', id='serializer1'),
-    pytest.param('serializer2', id='serializer2'),
-    pytest.param('serializer3', id='serializer3'),
-])
-def serializer(request):
-    name = f'blk.text.{request.param}'
-    maybe_module = sys.modules.get(name)
-    return importlib.import_module(name) if maybe_module is None else importlib.reload(maybe_module)
-
-
-@pytest.fixture(scope='module')
-def restore_serializer():
-    serializer = sys.modules['blk.text.serializer']
-    yield
-    importlib.reload(serializer)
-
-
-@pytest.mark.usefixtures('restore_serializer')
 @pytest.mark.parametrize(['section', 'dialect', 'text'], [
-    pytest.param(mixed_section_,
-                 'DefaultDialect', text_mixed_default, id='mixed-default'),
-    pytest.param(mixed_section_,
-                 'StrictDialect', text_mixed_strict, id='mixed-strict'),
-    pytest.param(sections_only_section_,
-                 'DefaultDialect', text_sections_only_default, id='sections only-default'),
-    pytest.param(sections_only_section_,
-                 'StrictDialect', text_sections_only_strict, id='sections only-strict'),
+    pytest.param(mixed_section_, txt.DefaultDialect, text_mixed_default, id='mixed-default'),
+    pytest.param(mixed_section_, txt.StrictDialect, text_mixed_strict, id='mixed-strict'),
+    pytest.param(sections_only_section_, txt.DefaultDialect, text_sections_only_default, id='sections only-default'),
+    pytest.param(sections_only_section_, txt.StrictDialect, text_sections_only_strict, id='sections only-strict'),
 ])
-def test_serialize(serializer, section, ostream, dialect, text):
-    dialect_ = getattr(serializer, dialect)
-    serializer.serialize(section, ostream, dialect_)
+def test_serialize(section, ostream, dialect, text):
+    txt.serialize(section, ostream, dialect)
     ostream.seek(0)
     given = ostream.read()
     assert text == given
