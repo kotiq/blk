@@ -4,6 +4,7 @@ import re
 from functools import partial
 from blk.types import *
 from .dialect import *
+from .constants import *
 
 __all__ = ['serialize']
 

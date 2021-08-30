@@ -14,7 +14,8 @@ from blk.binary.constructor import *
 ])
 def test_name(init, parse_bs, build_bs):
     name = Name.of(init)
-    assert Name.con.parse(parse_bs) == name
-    assert Name.con.build(name) == build_bs
+    con = types_cons_map[Name]
+    assert con.parse(parse_bs) == name
+    assert con.build(name) == build_bs
 
 

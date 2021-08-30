@@ -6,9 +6,9 @@ import pytest
 from helpers import make_outpath
 from blk.binary.constructor import (compose_fat, serialize_fat, serialize_fat_s,
                                     compose_slim, Names, serialize_slim)
-from blk.text.serializer import serialize, StrictDialect
+import blk.text as txt
 
-serialize_text = partial(serialize, dialect=StrictDialect)
+serialize_text = partial(txt.serialize, dialect=txt.StrictDialect)
 outpath = make_outpath(__name__)
 
 

@@ -4,9 +4,9 @@ import typing as t
 import construct as ct
 from construct import len_, this
 from blk.types import *
-from blk.binary import codes_map
+from .constants import *
 
-__all__ = ['TaggedOffset', 'FileStruct', 'RawCString', 'Names',
+__all__ = ['TaggedOffset', 'FileStruct', 'RawCString', 'Names', 'types_cons_map',
            'serialize_fat', 'serialize_fat_s', 'compose_fat', 'compose_names', 'compose_slim', 'serialize_slim',
            'ConstructError', 'ComposeError', 'SerializeError', 'update_names_map', 'serialize_names']
 
@@ -23,38 +23,42 @@ class SerializeError(ConstructError):
     pass
 
 
-UByte.con = ct.Byte.compile()
-Int.con = ct.Int32sl.compile()
-Long.con = ct.Int64sl.compile()
-Float.con = ct.Float32l.compile()
-Bool.con = ct.Int32ul.compile()
-
-Color.con = ct.ExprSymmetricAdapter(
-    UByte.con[4],
-    lambda o, c: tuple(reversed(o[:-1])) + (o[-1], ),
-).compile()
-
-for c in (Float12, Float4, Float3, Float2, Int3, Int2):
-    c.con = c.type.con[c.size].compile()
-
 RawCString = ct.NullTerminated(ct.GreedyBytes).compile()
 
-Name.con = ct.ExprAdapter(
+name_con = ct.ExprAdapter(
     RawCString,
     lambda obj, ctx: Name.of(obj),
     lambda obj, ctx: obj.encode()
 ).compile()
 
-Str.con = ct.ExprAdapter(
+str_con = ct.ExprAdapter(
     RawCString,
     lambda obj, ctx: Str.of(obj),
     lambda obj, ctx: obj.encode()
 ).compile()
 
+types_cons_map = {
+    UByte: ct.Byte.compile(),
+    Int: ct.Int32sl.compile(),
+    Long: ct.Int64sl.compile(),
+    Float: ct.Float32l.compile(),
+    Bool: ct.Int32ul.compile(),
+    Str: str_con,
+    Name: name_con,
+}
+
+types_cons_map[Color] = ct.ExprSymmetricAdapter(
+    (types_cons_map[Color.type])[Color.size],
+    lambda o, _: tuple(reversed(o[:-1])) + (o[-1], ),
+).compile()
+
+for c in (Float12, Float4, Float3, Float2, Int3, Int2):
+    types_cons_map[c] = (types_cons_map[c.type])[c.size].compile()
+
 Names = ct.FocusedSeq(
     'names',
     'names_count' / ct.Rebuild(ct.VarInt, ct.len_(ct.this.names)),
-    'names' / ct.Prefixed(ct.VarInt, Name.con[ct.this.names_count])
+    'names' / ct.Prefixed(ct.VarInt, (types_cons_map[Name])[ct.this.names_count])
 ).compile()
 
 TaggedOffset = ct.ByteSwapped(ct.Bitwise(ct.Sequence(ct.Bit, ct.BitsInteger(31)))).compile()
@@ -101,21 +105,23 @@ SlimFile = """"Файл с таблицей имен в другом файле"
     'file' / FileStruct,
 ).compile()
 
-ItemT = t.Tuple[Name, Value]
-NamesIT = t.Iterable[Name]
+Pair = t.Tuple[Name, Value]
+NamesI = t.Iterable[Name]
 NamesT = t.Sequence[Name]
-NamesMapT = t.OrderedDict[t.Union[Name, Str], int]
-LongValueT = t.Union[Str, Float12, Float4, Float3, Float2, Int3, Int2, Long]
-ParametersMapT = t.OrderedDict[t.Union[Name, LongValueT], int]
-ValuesMapT = t.Mapping[type, ParametersMapT]
-ParameterInfoT = t.Tuple[int, int, bytes]
-ParameterInfosT = t.MutableSequence[ParameterInfoT]
+NamesMap = t.OrderedDict[t.Union[Name, Str], int]
+LongValue = t.Union[Str, Float12, Float4, Float3, Float2, Int3, Int2, Long]
+LongValueType = t.Union[t.Type[Str], t.Type[Float12], t.Type[Float4], t.Type[Float3], t.Type[Float2], t.Type[Int3],
+                        t.Type[Int2], t.Type[Long]]
+ParametersMap = t.OrderedDict[t.Union[Name, LongValue], int]
+ValuesMap = t.Mapping[LongValueType, ParametersMap]
+ParameterInfo = t.Tuple[int, int, bytes]
+ParameterInfos = t.MutableSequence[ParameterInfo]
 BlockInfoT = t.Tuple[int, int, int, t.Optional[int]]
-BlockInfosT = t.MutableSequence[BlockInfoT]
+BlockInfos = t.MutableSequence[BlockInfoT]
 ParameterT = t.Tuple[Name, Parameter]
-ParametersT = t.MutableSequence[ParameterT]
+Parameters = t.MutableSequence[ParameterT]
 SectionT = t.Tuple[t.Optional[Name], Section]
-SectionsT = t.MutableSequence[SectionT]
+Sections = t.MutableSequence[SectionT]
 
 
 def getvalue(val: t.Union[callable, t.Any], context) -> t.Any:
@@ -123,7 +129,7 @@ def getvalue(val: t.Union[callable, t.Any], context) -> t.Any:
 
 
 class FileAdapter(ct.Adapter):
-    def __init__(self, subcon, names_or_names_map: t.Union[t.Callable, NamesT, NamesIT, NamesMapT]):
+    def __init__(self, subcon, names_or_names_map: t.Union[t.Callable, NamesT, NamesI, NamesMap]):
         super().__init__(subcon)
         self.params_data: BytesIO = ...
 
@@ -145,26 +151,27 @@ class FileAdapter(ct.Adapter):
 
         self.params_data = BytesIO(obj.params_data)
         names = names_or_names_map
-        params: ParametersT = []
-        blocks: SectionsT = []
+        params: Parameters = []
+        blocks: Sections = []
         param_offset = 0
 
         for name_id, type_id, data in obj.params:
             name = names[name_id]
-            cls = codes_map[type_id]
+            cls = codes_types_map[type_id]
+            con = types_cons_map[cls]
             if cls is Str:
                 tag, offset = TaggedOffset.parse(data)
-                init = names[offset] if tag else self.parse_params_data(cls.con, offset)
+                init = names[offset] if tag else self.parse_params_data(con, offset)
                 value = cls.of(init)
             elif cls in (Float12, Float4, Float3, Float2, Int3, Int2, Long):
                 offset = ct.Int32ul.parse(data)
-                init = self.parse_params_data(cls.con, offset)
+                init = self.parse_params_data(con, offset)
                 value = cls(init)
             elif cls in (Color, Int, Float):
-                init = cls.con.parse(data)
+                init = con.parse(data)
                 value = cls(init)
             elif cls is Bool:
-                init = cls.con.parse(data)
+                init = con.parse(data)
                 value = true if init else false
             params.append((name, value))
 
@@ -189,12 +196,12 @@ class FileAdapter(ct.Adapter):
         return blocks[0][1]
 
     def _encode(self, obj: Section, context, path) -> ct.Container:
-        names_or_names_map: t.Union[NamesIT, NamesMapT] = getvalue(self.names_or_names_map, context)
+        names_or_names_map: t.Union[NamesI, NamesMap] = getvalue(self.names_or_names_map, context)
         self.strings_in_names = isinstance(names_or_names_map, t.Mapping)
 
         self.params_data = BytesIO()
-        params: ParameterInfosT = []
-        blocks: BlockInfosT = []
+        params: ParameterInfos = []
+        blocks: BlockInfos = []
         block_offset_var = Var(0)
 
         if isinstance(names_or_names_map, t.OrderedDict):
@@ -202,8 +209,8 @@ class FileAdapter(ct.Adapter):
         else:
             names_map = OrderedDict((name, i) for i, name in enumerate(names_or_names_map))
 
-        values_maps: ValuesMapT = dict((cls, OrderedDict())
-                                       for cls in (Str, Float12, Float4, Float3, Float2, Int2, Int3, Long))
+        values_maps: ValuesMap = dict((cls, OrderedDict())
+                                      for cls in (Str, Float12, Float4, Float3, Float2, Int2, Int3, Long))
         """value -> offset"""
 
         if not self.strings_in_names:
@@ -223,20 +230,23 @@ class FileAdapter(ct.Adapter):
             'blocks': blocks
         }
 
-    def build_string(self, item: ItemT, map_: NamesMapT):
+    def build_string(self, item: Pair, map_: NamesMap):
         value = item[1]
 
         if isinstance(value, Str):
             if value not in map_:
-                map_[value] = self.build_params_data(Str.con, value)
+                con = types_cons_map[Str]
+                map_[value] = self.build_params_data(con, value)
 
-    def build_item(self, item: ItemT, names_map: NamesMapT, values_maps: ValuesMapT,
-                   params: ParameterInfosT, blocks: BlockInfosT, block_offset_var: Var):
+    def build_item(self, item: Pair, names_map: NamesMap, values_maps: ValuesMap,
+                   params: ParameterInfos, blocks: BlockInfos, block_offset_var: Var):
         name, value = item
         name_id = names_map.get(name, Name.of_root)
 
         if isinstance(value, Parameter):
             cls = value.__class__
+            code = types_codes_map[cls]
+            con = types_cons_map[cls]
 
             if cls is Str:
                 if self.strings_in_names:
@@ -250,13 +260,13 @@ class FileAdapter(ct.Adapter):
             elif cls in (Float12, Float4, Float3, Float2, Int3, Int2, Long):
                 map_ = values_maps[cls]
                 if value not in map_:
-                    map_[value] = self.build_params_data(cls.con, value)
+                    map_[value] = self.build_params_data(con, value)
                 offset = map_[value]
                 data = ct.Int32ul.build(offset)
             elif cls in (Color, Int, Float, Bool):
-                data = cls.con.build(value)
+                data = con.build(value)
 
-            params.append((name_id, value.code, data))
+            params.append((name_id, code, data))
 
         elif isinstance(value, Section):
             params_count, blocks_count = value.size()
@@ -325,7 +335,7 @@ def compose_names(istream) -> NamesT:
         raise ComposeError(str(e))
 
 
-def serialize_slim(section, names_map: NamesMapT, ostream):
+def serialize_slim(section, names_map: NamesMap, ostream):
     """Сборка секции c именами из отображения в поток.
     Отображение имен может расширяться.
     Все строковые параметры находятся в блоке имен.
@@ -338,13 +348,13 @@ def serialize_slim(section, names_map: NamesMapT, ostream):
         raise SerializeError(str(e))
 
 
-def add_new_names(names_map: NamesMapT, section: Section):
+def add_new_names(names_map: NamesMap, section: Section):
     for name in section.names():
         if name not in names_map:
             names_map[name] = len(names_map)
 
 
-def add_new_strings(names_map: NamesMapT, section: Section):
+def add_new_strings(names_map: NamesMap, section: Section):
     for item in section.bfs_sorted_pairs():
         value = item[1]
         if isinstance(value, Str):
@@ -352,7 +362,7 @@ def add_new_strings(names_map: NamesMapT, section: Section):
                 names_map[value] = len(names_map)
 
 
-def update_names_map(names_map: NamesMapT, section: Section):
+def update_names_map(names_map: NamesMap, section: Section):
     add_new_names(names_map, section)
     add_new_strings(names_map, section)
 
