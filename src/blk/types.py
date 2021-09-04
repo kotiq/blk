@@ -281,7 +281,6 @@ PairsGenOf = t.Callable[['Section'], t.Iterable[Pair]]
 
 
 class Section(OrderedDict, Value):
-    # todo: избежать цикла
     def append(self, name: Name, value: Value):
         """Небезопасное добавление пары в секцию."""
 
@@ -311,26 +310,10 @@ class Section(OrderedDict, Value):
         """Пары в порядке добавления первого имени."""
 
         for name, values in self.items():
-            sz = len(values)
-            if sz == 1:
+            if len(values) == 1:
                 yield name, values[0]
-            elif sz == 0:
-                continue
             else:
                 for value in values:
-                    yield name, value
-
-    def reversed_pairs(self) -> PairsGen:
-        """Пары обращенном порядке добавления первого имени."""
-
-        for name, values in reversed(self.items()):
-            sz = len(values)
-            if sz == 1:
-                yield name, values[0]
-            elif sz == 0:
-                continue
-            else:
-                for value in reversed(values):
                     yield name, value
 
     def sorted_pairs(self) -> PairsGen:
@@ -370,52 +353,6 @@ class Section(OrderedDict, Value):
         """Генератор пар при обходе секции в ширину."""
 
         yield from self.bfs_pairs_gen(lambda s: s.sorted_pairs())
-
-    end: EOS = None
-    """Маркер конца секции."""
-
-    def dfs_nlr_items_gen(self, reversed_pairs_of: PairsGenOf) -> ItemsGen:
-        """
-        Генератор пар или маркеров конца секции при обходе секции в глубину с параметром.
-
-        :param reversed_pairs_of: обращенный генератор потомков на уровне
-        :return: генератор пар при обходе секции в глубину
-        """
-
-        stack = deque()
-        stack.append((Name.of_root, self))
-
-        while stack:
-            item = stack.popleft()
-            yield item
-            if item is not Section.end:
-                value = item[1]
-                if isinstance(value, Section):
-                    stack.insert(0, Section.end)
-                    for item in reversed_pairs_of(value):
-                        stack.insert(0, item)
-
-    def dfs_nlr_items(self) -> ItemsGen:
-        """Генератор пар или маркеров конца секции при обходе секции в глубину"""
-
-        yield from self.dfs_nlr_items_gen(lambda s: s.reversed_pairs())
-
-    def dfs_nlr_items_rec(self) -> ItemsGen:
-        """Генератор пар или маркеров конца секции при обходе секции в глубину, рекурсивная версия."""
-
-        def items(root: Section) -> ItemsGen:
-            for pair in root.pairs():
-                value = pair[1]
-                if isinstance(value, Section):
-                    yield pair
-                    yield from items(value)  # @r
-                    yield Section.end
-                else:
-                    yield pair
-
-        yield Name.of_root, self
-        yield from items(self)
-        yield Section.end
 
     def names_dfs_nlr_rec(self) -> NamesGen:
         """Генератор имен при обходе секции в глубину, рекурсивная версия."""

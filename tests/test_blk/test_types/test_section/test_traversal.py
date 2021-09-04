@@ -32,7 +32,7 @@ def maybe_str(t):
 
 
 def ans(ps):
-    return [maybe_str(p[0]) for p in ps if p is not Section.end]
+    return [maybe_str(p[0]) for p in ps]
 
 
 def test_sorted_pairs(section: Section):
@@ -48,19 +48,6 @@ def test_bfs_pairs(section: Section):
         'd1', 'e1', 'f1', 'd', 'e', 'f',
         'g1', 'h1', 'i1', 'g', 'h', 'i',
         'j1', 'k1', 'l1', 'j', 'k', 'l'
-    ]
-
-
-def test_dfs_nlr_pairs(section: Section):
-    all_names = ans(section.dfs_nlr_items())
-    assert all_names == [
-        None,
-        'a',
-        'd', 'd1', 'e', 'e1', 'f', 'f1', 'a1',
-        'b',
-        'g', 'g1', 'h', 'h1', 'i', 'i1', 'b1',
-        'c',
-        'j', 'j1', 'k', 'k1', 'l', 'l1', 'c1'
     ]
 
 

@@ -222,6 +222,7 @@ class Serializer:
                 stream.write(f'{self.name_type_sep}{tag}{self.type_value_sep}{value_text}')
 
 
+# todo: избежать цикла
 def serialize(root, stream, dialect=DefaultDialect):
     s = Serializer(stream, dialect)
     s.serialize(root)

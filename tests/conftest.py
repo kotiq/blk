@@ -19,15 +19,15 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope='session')
-def binrespath(request):
-    return request.config.getini('binrespath')
+def binrespath(pytestconfig):
+    return pytestconfig.getini('binrespath')
 
 
 @pytest.fixture(scope='session')
-def buildpath(request):
-    return request.config.getini('buildpath')
+def buildpath(pytestconfig):
+    return pytestconfig.getini('buildpath')
 
 
 @pytest.fixture(scope='session')
-def cdkpath(request):
-    return request.config.getini('cdkpath')
+def cdkpath(pytestconfig):
+    return pytestconfig.getini('cdkpath')

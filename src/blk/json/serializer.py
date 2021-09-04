@@ -145,6 +145,7 @@ JSON_2 = 3
 JSON_3 = 4
 
 
+# todo: избежать цикла
 def serialize(root: Section, ostream, out_type: int, is_sorted=False):
     mapper = {
         JSON: JSONMapper,

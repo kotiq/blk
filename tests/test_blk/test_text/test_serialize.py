@@ -1,6 +1,6 @@
 import io
-import sys
 import pytest
+from pytest_lazyfixture import lazy_fixture
 from blk.types import *
 import blk.text as txt
 
@@ -108,8 +108,8 @@ def ostream():
     return io.StringIO()
 
 
-mixed_section_ = pytest.lazy_fixture('mixed_section')
-sections_only_section_ = pytest.lazy_fixture('sections_only_section')
+mixed_section_ = lazy_fixture('mixed_section')
+sections_only_section_ = lazy_fixture('sections_only_section')
 
 
 @pytest.mark.parametrize(['section', 'dialect', 'text'], [
