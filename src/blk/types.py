@@ -6,7 +6,7 @@ from math import isfinite, isclose
 
 __all__ = ['Value', 'Parameter', 'Vector', 'Bool', 'true', 'false', 'Str', 'Float', 'Float2', 'Float3', 'Float4',
            'Name', 'Section', 'Int', 'Long', 'UByte', 'Int2', 'Int3', 'Color', 'Float2', 'Float3', 'Float4', 'Float12',
-           'EncodedStr', 'Var', 'method']
+           'EncodedStr', 'Var', 'method', 'dgen_float', 'dgen_float_element']
 
 
 class Var:
@@ -25,6 +25,14 @@ def method(cls: type) -> t.Callable[[type], type]:
         return f
 
     return decorator
+
+
+def dgen_float(x):
+    return round(x, 4)
+
+
+def dgen_float_element(x):
+    return float(format(x, 'e'))
 
 
 class Value:

@@ -76,13 +76,13 @@ class Mapper:
         if isinstance(value, (Section, t.Mapping)):
             return cls._map_section(value)
         elif isinstance(value, Float12):
-            return tuple(Var(tuple(float(format(x, 'e')) for x in value[i:i+3])) for i in range(0, 10, 3))
+            return tuple(Var(tuple(dgen_float_element(x) for x in value[i:i+3])) for i in range(0, 10, 3))
         elif isinstance(value, Color):
             return f"#{''.join(format(x, '02x') for x in value)}"
         elif isinstance(value, Vector):
             return Var(tuple(float(format(x, 'e')) for x in value))
         elif isinstance(value, Float):
-            return round(value, 4)
+            return dgen_float(value)
         elif isinstance(value, Bool):
             return bool(value)
         else:

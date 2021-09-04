@@ -63,7 +63,7 @@ def make_int_text(cls):
 
 
 def dgen_float_text(x):
-    return repr(round(x, 4))
+    return repr(dgen_float(x))
 
 
 def make_ints_text(cls):
@@ -76,8 +76,8 @@ def make_ints_text(cls):
     return text
 
 
-def dgen_floats_text(x):
-    return repr(float(format(x, 'e')))
+def dgen_float_element_text(x):
+    return repr(dgen_float_element(x))
 
 
 def make_floats_text(cls):
@@ -86,7 +86,7 @@ def make_floats_text(cls):
     def text(self, value):
         fmt = getattr(self, key)
         if fmt == DGEN:
-            format_ = dgen_floats_text
+            format_ = dgen_float_element_text
         else:
             def format_(x):
                 return format(x, fmt)
@@ -182,7 +182,7 @@ class Serializer:
     def mat_text(self, value):
         fmt = self.float
         if fmt == DGEN:
-            format_ = dgen_floats_text
+            format_ = dgen_float_element_text
         else:
             def format_(x):
                 return format(x, fmt)
