@@ -145,7 +145,6 @@ JSON_2 = 3
 JSON_3 = 4
 
 
-# todo: избежать цикла
 def serialize(root: Section, ostream, out_type: int, is_sorted=False):
     mapper = {
         JSON: JSONMapper,
@@ -154,5 +153,6 @@ def serialize(root: Section, ostream, out_type: int, is_sorted=False):
         JSON_3: JSON3Mapper,
     }[out_type]
     if root:
+        root.check_cycle()
         json.dump(mapper.map(root), ostream, cls=NoIndentEncoder, ensure_ascii=False, indent=2, separators=(',', ': '),
                   sort_keys=is_sorted)

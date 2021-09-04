@@ -146,6 +146,7 @@ class Serializer:
 
     def serialize(self, root: Section):
         if root:
+            root.check_cycle()
             self.fst = True
             self.serialize_pairs(root.pairs(), self.stream)
         if self.eof_newline:
@@ -222,7 +223,6 @@ class Serializer:
                 stream.write(f'{self.name_type_sep}{tag}{self.type_value_sep}{value_text}')
 
 
-# todo: избежать цикла
 def serialize(root, stream, dialect=DefaultDialect):
     s = Serializer(stream, dialect)
     s.serialize(root)

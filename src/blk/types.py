@@ -6,7 +6,11 @@ from math import isfinite, isclose
 
 __all__ = ['Value', 'Parameter', 'Vector', 'Bool', 'true', 'false', 'Str', 'Float', 'Float2', 'Float3', 'Float4',
            'Name', 'Section', 'Int', 'Long', 'UByte', 'Int2', 'Int3', 'Color', 'Float2', 'Float3', 'Float4', 'Float12',
-           'EncodedStr', 'Var', 'method', 'dgen_float', 'dgen_float_element']
+           'EncodedStr', 'Var', 'method', 'dgen_float', 'dgen_float_element', 'CycleError']
+
+
+class CycleError(Exception):
+    """Секция содержит цикл."""
 
 
 class Var:
@@ -387,6 +391,32 @@ class Section(OrderedDict, Value):
                 sections_count += 1
 
         return params_count, sections_count
+
+    def check_cycle(self):
+        """
+        Проверка секции на цикл.
+
+        :raises CycleError: найден цикл
+        """
+
+        def g(section: Section, ids: t.Set[int]) -> None:
+            """
+            :param section: проверяемая секция
+            :param ids: id верхних уровней
+            :raises CycleError: найден цикл
+            """
+
+            for name, value in section.pairs():
+                if isinstance(value, Section):
+                    id_ = id(value)
+                    if id_ in ids:
+                        raise CycleError
+                    else:
+                        ids.add(id_)
+                        g(value, ids)
+                        ids.remove(id_)
+
+        g(self, {id(self)})
 
     def __repr__(self):
         return f'{self.__class__.__name__}([{", ".join(map(repr, self.items()))}])'
