@@ -108,7 +108,7 @@ m_text = v_text(' ')
 
 
 class Serializer:
-    def __init__(self, stream, dialect):
+    def __init__(self, stream, dialect, check_cycle):
         self.stream = stream
         self.scale = dialect.scale
         self.eof_newline = dialect.eof_newline
@@ -125,6 +125,7 @@ class Serializer:
         self.sec_opener = dialect.sec_opener
         self.fst = ...
         self.level = 0
+        self.check_cycle = check_cycle
 
         self.types_text_map = {
             Bool: self.bool_text,
@@ -146,7 +147,8 @@ class Serializer:
 
     def serialize(self, root: Section):
         if root:
-            root.check_cycle()
+            if self.check_cycle:
+                root.check_cycle()
             self.fst = True
             self.serialize_pairs(root.pairs(), self.stream)
         if self.eof_newline:
@@ -223,6 +225,6 @@ class Serializer:
                 stream.write(f'{self.name_type_sep}{tag}{self.type_value_sep}{value_text}')
 
 
-def serialize(root, stream, dialect=DefaultDialect):
-    s = Serializer(stream, dialect)
+def serialize(root, stream, dialect=DefaultDialect, check_cycle=False):
+    s = Serializer(stream, dialect, check_cycle)
     s.serialize(root)

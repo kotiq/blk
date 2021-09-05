@@ -145,7 +145,7 @@ JSON_2 = 3
 JSON_3 = 4
 
 
-def serialize(root: Section, ostream, out_type: int, is_sorted=False):
+def serialize(root: Section, ostream, out_type: int, is_sorted=False, check_cycle=False):
     mapper = {
         JSON: JSONMapper,
         JSON_MIN: JSONMinMapper,
@@ -153,6 +153,7 @@ def serialize(root: Section, ostream, out_type: int, is_sorted=False):
         JSON_3: JSON3Mapper,
     }[out_type]
     if root:
-        root.check_cycle()
+        if check_cycle:
+            root.check_cycle()
         json.dump(mapper.map(root), ostream, cls=NoIndentEncoder, ensure_ascii=False, indent=2, separators=(',', ': '),
                   sort_keys=is_sorted)

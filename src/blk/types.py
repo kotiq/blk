@@ -284,14 +284,12 @@ class Name(EncodedStr):
 SafeName = Name.of
 
 Pair = t.Tuple[Name, Value]
-EOS = None
-Item = t.Union[EOS, t.Tuple[Name, Value]]
 PairsGen = t.Generator[Pair, None, None]
-ItemsGen = t.Generator[Item, None, None]
 NamesGen = t.Generator[Name, None, None]
 PairsGenOf = t.Callable[['Section'], t.Iterable[Pair]]
 
 
+# todo: ограничить уровень вложенности секций до 512
 class Section(OrderedDict, Value):
     def append(self, name: Name, value: Value):
         """Небезопасное добавление пары в секцию."""
