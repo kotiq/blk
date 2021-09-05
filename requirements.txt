@@ -1,0 +1,5 @@
+click==7.1.2
+construct==2.9.44
+lark==0.11.3
+multiprocessing-logging==0.3.1
+zstandard==0.15.1 --install-option="--legacy"
