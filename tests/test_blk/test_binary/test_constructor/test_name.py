@@ -1,6 +1,6 @@
 import pytest
 from blk.types import Name
-from blk.binary.constructor import *
+from blk.binary.constructor import types_cons_map
 
 
 @pytest.mark.parametrize(['init', 'parse_bs', 'build_bs'], [

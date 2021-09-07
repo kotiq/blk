@@ -1,9 +1,7 @@
-import sys
 from io import BytesIO
 import pytest
 from blk.types import *
 from blk.binary.constructor import *
-from blk.text.serializer import serialize
 
 
 def make_sections_only_section():
@@ -72,4 +70,3 @@ def test_fat(section, bs):
     stream.seek(0)
     s = compose_fat(stream)
     assert s == section
-

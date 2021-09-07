@@ -5,23 +5,10 @@ import construct as ct
 from construct import len_, this
 from blk.types import *
 from .constants import *
+from .error import *
 
-__all__ = ['TaggedOffset', 'FileStruct', 'RawCString', 'Names', 'types_cons_map',
-           'serialize_fat', 'serialize_fat_s', 'compose_fat', 'compose_names', 'compose_slim', 'serialize_slim',
-           'ConstructError', 'ComposeError', 'SerializeError', 'update_names_map', 'serialize_names']
-
-
-class ConstructError(Exception):
-    pass
-
-
-class ComposeError(ConstructError):
-    pass
-
-
-class SerializeError(ConstructError):
-    pass
-
+__all__ = ['serialize_fat', 'serialize_fat_s', 'compose_fat', 'compose_names', 'compose_slim', 'serialize_slim',
+           'update_names_map', 'serialize_names']
 
 RawCString = ct.NullTerminated(ct.GreedyBytes).compile()
 
