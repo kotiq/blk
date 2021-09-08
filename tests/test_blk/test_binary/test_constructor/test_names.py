@@ -9,7 +9,7 @@ from blk.binary.constructor import Names
 
 
 @pytest.fixture(scope='module')
-def names_bs():
+def names_bs_short():
     return bytes.fromhex(
         '2BA10'
         '6656E7469747900' '5F74656D706C61746500'
@@ -65,7 +65,7 @@ def names():
 
 
 @pytest.fixture
-def istream(names_bs):
+def istream(names_bs_short):
     return io.BytesIO(names_bs)
 
 
