@@ -4,18 +4,18 @@ import typing as t
 import construct as ct
 from construct import len_, this
 from blk.types import *
-from blk.types import Name as Name_
 from .constants import *
 from .error import *
+from .typed_named_tuple import TypedNamedTuple
 
 __all__ = ['serialize_fat', 'serialize_fat_s', 'compose_fat', 'compose_names', 'compose_slim', 'serialize_slim',
            'update_names_map', 'serialize_names']
 
 RawCString = ct.NullTerminated(ct.GreedyBytes).compile()
 
-Name = ct.ExprAdapter(
+NameCon = ct.ExprAdapter(
     RawCString,
-    lambda obj, ctx: Name_.of(obj),
+    lambda obj, ctx: Name.of(obj),
     lambda obj, ctx: obj.encode()
 ).compile()
 
@@ -44,14 +44,20 @@ for c in (Float12, Float4, Float3, Float2, Int3, Int2):
 Names = ct.FocusedSeq(
     'names',
     'names_count' / ct.Rebuild(ct.VarInt, ct.len_(ct.this.names)),
-    'names' / ct.Prefixed(ct.VarInt, Name[ct.this.names_count])
+    'names' / ct.Prefixed(ct.VarInt, NameCon[ct.this.names_count])
 ).compile()
 
 TaggedOffset = ct.ByteSwapped(ct.Bitwise(ct.Sequence(ct.Bit, ct.BitsInteger(31)))).compile()
 
-ParamInfo = ct.NamedTuple(
-    'ParamInfo',
-    'name_id type_id data',
+
+class ParamInfo(t.NamedTuple):
+    name_id: int
+    type_id: int
+    data: bytes
+
+
+ParamInfoCon = TypedNamedTuple(
+    ParamInfo,
     ct.Sequence(
         'name_id' / ct.Int24ul,
         'type_id' / ct.Byte,
@@ -61,14 +67,21 @@ ParamInfo = ct.NamedTuple(
 
 Id_of_root = None
 
-BlockInfo = ct.NamedTuple(
-    'BlockInfo',
-    'name_id params_count blocks_count block_offset',
+
+class BlockInfo(t.NamedTuple):
+    name_id: int
+    params_count: int
+    blocks_count: int
+    block_offset: t.Optional[int]
+
+
+BlockInfoCon = TypedNamedTuple(
+    BlockInfo,
     ct.Sequence(
         'name_id' / ct.ExprAdapter(
             ct.VarInt,
             lambda obj, ctx: obj - 1 if obj else Id_of_root,
-            lambda obj, ctx: 0 if obj is Name_.of_root else obj + 1
+            lambda obj, ctx: 0 if obj is Name.of_root else obj + 1
         ),
         'params_count' / ct.VarInt,
         'blocks_count' / ct.VarInt,
@@ -81,8 +94,8 @@ FileStruct = """Структура файла, за исключением та�
     'blocks_count' / ct.Rebuild(ct.VarInt, len_(this.blocks)),
     'params_count' / ct.Rebuild(ct.VarInt, len_(this.params)),
     'params_data' / ct.Prefixed(ct.VarInt, ct.GreedyBytes),
-    'params' / ParamInfo[this.params_count],
-    'blocks' / BlockInfo[this.blocks_count],
+    'params' / ParamInfoCon[this.params_count],
+    'blocks' / BlockInfoCon[this.blocks_count],
 ).compile()
 
 SlimFile = """"Файл с таблицей имен в другом файле""" * ct.FocusedSeq(
@@ -91,22 +104,22 @@ SlimFile = """"Файл с таблицей имен в другом файле"
     'file' / FileStruct,
 ).compile()
 
-Pair = t.Tuple[Name_, Value]
-NamesI = t.Iterable[Name_]
-NamesT = t.Sequence[Name_]
-NamesMap = t.OrderedDict[t.Union[Name_, Str], int]
+Pair = t.Tuple[Name, Value]
+NamesI = t.Iterable[Name]
+NamesT = t.Sequence[Name]
+NamesMap = t.OrderedDict[t.Union[Name, Str], int]
 LongValue = t.Union[Str, Float12, Float4, Float3, Float2, Int3, Int2, Long]
 LongValueType = t.Union[t.Type[Str], t.Type[Float12], t.Type[Float4], t.Type[Float3], t.Type[Float2], t.Type[Int3],
                         t.Type[Int2], t.Type[Long]]
-ParametersMap = t.OrderedDict[t.Union[Name_, LongValue], int]
+ParametersMap = t.OrderedDict[t.Union[Name, LongValue], int]
 ValuesMap = t.Mapping[LongValueType, ParametersMap]
 ParameterInfo = t.Tuple[int, int, bytes]
 ParameterInfos = t.MutableSequence[ParameterInfo]
 BlockInfoT = t.Tuple[int, int, int, t.Optional[int]]
 BlockInfos = t.MutableSequence[BlockInfoT]
-ParameterT = t.Tuple[Name_, Parameter]
+ParameterT = t.Tuple[Name, Parameter]
 Parameters = t.MutableSequence[ParameterT]
-SectionT = t.Tuple[t.Optional[Name_], Section]
+SectionT = t.Tuple[t.Optional[Name], Section]
 Sections = t.MutableSequence[SectionT]
 
 
@@ -164,7 +177,7 @@ class FileAdapter(ct.Adapter):
             params.append((name, value))
 
         for name_id, *_ in obj.blocks:
-            name = Name_.of_root if name_id is Id_of_root else names[name_id]
+            name = Name.of_root if name_id is Id_of_root else names[name_id]
             value = Section()
             blocks.append((name, value))
 
@@ -228,7 +241,7 @@ class FileAdapter(ct.Adapter):
     def build_item(self, item: Pair, names_map: NamesMap, values_maps: ValuesMap,
                    params: ParameterInfos, blocks: BlockInfos, block_offset_var: Var):
         name, value = item
-        name_id = names_map.get(name, Name_.of_root)
+        name_id = names_map.get(name, Name.of_root)
 
         if isinstance(value, Parameter):
             cls = value.__class__
@@ -262,7 +275,7 @@ class FileAdapter(ct.Adapter):
             if not blocks_count:
                 block_offset = None
             else:
-                if name_id is Name_.of_root:  # root
+                if name_id is Name.of_root:  # root
                     block_offset_var.value = 1
                 block_offset = block_offset_var.value
                 block_offset_var.value += blocks_count

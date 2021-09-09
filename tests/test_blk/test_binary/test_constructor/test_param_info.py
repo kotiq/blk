@@ -1,6 +1,6 @@
 import pytest
 from blk.types import *
-from blk.binary.constructor import ParamInfo, types_codes_map
+from blk.binary.constructor import ParamInfoCon, types_codes_map
 from . import _test_parse_all
 
 
@@ -25,5 +25,5 @@ def test_con(bs_hex, info):
     name_id, cls, data_hex = info
     code = types_codes_map[cls]
     info = name_id, code, bytes.fromhex(data_hex)
-    _test_parse_all(ParamInfo, bs, info.__eq__)
-    assert ParamInfo.build(info) == bs
+    _test_parse_all(ParamInfoCon, bs, info.__eq__)
+    assert ParamInfoCon.build(info) == bs

@@ -1,5 +1,5 @@
 import pytest
-from blk.binary.constructor import BlockInfo
+from blk.binary.constructor import BlockInfoCon
 from . import _test_parse_all
 
 
@@ -15,5 +15,5 @@ from . import _test_parse_all
 ])
 def test_con(bs_hex, info):
     bs = bytes.fromhex(bs_hex)
-    _test_parse_all(BlockInfo, bs, info.__eq__)
-    assert BlockInfo.build(info) == bs
+    _test_parse_all(BlockInfoCon, bs, info.__eq__)
+    assert BlockInfoCon.build(info) == bs
