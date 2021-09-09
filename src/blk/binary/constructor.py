@@ -4,6 +4,7 @@ import typing as t
 import construct as ct
 from construct import len_, this
 from blk.types import *
+from blk.types import Name as Name_
 from .constants import *
 from .error import *
 
@@ -12,13 +13,13 @@ __all__ = ['serialize_fat', 'serialize_fat_s', 'compose_fat', 'compose_names', '
 
 RawCString = ct.NullTerminated(ct.GreedyBytes).compile()
 
-name_con = ct.ExprAdapter(
+Name = ct.ExprAdapter(
     RawCString,
-    lambda obj, ctx: Name.of(obj),
+    lambda obj, ctx: Name_.of(obj),
     lambda obj, ctx: obj.encode()
 ).compile()
 
-str_con = ct.ExprAdapter(
+String = ct.ExprAdapter(
     RawCString,
     lambda obj, ctx: Str.of(obj),
     lambda obj, ctx: obj.encode()
@@ -30,8 +31,6 @@ types_cons_map = {
     Long: ct.Int64sl.compile(),
     Float: ct.Float32l.compile(),
     Bool: ct.Int32ul.compile(),
-    Str: str_con,
-    Name: name_con,
 }
 
 types_cons_map[Color] = ct.ExprSymmetricAdapter(
@@ -45,7 +44,7 @@ for c in (Float12, Float4, Float3, Float2, Int3, Int2):
 Names = ct.FocusedSeq(
     'names',
     'names_count' / ct.Rebuild(ct.VarInt, ct.len_(ct.this.names)),
-    'names' / ct.Prefixed(ct.VarInt, (types_cons_map[Name])[ct.this.names_count])
+    'names' / ct.Prefixed(ct.VarInt, Name[ct.this.names_count])
 ).compile()
 
 TaggedOffset = ct.ByteSwapped(ct.Bitwise(ct.Sequence(ct.Bit, ct.BitsInteger(31)))).compile()
@@ -69,7 +68,7 @@ BlockInfo = ct.NamedTuple(
         'name_id' / ct.ExprAdapter(
             ct.VarInt,
             lambda obj, ctx: obj - 1 if obj else Id_of_root,
-            lambda obj, ctx: 0 if obj is Name.of_root else obj + 1
+            lambda obj, ctx: 0 if obj is Name_.of_root else obj + 1
         ),
         'params_count' / ct.VarInt,
         'blocks_count' / ct.VarInt,
@@ -92,22 +91,22 @@ SlimFile = """"Файл с таблицей имен в другом файле"
     'file' / FileStruct,
 ).compile()
 
-Pair = t.Tuple[Name, Value]
-NamesI = t.Iterable[Name]
-NamesT = t.Sequence[Name]
-NamesMap = t.OrderedDict[t.Union[Name, Str], int]
+Pair = t.Tuple[Name_, Value]
+NamesI = t.Iterable[Name_]
+NamesT = t.Sequence[Name_]
+NamesMap = t.OrderedDict[t.Union[Name_, Str], int]
 LongValue = t.Union[Str, Float12, Float4, Float3, Float2, Int3, Int2, Long]
 LongValueType = t.Union[t.Type[Str], t.Type[Float12], t.Type[Float4], t.Type[Float3], t.Type[Float2], t.Type[Int3],
                         t.Type[Int2], t.Type[Long]]
-ParametersMap = t.OrderedDict[t.Union[Name, LongValue], int]
+ParametersMap = t.OrderedDict[t.Union[Name_, LongValue], int]
 ValuesMap = t.Mapping[LongValueType, ParametersMap]
 ParameterInfo = t.Tuple[int, int, bytes]
 ParameterInfos = t.MutableSequence[ParameterInfo]
 BlockInfoT = t.Tuple[int, int, int, t.Optional[int]]
 BlockInfos = t.MutableSequence[BlockInfoT]
-ParameterT = t.Tuple[Name, Parameter]
+ParameterT = t.Tuple[Name_, Parameter]
 Parameters = t.MutableSequence[ParameterT]
-SectionT = t.Tuple[t.Optional[Name], Section]
+SectionT = t.Tuple[t.Optional[Name_], Section]
 Sections = t.MutableSequence[SectionT]
 
 
@@ -145,25 +144,27 @@ class FileAdapter(ct.Adapter):
         for name_id, type_id, data in obj.params:
             name = names[name_id]
             cls = codes_types_map[type_id]
-            con = types_cons_map[cls]
+
             if cls is Str:
                 tag, offset = TaggedOffset.parse(data)
-                init = names[offset] if tag else self.parse_params_data(con, offset)
+                init = names[offset] if tag else self.parse_params_data(String, offset)
                 value = cls.of(init)
-            elif cls in (Float12, Float4, Float3, Float2, Int3, Int2, Long):
-                offset = ct.Int32ul.parse(data)
-                init = self.parse_params_data(con, offset)
-                value = cls(init)
-            elif cls in (Color, Int, Float):
-                init = con.parse(data)
-                value = cls(init)
-            elif cls is Bool:
-                init = con.parse(data)
-                value = true if init else false
+            else:
+                con = types_cons_map[cls]
+                if cls in (Float12, Float4, Float3, Float2, Int3, Int2, Long):
+                    offset = ct.Int32ul.parse(data)
+                    init = self.parse_params_data(con, offset)
+                    value = cls(init)
+                elif cls in (Color, Int, Float):
+                    init = con.parse(data)
+                    value = cls(init)
+                elif cls is Bool:
+                    init = con.parse(data)
+                    value = true if init else false
             params.append((name, value))
 
         for name_id, *_ in obj.blocks:
-            name = Name.of_root if name_id is Id_of_root else names[name_id]
+            name = Name_.of_root if name_id is Id_of_root else names[name_id]
             value = Section()
             blocks.append((name, value))
 
@@ -222,18 +223,16 @@ class FileAdapter(ct.Adapter):
 
         if isinstance(value, Str):
             if value not in map_:
-                con = types_cons_map[Str]
-                map_[value] = self.build_params_data(con, value)
+                map_[value] = self.build_params_data(String, value)
 
     def build_item(self, item: Pair, names_map: NamesMap, values_maps: ValuesMap,
                    params: ParameterInfos, blocks: BlockInfos, block_offset_var: Var):
         name, value = item
-        name_id = names_map.get(name, Name.of_root)
+        name_id = names_map.get(name, Name_.of_root)
 
         if isinstance(value, Parameter):
             cls = value.__class__
             code = types_codes_map[cls]
-            con = types_cons_map[cls]
 
             if cls is Str:
                 if self.strings_in_names:
@@ -244,14 +243,16 @@ class FileAdapter(ct.Adapter):
                     tag = 0
                 offset = map_[value]
                 data = TaggedOffset.build([tag, offset])
-            elif cls in (Float12, Float4, Float3, Float2, Int3, Int2, Long):
-                map_ = values_maps[cls]
-                if value not in map_:
-                    map_[value] = self.build_params_data(con, value)
-                offset = map_[value]
-                data = ct.Int32ul.build(offset)
-            elif cls in (Color, Int, Float, Bool):
-                data = con.build(value)
+            else:
+                con = types_cons_map[cls]
+                if cls in (Float12, Float4, Float3, Float2, Int3, Int2, Long):
+                    map_ = values_maps[cls]
+                    if value not in map_:
+                        map_[value] = self.build_params_data(con, value)
+                    offset = map_[value]
+                    data = ct.Int32ul.build(offset)
+                elif cls in (Color, Int, Float, Bool):
+                    data = con.build(value)
 
             params.append((name_id, code, data))
 
@@ -261,7 +262,7 @@ class FileAdapter(ct.Adapter):
             if not blocks_count:
                 block_offset = None
             else:
-                if name_id is Name.of_root:  # root
+                if name_id is Name_.of_root:  # root
                     block_offset_var.value = 1
                 block_offset = block_offset_var.value
                 block_offset_var.value += blocks_count

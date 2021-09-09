@@ -65,12 +65,13 @@ String = ct.ExprAdapter(
     lambda obj, ctx: obj.encode()
 ).compile()
 
+Offset = ct.Int32ul.compile()
+
 types_cons_map = {
     UByte: ct.Byte.compile(),
     Int: ct.Int32sl.compile(),
     Long: ct.Int64sl.compile(),
     Float: ct.Float32l.compile(),
-    Str:  ct.Int32ul.compile(),
 }
 
 for c in (Float12, Float4, Float3, Float2, Color, Int3, Int2):
@@ -263,7 +264,10 @@ class Block(ct.Construct):
                 cls = codes_types_map[type_id]
                 if cls is Section:
                     raise ValueError('Ожидался код параметра: {}'.format(type_id))
-                con = types_cons_map[cls]
+                elif cls is Str:
+                    con = Offset
+                else:
+                    con = types_cons_map[cls]
                 data = con._parsereport(stream, context, path)
             values_info.append(ValueInfo(name_id, type_id, data))
 

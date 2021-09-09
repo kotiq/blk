@@ -1,6 +1,6 @@
 import pytest
-from blk.types import Name
-from blk.binary.constructor import types_cons_map
+from blk.types import Name as Name_
+from blk.binary.constructor import Name
 
 
 @pytest.mark.parametrize(['init', 'parse_bs', 'build_bs'], [
@@ -13,9 +13,8 @@ from blk.binary.constructor import types_cons_map
                  b'\xd0\xbf\xd1\x80\xd0\xb8\xd0\xb2\xd0\xb5\xd1\x82\x00', id='cp1251')
 ])
 def test_name(init, parse_bs, build_bs):
-    name = Name.of(init)
-    con = types_cons_map[Name]
-    assert con.parse(parse_bs) == name
-    assert con.build(name) == build_bs
+    name = Name_.of(init)
+    assert Name.parse(parse_bs) == name
+    assert Name.build(name) == build_bs
 
 
