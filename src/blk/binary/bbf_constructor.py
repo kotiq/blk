@@ -34,9 +34,9 @@ class VQL(ct.Construct):
 
     def _parse(self, stream: io.BufferedIOBase, context: ct.Container, path: str) -> int:
         head = ct.Byte._parsereport(stream, context, path)
-        if head < 0x80:
+        if (head & 0x80) == 0:
             return head
-        elif head < 0xc0:
+        elif (head & 0xc0) == 0x80:
             tail = ct.Byte._parsereport(stream, context, path)
             return ((head & 0x3f) << 8) | tail
         else:
@@ -137,7 +137,7 @@ def create_names_map(raw_names: t.Iterable[bytes], module: int) -> t.Mapping[int
         # коллизии
         while h in hashmap:
             h += module
-            # hash в дерева хранится как Int24ul
+            # hash в дереве хранится как Int24ul
             if h > 0xff_ff_ff:
                 raise ValueError("Исчерпана Dom(hashmap): {}".format(h))
         hashmap[h] = Name.of(raw_name)
@@ -276,8 +276,7 @@ class Block(ct.Construct):
             cls = codes_types_map[type_id]
             if cls is not Section:
                 raise ValueError('Ожидался код секции: {}'.format(type_id))
-            con = types_cons_map[cls]
-            data = con._parsereport(stream, context, path)  # @r
+            data = Block._parsereport(stream, context, path)  # @r
             values_info.append(ValueInfo(name_id, type_id, data))
 
         return values_info
