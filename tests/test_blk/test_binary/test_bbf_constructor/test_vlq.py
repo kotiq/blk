@@ -1,5 +1,5 @@
 import pytest
-from blk.binary.bbf_constructor import VQL
+from blk.binary.bbf_constructor import VLQ
 
 
 @pytest.mark.parametrize(['x', 'parse_bs', 'build_bs'], [
@@ -10,6 +10,6 @@ from blk.binary.bbf_constructor import VQL
     pytest.param(0x40_00, b'\xc0\x40\x00', b'\xc0\x40\x00', id='3 bytes min'),
     pytest.param(0x3f_ff_ff, b'\xff\xff\xff', b'\xff\xff\xff', id='3 bytes max'),
 ])
-def test_vql(x, parse_bs, build_bs):
-    assert VQL.parse(parse_bs) == x
-    assert VQL.build(x) == build_bs
+def test_vlq(x, parse_bs, build_bs):
+    assert VLQ.parse(parse_bs) == x
+    assert VLQ.build(x) == build_bs

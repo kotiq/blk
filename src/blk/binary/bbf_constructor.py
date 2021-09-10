@@ -21,7 +21,7 @@ class Version(ct.Adapter):
 
 
 @ct.singleton
-class VQL(ct.Construct):
+class VLQ(ct.Construct):
     """
     Целое переменной длины.
 
@@ -57,7 +57,7 @@ class VQL(ct.Construct):
         return obj
 
 
-RawPascalString = ct.Prefixed(VQL, ct.GreedyBytes).compile()
+RawPascalString = ct.Prefixed(VLQ, ct.GreedyBytes).compile()
 
 String = ct.ExprAdapter(
     RawPascalString,
