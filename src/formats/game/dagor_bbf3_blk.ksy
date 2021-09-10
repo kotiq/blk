@@ -89,7 +89,7 @@ types:
           cases:
             count_type::single_byte: u1
             count_type::two_bytes: u2
-            count_type::three_bytes: u4
+            count_type::four_bytes: u4
       - id: array
         type: pascal_string
         repeat: expr
@@ -120,7 +120,7 @@ types:
           cases:
             count_type::single_byte: u1
             count_type::two_bytes: u2
-            count_type::three_bytes: u4
+            count_type::four_bytes: u4
       - id: strings_stream
         type: strings_stream
         size: _parent.tag_size.size
