@@ -1,5 +1,5 @@
 meta:
-  id: dat_blk
+  id: fat_blk
   title: DagorEngine fat datablock
   file-extension: blk
   endian: le
@@ -38,22 +38,28 @@ types:
         type: strz
         encoding: UTF-8
 
+  names_stream:
+    seq:
+      - id: array
+        type: cstring
+        repeat: expr
+        repeat-expr: _parent.count.value
+
   names:
     seq:
       - id: count
         type: vlq_base128_le
       - id: size
         type: vlq_base128_le
-      - id: data
-        type: cstring
-        repeat: expr
-        repeat-expr: count.value
+      - id: names_stream
+        type: names_stream
+        size: size.value
 
   params_data:
     seq:
       - id: size
         type: vlq_base128_le
-      - id: data
+      - id: params_data_stream
         size: size.value
 
   param:

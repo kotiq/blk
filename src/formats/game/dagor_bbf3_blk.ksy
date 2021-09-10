@@ -72,7 +72,6 @@ types:
         type: vlq
       - id: data
         type: str
-        # todo: вариации кодирования: utf8, cp1251
         encoding: UTF-8
         size: size.value
 
@@ -81,7 +80,7 @@ types:
       - id: padding
         size: (4 - _io.pos) % 4
 
-  names_content:
+  names_data:
     seq:
       - id: count
         type:
@@ -90,7 +89,7 @@ types:
             count_type::single_byte: u1
             count_type::two_bytes: u2
             count_type::three_bytes: u4
-      - id: data
+      - id: array
         type: pascal_string
         repeat: expr
         repeat-expr: count
@@ -99,13 +98,20 @@ types:
     seq:
       - id: tag_module
         type: tag_module
-      - id: content
-        type: names_content
+      - id: names_data
+        type: names_data
         if: tag_module.tag != count_type::zero
       - id: padding
         type: pad4
 
-  strings_content:
+  strings_stream:
+    seq:
+      - id: array
+        type: pascal_string
+        repeat: expr
+        repeat-expr: _parent.count
+
+  strings_data:
     seq:
       - id: count
         type:
@@ -114,17 +120,16 @@ types:
             count_type::single_byte: u1
             count_type::two_bytes: u2
             count_type::three_bytes: u4
-      - id: data
-        type: pascal_string
-        repeat: expr
-        repeat-expr: count
+      - id: strings_stream
+        type: strings_stream
+        size: _parent.tag_size.size
 
   strings:
     seq:
       - id: tag_size
         type: tag_size
-      - id: content
-        type: strings_content
+      - id: strings_data
+        type: strings_data
         if: tag_size.tag != count_type::zero
       - id: padding
         type: pad4
@@ -134,7 +139,7 @@ types:
       - id: data
         size-eos: true
 
-  data_content:
+  data_stream:
     seq:
       - id: names
         type: names
@@ -147,5 +152,6 @@ types:
     seq:
       - id: size
         type: u4
-      - id: content
-        type: data_content
+      - id: data_stream
+        type: data_stream
+        size: size
