@@ -30,10 +30,11 @@ enums:
     6: float4
     7: int2
     8: int3
-    9: bool
+    9: true
     10: color
     11: float12
     12: long
+    0x89: false
 
 types:
   version:
@@ -134,10 +135,102 @@ types:
       - id: padding
         type: pad4
 
+  value_info:
+    seq:
+      - id: name_id
+        type: b24le
+      - id: type_id
+        type: u1
+        enum: value_type
+
+  dummy: {}
+
+  floats:
+    params:
+      - id: len
+        type: u1
+    seq:
+      - id: array
+        type: f4
+        repeat: expr
+        repeat-expr: len
+
+  ints:
+    params:
+      - id: len
+        type: u1
+    seq:
+      - id: array
+        type: s4
+        repeat: expr
+        repeat-expr: len
+
+  color:
+    seq:
+      - id: array
+        type: u1
+        repeat: expr
+        repeat-expr: 4
+
+  true:
+    instances:
+      value:
+        value: True
+
+  false:
+    instances:
+      value:
+        value: False
+
+  param_value:
+    params:
+      - id: i
+        type: u2
+    seq:
+      - id: value
+        type:
+          switch-on: _parent.values_info[i].type_id
+          cases:
+            value_type::str: u4
+            value_type::int: s4
+            value_type::float: f4
+            value_type::float2: floats(2)
+            value_type::float3: floats(3)
+            value_type::float4: floats(4)
+            value_type::int2: ints(2)
+            value_type::int3: ints(3)
+            value_type::true: true
+            value_type::false: false
+            value_type::color: color
+            value_type::float12: floats(12)
+            value_type::long: s8
+
+
+  block_value:
+    seq:
+      - id: value_info
+        type: value_info
+      - id: value
+        type: block  # @r
+
   block:
     seq:
-      - id: data
-        size-eos: true
+      - id: params_count
+        type: u2
+      - id: blocks_count
+        type: u2
+      - id: values_info
+        type: value_info
+        repeat: expr
+        repeat-expr: params_count
+      - id: params_values
+        type: param_value(_index)
+        repeat: expr
+        repeat-expr: params_count
+      - id: blocks_values
+        type: block_value
+        repeat: expr
+        repeat-expr: blocks_count
 
   data_stream:
     seq:
@@ -145,7 +238,7 @@ types:
         type: names
       - id: strings
         type: strings
-      - id: block
+      - id: root
         type: block
 
   data:
