@@ -3,6 +3,7 @@ meta:
   title: DagorEngine fat datablock
   file-extension: blk
   endian: le
+  bit-endian: le
   imports:
     - /common/vlq_base128_le
 
@@ -62,6 +63,29 @@ types:
       - id: params_data_stream
         size: size.value
 
+  tag_offset:
+    seq:
+      - id: offset
+        type: b31
+      - id: tag
+        type: b1
+
+  offset:
+    seq:
+      - id: value
+        type: u4
+
+  color:
+    seq:
+      - id: b
+        type: u1
+      - id: g
+        type: u1
+      - id: r
+        type: u1
+      - id: a
+        type: u1
+
   param:
     seq:
       - id: name_id
@@ -70,6 +94,21 @@ types:
         type: u1
         enum: value_type
       - id: data
+        type:
+          switch-on: type_id
+          cases:
+            value_type::str: tag_offset
+            value_type::float12: offset
+            value_type::float4: offset
+            value_type::float3: offset
+            value_type::float2: offset
+            value_type::int3: offset
+            value_type::int2: offset
+            value_type::long: offset
+            value_type::color: color
+            value_type::int: s4
+            value_type::float: f4
+            value_type::bool: u4
         size: 4
 
   name_index:
