@@ -9,7 +9,7 @@ from .constants import *
 from .error import *
 from .typed_named_tuple import TypedNamedTuple
 
-__all__ = ['compose_bbf', 'compoze_bbz', 'serialize_bbf', 'serialize_bbz']
+__all__ = ['compose_bbf', 'compoze_bbf_zlib', 'serialize_bbf', 'serialize_bbf_zlib']
 
 
 class Version(ct.Adapter):
@@ -355,9 +355,9 @@ def serialize_bbf(section: Section, ostream: t.BinaryIO, module: int = 0x100):
     raise NotImplementedError
 
 
-def compoze_bbz(istream: t.BinaryIO) -> Section:
+def compoze_bbf_zlib(istream: t.BinaryIO) -> Section:
     raise NotImplementedError
 
 
-def serialize_bbz(section: Section, ostream: t.BinaryIO, module: int = 0x100):
+def serialize_bbf_zlib(section: Section, ostream: t.BinaryIO, module: int = 0x100):
     raise NotImplementedError
