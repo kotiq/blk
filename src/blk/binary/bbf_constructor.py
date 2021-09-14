@@ -2,10 +2,12 @@
 
 import io
 import typing as t
+import zlib
 import construct as ct
-from construct import this
+from construct import this, len_
 from blk.types import *
 from .constants import *
+from .constructor import getvalue, VT
 from .error import *
 from .typed_named_tuple import TypedNamedTuple
 
@@ -341,6 +343,34 @@ BBFFile = ct.FocusedSeq(
 )
 
 
+class ZlibCompressed(ct.Tunnel):
+    def __init__(self, subcon,
+                 level: VT[int] = -1,
+                 max_length: VT[int] = 0,
+                 ):
+        super().__init__(subcon)
+        self.level = level
+        self.max_length = max_length
+
+    def _decode(self, data, context, path):
+        max_lenght = getvalue(self.max_length, context)
+        dctx = zlib.decompressobj()
+        return dctx.decompress(data, max_lenght)
+
+    def _encode(self, data, context, path):
+        level = getvalue(self.level, context)
+        cctx = zlib.compressobj(level)
+        return cctx.compress(data)
+
+
+CompressedBBFFile = ct.FocusedSeq(
+    'data_bs',
+    ct.Const(b'\x00BBz'),
+    'size' / ct.Rebuild(ct.Int32ul, len_(this.data_bs)),
+    'data_bs' / ct.Prefixed(ct.Int32ul, ZlibCompressed(ct.GreedyBytes, max_length=this.size)),
+)
+
+
 # todo: readable/writable protocol
 def compose_bbf(istream: t.BinaryIO) -> Section:
     """Сборка секции из потока."""
@@ -352,12 +382,25 @@ def compose_bbf(istream: t.BinaryIO) -> Section:
 
 
 def serialize_bbf(section: Section, ostream: t.BinaryIO, module: int = 0x100):
-    raise NotImplementedError
+    try:
+        return BBFFile.build_stream(section, ostream, module=module)
+    except (TypeError, ValueError, ct.ConstructError) as e:
+        raise SerializeError(str(e))
 
 
 def compoze_bbf_zlib(istream: t.BinaryIO) -> Section:
-    raise NotImplementedError
+    """Сборка секции из сжатого потока."""
+
+    try:
+        data_bs = CompressedBBFFile.parse_stream(istream)
+        return BBFFile.parse(data_bs)
+    except (TypeError, ValueError, ct.ConstructError, zlib.error) as e:
+        raise ComposeError(str(e))
 
 
 def serialize_bbf_zlib(section: Section, ostream: t.BinaryIO, module: int = 0x100):
-    raise NotImplementedError
+    try:
+        data_bs = BBFFile.build(section, module=module)
+        CompressedBBFFile.build_stream(data_bs, ostream)
+    except (TypeError, ValueError, ct.ConstructError, zlib.error) as e:
+        raise SerializeError(str(e))

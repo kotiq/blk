@@ -121,9 +121,11 @@ ParameterT = t.Tuple[Name, Parameter]
 Parameters = t.MutableSequence[ParameterT]
 SectionT = t.Tuple[t.Optional[Name], Section]
 Sections = t.MutableSequence[SectionT]
+T = t.TypeVar('T')
+VT = t.Union[T, t.Callable[[ct.Container], T]]
 
 
-def getvalue(val: t.Union[callable, t.Any], context) -> t.Any:
+def getvalue(val: VT[T], context) -> T:
     return val(context) if callable(val) else val
 
 

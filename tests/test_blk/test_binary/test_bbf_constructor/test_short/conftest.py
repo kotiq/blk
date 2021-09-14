@@ -175,3 +175,24 @@ def file_bs():
 @pytest.fixture
 def file_istream(file_bs):
     return io.BytesIO(file_bs)
+
+
+@pytest.fixture(scope='session')
+def compressed_file_bs():
+    return bytes.fromhex(
+        # header
+        '0042427a'  # b'\x00BBz' magic
+        '40000000'  # data size=0x40
+        '3c000000'  # compressed data size=0x3c
+        
+        # compressed data
+        '789C'
+        '6370727263666064306100024726CE8CCC9454BFFC94D462963C20C9C0C0C6C0E0C0C85A5099939F0754C0C85001261918564328060070'
+        'E50A30'
+    )
+
+
+@pytest.fixture
+def compressed_file_istream(compressed_file_bs):
+    return io.BytesIO(compressed_file_bs)
+
