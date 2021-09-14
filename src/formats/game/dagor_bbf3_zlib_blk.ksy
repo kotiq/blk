@@ -1,6 +1,6 @@
 meta:
   id: bbf3_zlib_blk
-  title: DagorEngine BBF Zlib compressed datablock
+  title: DagorEngine Zlib compressed BBF datablock
   file-extension: blk
   endian: le
 

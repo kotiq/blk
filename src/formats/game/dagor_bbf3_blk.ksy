@@ -1,5 +1,5 @@
 meta:
-  id: bbf_blk
+  id: bbf3_blk
   title: DagorEngine BBF datablock
   file-extension: blk
   endian: le

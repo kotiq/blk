@@ -1,12 +1,13 @@
 meta:
-  id: fat_blk
-  title: DagorEngine fat datablock
+  id: slim_blk
+  title: DagorEngine slim datablock
   file-extension: blk
   imports:
     - data
 
 seq:
   - id: type
-    contents: [1]
+    contents: [3]
+    # no names expected
   - id: data
     type: data
