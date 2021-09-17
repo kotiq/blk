@@ -1,0 +1,27 @@
+str:t = "hello"
+int:i = 1
+float:r = 1.0
+float2:p2 = 1.0, 2.0
+float3:p3 = 1.0, 2.0, 3.0
+float4:p4 = 1.0, 2.0, 3.0, 4.0
+int2:ip2 = 1, 2
+int3:ip3 = 1, 2, 3
+bool:b = 1
+color:c = 1, 2, 3, 4
+float12:m = [[1.0, 2.0, 3.0] [4.0, 5.0, 6.0] [7.0, 8.0, 9.0] [10.0, 11.0, 12.0]]
+long:i64 = 1
+section_11 {
+  str:t = "world"
+  int:i = 2
+  section_21 {
+    float:r = 2.0
+    bool:b = 0
+  }
+}
+section_12 {
+  int:i = 3
+  int:i = 4
+  int:i = 5
+  int:i = 6
+  int:i = 7
+}

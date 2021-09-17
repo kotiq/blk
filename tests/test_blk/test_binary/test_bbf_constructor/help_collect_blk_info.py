@@ -4,19 +4,9 @@ import heapq
 from collections import defaultdict, OrderedDict
 import pytest
 from helpers import make_outpath, create_text
+from . import bbf_paths
 
 outpath = make_outpath(__name__)
-
-
-def bbf_files(path: str):
-    for entry in os.scandir(path):  # type: os.DirEntry
-        if entry.is_dir():
-            yield from bbf_files(entry.path)  # @r
-        elif entry.is_file() and entry.name.endswith('.blk'):
-            with open(entry, 'rb') as istream:
-                magic = istream.read(4)
-                if magic == b'\x00BBF':
-                    yield entry.path
 
 
 @pytest.fixture(scope='module')
@@ -31,7 +21,7 @@ def blk_names_summary_path(outpath: str):
 
 def test_collect_blk_versions(bbfpath: str, blk_version_summary_path: str):
     m = defaultdict(list)
-    for path in bbf_files(bbfpath):
+    for path in bbf_paths(bbfpath):
         with open(path, 'rb') as istream:
             istream.seek(4)
             hi = int.from_bytes(istream.read(2), 'little')
@@ -47,7 +37,7 @@ def test_collect_blk_versions(bbfpath: str, blk_version_summary_path: str):
 def test_collect_blk_names(bbfpath: str, blk_names_summary_path: str):
     tag_modules = set()
     heap = []
-    for path in bbf_files(bbfpath):
+    for path in bbf_paths(bbfpath):
         with open(path, 'rb') as istream:
             istream.seek(12)
             tag = int.from_bytes(istream.read(2), 'little')

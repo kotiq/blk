@@ -284,8 +284,11 @@ class Name(EncodedStr):
 SafeName = Name.of
 
 Pair = t.Tuple[Name, Value]
+ParameterPair = t.Tuple[Name, Parameter]
+SectionPair = t.Tuple[Name, 'Section']
 PairsGen = t.Generator[Pair, None, None]
 NamesGen = t.Generator[Name, None, None]
+StringsGen = t.Generator[Str, None, None]
 PairsGenOf = t.Callable[['Section'], t.Iterable[Pair]]
 
 
@@ -325,6 +328,18 @@ class Section(OrderedDict, Value):
             else:
                 for value in values:
                     yield name, value
+
+    def split_values(self) -> t.Tuple[t.Sequence[ParameterPair], t.Sequence[SectionPair]]:
+        """Последовательности пар параметров и секций в порядке появления в двоичном файле."""
+
+        parameter_pairs = []
+        section_pairs = []
+
+        for item in self.pairs():
+            value = item[1]
+            (section_pairs if isinstance(value, Section) else parameter_pairs).append(item)
+
+        return parameter_pairs, section_pairs
 
     def sorted_pairs(self) -> PairsGen:
         """Пары в порядке появления в двоичном файле.
@@ -374,6 +389,18 @@ class Section(OrderedDict, Value):
                     yield from Section.names_dfs_nlr_rec(value)  # @r
 
     names = names_dfs_nlr_rec
+
+    def strings_dfs_nlr_rec(self) -> StringsGen:
+        """Генератор строк при обходе секции в глубину, рекурсивная версия."""
+
+        for name, values in self.items():
+            for value in values:
+                if isinstance(value, Section):
+                    yield from Section.strings_dfs_nlr_rec(value)  # @r
+                elif isinstance(value, Str):
+                    yield value
+
+    strings = strings_dfs_nlr_rec
 
     def size(self) -> t.Tuple[int, int]:
         """Размер секции на уровне.

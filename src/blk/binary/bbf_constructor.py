@@ -128,22 +128,52 @@ class NamesMapInit(ct.Construct):
         return obj
 
 
-def create_names_map(raw_names: t.Iterable[bytes], module: int) -> t.Mapping[int, Name]:
+def hash_(bs: bytes, module: int, hashes: t.Container[int]) -> int:
+    # DJBX33A, модуль uint14
+    h = 5381
+    for b in bs:
+        h = ((h << 5) + h + b) & 0xffff
+    h %= module
+    # коллизии
+    while h in hashes:
+        h += module
+        # hash в дереве хранится как Int24ul
+        if h > 0xff_ff_ff:
+            raise ValueError("Исчерпаны значения hash: {}".format(h))
+    return h
+
+
+def create_names_map(uniq_raw_names: t.Iterable[bytes], module: int) -> t.Mapping[int, Name]:
+    """hash -> Name"""
     hashmap = {}
-    for raw_name in raw_names:
-        # DJBX33A, модуль uint14
-        h = 5381
-        for b in raw_name:
-            h = ((h << 5) + h + b) & 0xffff
-        h %= module
-        # коллизии
-        while h in hashmap:
-            h += module
-            # hash в дереве хранится как Int24ul
-            if h > 0xff_ff_ff:
-                raise ValueError("Исчерпана Dom(hashmap): {}".format(h))
-        hashmap[h] = Name.of(raw_name)
+    for uniq_raw_name in uniq_raw_names:
+        h = hash_(uniq_raw_name, module, hashmap)
+        hashmap[h] = Name.of(uniq_raw_name)
     return hashmap
+
+
+def create_inv_names_map(names: t.Iterable[Name], module: int) -> t.Mapping[Name, int]:
+    """Name -> hash"""
+
+    inv_hashmap = {}
+    for name in names:
+        if name in inv_hashmap:
+            continue
+        h = hash_(name.encode(), module, inv_hashmap.values())
+        inv_hashmap[name] = h
+    return inv_hashmap
+
+
+def create_inv_strings(strings: t.Iterable[Str]) -> t.Mapping[Str, int]:
+    """Str -> id"""
+
+    inv_strings = {}
+    for string in strings:
+        if string in inv_strings:
+            continue
+        i = len(inv_strings)
+        inv_strings[string] = i
+    return inv_strings
 
 
 class NamesMapAdapter(ct.Adapter):
@@ -242,98 +272,56 @@ SizeCon = TypedNamedTuple(
     )
 )
 
-
-class ValueInfo(t.NamedTuple):
-    name_id: int
-    type_id: int
-    data: t.Any
-
-
 true_id = types_codes_map[Bool]
 false_id = 0x80 | true_id
 
 
 @ct.singleton
 class Block(ct.Construct):
-    def _parse(self, stream: io.BufferedIOBase, context: ct.Container, path: str) -> t.List[ValueInfo]:
+    def _parse(self, stream: io.BufferedIOBase, context: ct.Container, path: str) -> Section:
+        names: t.Mapping[int, Name] = context.names
+        strings: t.Sequence[Str] = context.strings
+        root = Section()
         params_count, blocks_count = SizeCon._parsereport(stream, context, path)
-        values_info: t.List[ValueInfo] = []
         partial_params_info = PartialValueInfoCon[params_count]._parsereport(stream, context, path)
+
         for name_id, type_id in partial_params_info:
-            if type_id in (true_id, false_id):
-                data = None
+            if type_id == false_id:
+                value = false
+            elif type_id == true_id:
+                value = true
             else:
                 cls = codes_types_map[type_id]
                 if cls is Section:
                     raise ValueError('Ожидался код параметра: {}'.format(type_id))
                 elif cls is Str:
-                    con = Offset
+                    str_id = Offset._parsereport(stream, context, path)
+                    value = strings[str_id]
                 else:
                     con = types_cons_map[cls]
-                data = con._parsereport(stream, context, path)
-            values_info.append(ValueInfo(name_id, type_id, data))
+                    value = cls(con._parsereport(stream, context, path))
+            name = names[name_id]
+            root.append(name, value)
 
         for _ in range(blocks_count):
             name_id, type_id = PartialValueInfoCon._parsereport(stream, context, path)
             cls = codes_types_map[type_id]
             if cls is not Section:
                 raise ValueError('Ожидался код секции: {}'.format(type_id))
-            data = Block._parsereport(stream, context, path)  # @r
-            values_info.append(ValueInfo(name_id, type_id, data))
+            value = Block._parsereport(stream, context, path)  # @r
+            name = names[name_id]
+            root.append(name, value)
 
-        return values_info
+        return root
 
 
 types_cons_map[Section] = Block
 
-
-class DataStruct(t.NamedTuple):
-    names: t.Mapping[int, Name]
-    strings: t.Sequence[Str]
-    block: t.Sequence[ValueInfo]
-
-
-DataStructCon = TypedNamedTuple(
-    DataStruct,
-    ct.Sequence(
-        'names' / ct.Aligned(4, Names),
-        'strings' / ct.Aligned(4, Strings),
-        'block' / Block)
-)
-
-
-def create_section(names: t.Mapping[int, Name], strings: t.Sequence[Str], block: t.Sequence[ValueInfo]) -> Section:
-    root = Section()
-    for name_id, type_id, data in block:
-        name = names[name_id]
-        if type_id == false_id:
-            value = false
-        elif type_id == true_id:
-            value = true
-        else:
-            cls = codes_types_map[type_id]
-            if cls is Section:
-                value = create_section(names, strings, data)  # @r
-            elif cls is Str:
-                value = strings[data]
-            else:
-                value = cls(data)
-        root.append(name, value)
-
-    return root
-
-
-class DataAdapter(ct.Adapter):
-    def _decode(self, obj: DataStruct, context: ct.Container, path: str) -> Section:
-        names: t.Mapping[int, Name] = obj.names
-        strings: t.Sequence[Str] = obj.strings
-        block: t.Sequence[ValueInfo] = obj.block
-
-        return create_section(names, strings, block)
-
-
-Data = DataAdapter(DataStructCon)
-
+Data = ct.FocusedSeq(
+    'block',
+    'names' / ct.Aligned(4, Names),
+    'strings' / ct.Aligned(4, Strings),
+    'block' / Block)
 
 BBFFile = ct.FocusedSeq(
     'data',

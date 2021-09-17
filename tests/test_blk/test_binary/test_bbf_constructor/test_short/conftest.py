@@ -1,8 +1,7 @@
 import io
-from collections import OrderedDict
 import pytest
 from blk.types import Name, Str, Section
-from blk.binary.bbf_constructor import NamesMapInitContainer, ValueInfo, DataStruct
+from blk.binary.bbf_constructor import NamesMapInitContainer
 
 
 @pytest.fixture(scope='session')
@@ -57,31 +56,6 @@ def strings_istream(strings_bs):
     return io.BytesIO(strings_bs)
 
 
-@pytest.fixture(scope='session')
-def block_bs():
-    return bytes.fromhex(
-        '0000 0100'  # params_count=0, blocks_count=1
-        '780000 00'  # name_id=0x78, type_id=section_type
-        '0100 0000'  # params_count=1, blocks_count=0
-        'AB0000 01'  # name_id=0xab, type=str_type
-        '00000000'   # string_id=0
-    )
-
-
-@pytest.fixture(scope='session')
-def values_info():
-    return [
-        ValueInfo(name_id=0x78, type_id=0, data=[
-            ValueInfo(name_id=0xab, type_id=1, data=0)
-        ])
-    ]
-
-
-@pytest.fixture
-def block_istream(block_bs):
-    return io.BytesIO(block_bs)
-
-
 @pytest.fixture
 def iostream():
     return io.BytesIO()
@@ -106,24 +80,6 @@ def data_bs():
         '0100 0000'  # params_count=1, blocks_count=0
         'AB0000 01'  # name_id=0xab, type=str_type
         '00000000'   # string_id=0
-    )
-
-
-@pytest.fixture(scope='session')
-def data():
-    return DataStruct(
-        names={
-            0x78: Name('hideNodes'),
-            0xab: Name('node')
-        },
-        strings=[
-            Str('pylon')
-        ],
-        block=[
-            ValueInfo(name_id=120, type_id=0, data=[
-                ValueInfo(name_id=171, type_id=1, data=0)
-            ])
-        ]
     )
 
 
@@ -195,4 +151,3 @@ def compressed_file_bs():
 @pytest.fixture
 def compressed_file_istream(compressed_file_bs):
     return io.BytesIO(compressed_file_bs)
-
