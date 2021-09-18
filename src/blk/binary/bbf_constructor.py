@@ -14,7 +14,7 @@ from .typed_named_tuple import TypedNamedTuple
 __all__ = ['compose_bbf', 'compoze_bbf_zlib', 'serialize_bbf', 'serialize_bbf_zlib']
 
 
-class Version(ct.Adapter):
+class Version(ct.SymmetricAdapter):
     def _decode(self, obj: t.Tuple[int, int], context: ct.Container, path: str) -> t.Tuple[int, int]:
         hi, lo = obj
         if hi != 3:
@@ -86,48 +86,6 @@ TagModule = ct.ByteSwapped(ct.Bitwise(ct.Struct(
 )))
 
 
-class NamesMapInitContainer(t.NamedTuple):
-    raw_names: t.List[bytes]
-    module: int
-
-
-@ct.singleton
-class NamesMapInit(ct.Construct):
-    def _parse(self, stream: io.BufferedIOBase, context: ct.Container, path: str) -> NamesMapInitContainer:
-        tag_module = TagModule._parsereport(stream, context, path)
-        tag = tag_module.tag
-        module = tag_module.module
-        if tag == 1:
-            names_count_con = ct.Byte
-        elif tag == 2:
-            names_count_con = ct.Int16ul
-        elif tag == 3:
-            names_count_con = ct.Int32ul
-        else:
-            raise ct.ValidationError('Код конструктора количества имен: {}'.format(tag))
-        raw_names = ct.PrefixedArray(names_count_con, RawPascalString)._parsereport(stream, context, path)
-        return NamesMapInitContainer(raw_names, module)
-
-    def _build(self, obj: NamesMapInitContainer, stream: io.BufferedIOBase, context: ct.Container, path: str) -> NamesMapInitContainer:
-        module = obj.module
-        names = obj.raw_names
-        names_count = len(obj.raw_names)
-        if names_count < 0x1_00:
-            names_count_con = ct.Byte
-            tag = 1
-        elif names_count < 0x1_00_00:
-            names_count_con = ct.Int16ul
-            tag = 2
-        elif names_count < 0x1_00_00_00_00:
-            names_count_con = ct.Int32ul
-            tag = 3
-        else:
-            raise ct.ValidationError('Слишком большое количество имен: {}'.format(names_count))
-        TagModule._build(dict(tag=tag, module=module), stream, context, path)
-        ct.PrefixedArray(names_count_con, RawPascalString)._build(names, stream, context, path)
-        return obj
-
-
 def hash_(bs: bytes, module: int, hashes: t.Container[int]) -> int:
     # DJBX33A, модуль uint14
     h = 5381
@@ -143,48 +101,80 @@ def hash_(bs: bytes, module: int, hashes: t.Container[int]) -> int:
     return h
 
 
-def create_names_map(uniq_raw_names: t.Iterable[bytes], module: int) -> t.Mapping[int, Name]:
-    """hash -> Name"""
-    hashmap = {}
-    for uniq_raw_name in uniq_raw_names:
-        h = hash_(uniq_raw_name, module, hashmap)
-        hashmap[h] = Name.of(uniq_raw_name)
-    return hashmap
+class NamesMap(dict):
+    """name_id => Name"""
+
+    def __init__(self, uniq_raw_names: t.Iterable[bytes], module: int):
+        super().__init__()
+        self.module = module
+
+        for uniq_raw_name in uniq_raw_names:
+            h = hash_(uniq_raw_name, module, self)
+            self[h] = Name.of(uniq_raw_name)
 
 
-def create_inv_names_map(names: t.Iterable[Name], module: int) -> t.Mapping[Name, int]:
-    """Name -> hash"""
+class InvNamesMap(dict):
+    """Name => name_id"""
 
-    inv_hashmap = {}
-    for name in names:
-        if name in inv_hashmap:
-            continue
-        h = hash_(name.encode(), module, inv_hashmap.values())
-        inv_hashmap[name] = h
-    return inv_hashmap
+    def __init__(self, names: t.Iterable[Name], module: int):
+        super().__init__()
+        self.module = module
 
-
-def create_inv_strings(strings: t.Iterable[Str]) -> t.Mapping[Str, int]:
-    """Str -> id"""
-
-    inv_strings = {}
-    for string in strings:
-        if string in inv_strings:
-            continue
-        i = len(inv_strings)
-        inv_strings[string] = i
-    return inv_strings
+        for name in names:
+            if name in self:
+                continue
+            h = hash_(name.encode(), module, self.values())
+            self[name] = h
 
 
-class NamesMapAdapter(ct.Adapter):
-    def _decode(self, obj: NamesMapInitContainer, context: ct.Container, path: str) -> t.Mapping[int, Name]:
-        return create_names_map(obj.raw_names, obj.module)
+class InvStrings(dict):
+    """Str => index"""
 
-    def _encode(self, obj, context: ct.Container, path: str):
-        raise NotImplementedError
+    def __init__(self, strings: t.Iterable[str]):
+        super().__init__()
+        for string in strings:
+            if string in self:
+                continue
+            i = len(self)
+            self[string] = i
 
 
-Names = NamesMapAdapter(NamesMapInit)
+@ct.singleton
+class Names(ct.Construct):
+    def _parse(self, stream: io.BufferedIOBase, context: ct.Container, path: str) -> NamesMap:
+        tag_module = TagModule._parsereport(stream, context, path)
+        tag = tag_module.tag
+        module = tag_module.module
+        if tag == 1:
+            names_count_con = ct.Byte
+        elif tag == 2:
+            names_count_con = ct.Int16ul
+        elif tag == 3:
+            names_count_con = ct.Int32ul
+        else:
+            raise ct.ValidationError('Код конструктора количества имен: {}'.format(tag))
+        uniq_raw_names = ct.PrefixedArray(names_count_con, RawPascalString)._parsereport(stream, context, path)
+        return NamesMap(uniq_raw_names, module)
+
+    def _build(self, obj: InvNamesMap,
+               stream: io.BufferedIOBase, context: ct.Container, path: str) -> InvNamesMap:
+        module = obj.module
+        uniq_raw_names = tuple(name.encode() for name in obj)
+        names_count = len(uniq_raw_names)
+        if names_count < 0x1_00:
+            names_count_con = ct.Byte
+            tag = 1
+        elif names_count < 0x1_00_00:
+            names_count_con = ct.Int16ul
+            tag = 2
+        elif names_count < 0x1_00_00_00_00:
+            names_count_con = ct.Int32ul
+            tag = 3
+        else:
+            raise ct.ValidationError('Слишком большое количество имен: {}'.format(names_count))
+        TagModule._build(dict(tag=tag, module=module), stream, context, path)
+        ct.PrefixedArray(names_count_con, RawPascalString)._build(uniq_raw_names, stream, context, path)
+        return obj
 
 
 TagSize = ct.ByteSwapped(ct.Bitwise(ct.Struct(
@@ -214,8 +204,8 @@ class Strings(ct.Construct):
         strings = String[strings_count]._parsereport(strings_data_stream, context, path)
         return strings
 
-    def _build(self, obj: t.List[Str], stream: io.BufferedIOBase, context: ct.Container, path: str
-               ) -> t.List[Str]:
+    def _build(self, obj: t.Mapping[Str, int],
+               stream: io.BufferedIOBase, context: ct.Container, path: str) -> t.Collection[Str]:
         strings_count = len(obj)
         if strings_count == 0:
             strings_count_con = ct.Error
@@ -292,9 +282,9 @@ class Block(ct.Construct):
                 value = true
             else:
                 cls = codes_types_map[type_id]
-                if cls is Section:
+                if issubclass(cls, Section):
                     raise ValueError('Ожидался код параметра: {}'.format(type_id))
-                elif cls is Str:
+                elif issubclass(cls, Str):
                     str_id = Offset._parsereport(stream, context, path)
                     value = strings[str_id]
                 else:
@@ -306,7 +296,7 @@ class Block(ct.Construct):
         for _ in range(blocks_count):
             name_id, type_id = PartialValueInfoCon._parsereport(stream, context, path)
             cls = codes_types_map[type_id]
-            if cls is not Section:
+            if not issubclass(cls, Section):
                 raise ValueError('Ожидался код секции: {}'.format(type_id))
             value = Block._parsereport(stream, context, path)  # @r
             name = names[name_id]
@@ -314,19 +304,54 @@ class Block(ct.Construct):
 
         return root
 
+    def _build(self, obj: Section, stream: io.BufferedIOBase, context: ct.Container, path: str) -> Section:
+        inv_names_map: t.Mapping[Name, int] = context.names
+        inv_strings: t.Mapping[Str, int] = context.strings
 
-types_cons_map[Section] = Block
+        splitted_values = (param_pairs, section_pairs) = obj.split_values()
+        size = Size(*map(len, splitted_values))
+        SizeCon._build(size, stream, context, path)
+        for name, param in param_pairs:
+            if param is true:
+                type_id = true_id
+            elif param is false:
+                type_id = false_id
+            else:
+                cls = param.__class__
+                type_id = types_codes_map[cls]
+            name_id = inv_names_map[name]
+            PartialValueInfoCon._build(PartialValueInfo(name_id, type_id), stream, context, path)
+
+        for name, param in param_pairs:
+            cls = param.__class__
+            if not isinstance(param, Bool):
+                if isinstance(param, Str):
+                    con = Offset
+                    value = inv_strings[param]
+                else:
+                    con = types_cons_map[cls]
+                    value = param
+                con._build(value, stream, context, path)
+
+        for name, section_ in section_pairs:
+            name_id = inv_names_map[name]
+            type_id = types_codes_map[Section]
+            PartialValueInfoCon._build(PartialValueInfo(name_id, type_id), stream, context, path)
+            self._build(section_, stream, context, path)  # @r
+
+        return obj
+
 
 Data = ct.FocusedSeq(
     'block',
-    'names' / ct.Aligned(4, Names),
-    'strings' / ct.Aligned(4, Strings),
+    'names' / ct.Aligned(4, ct.Rebuild(Names, lambda ctx: InvNamesMap(ctx.block.names(), ctx._._.module))),
+    'strings' / ct.Aligned(4, ct.Rebuild(Strings, lambda ctx: InvStrings(ctx.block.strings()))),
     'block' / Block)
 
 BBFFile = ct.FocusedSeq(
     'data',
     ct.Const(b'\x00BBF'),
-    'version' / Version(ct.Int16ul[2]),
+    'version' / ct.Rebuild(Version(ct.Int16ul[2]), this._.version),
     'data' / ct.Prefixed(ct.Int32ul, Data)
 )
 
@@ -369,9 +394,9 @@ def compose_bbf(istream: t.BinaryIO) -> Section:
         raise ComposeError(e)
 
 
-def serialize_bbf(section: Section, ostream: t.BinaryIO, module: int = 0x100):
+def serialize_bbf(section: Section, ostream: t.BinaryIO, version: t.Tuple[int, int] = (3, 1), module: int = 0x100):
     try:
-        return BBFFile.build_stream(section, ostream, module=module)
+        return BBFFile.build_stream(section, ostream, version=version, module=module)
     except (TypeError, ValueError, ct.ConstructError) as e:
         raise SerializeError(str(e))
 
@@ -386,9 +411,9 @@ def compoze_bbf_zlib(istream: t.BinaryIO) -> Section:
         raise ComposeError(str(e))
 
 
-def serialize_bbf_zlib(section: Section, ostream: t.BinaryIO, module: int = 0x100):
+def serialize_bbf_zlib(section: Section, ostream: t.BinaryIO, version: t.Tuple[int, int] = (3, 1), module: int = 0x100):
     try:
-        data_bs = BBFFile.build(section, module=module)
+        data_bs = BBFFile.build(section, version=version, module=module)
         CompressedBBFFile.build_stream(data_bs, ostream)
     except (TypeError, ValueError, ct.ConstructError, zlib.error) as e:
         raise SerializeError(str(e))

@@ -3,25 +3,18 @@
 """
 
 import io
-import typing as t
-from blk.types import Name
-from blk.binary.bbf_constructor import NamesMapInit, NamesMapInitContainer, NamesMapAdapter
+from blk.binary.bbf_constructor import Names, NamesMap, InvNamesMap
 
 
-def test_parse(names_istream: io.BufferedIOBase, names_map_init: NamesMapInitContainer, names_bs: bytes):
-    parsed_names_init: NamesMapInitContainer = NamesMapInit.parse_stream(names_istream)
+def test_parse(names_istream: io.BufferedIOBase, names_map: NamesMap, names_bs: bytes):
+    parsed_names_map = Names.parse_stream(names_istream)
     assert names_istream.tell() == len(names_bs)
-    assert list(parsed_names_init.raw_names) == list(names_map_init.raw_names)
-    assert parsed_names_init.module == names_map_init.module
+    assert parsed_names_map == names_map
 
 
-def test_build(iostream: io.BufferedIOBase, names_map_init: NamesMapInitContainer, names_bs: bytes):
-    NamesMapInit.build_stream(names_map_init, iostream)
+def test_build(iostream: io.BufferedIOBase, inv_names_map: InvNamesMap, names_bs: bytes):
+    module = 0x100
+    Names.build_stream(inv_names_map, iostream, module=module)
     iostream.seek(0)
     built_bs = iostream.read()
     assert built_bs == names_bs
-
-
-def test_decode(names_map_init: NamesMapInitContainer, names_map: t.Mapping[int, Name]):
-    decoded_names_map = NamesMapAdapter._decode(None, names_map_init, None, None)
-    assert decoded_names_map == names_map

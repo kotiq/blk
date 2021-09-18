@@ -1,7 +1,7 @@
 import io
 import pytest
 from blk.types import Name, Str, Section
-from blk.binary.bbf_constructor import NamesMapInitContainer
+from blk.binary.bbf_constructor import NamesMap, InvNamesMap
 
 
 @pytest.fixture(scope='session')
@@ -15,21 +15,20 @@ def names_bs():
 
 
 @pytest.fixture(scope='session')
-def raw_names():
-    return [b'hideNodes', b'node']
-
-
-@pytest.fixture(scope='session')
-def names_map_init(raw_names):
-    return NamesMapInitContainer(raw_names, 0x100)
-
-
-@pytest.fixture(scope='session')
 def names_map():
-    return {
+    nm = NamesMap([], 0x100)
+    nm.update({
         0x78: Name('hideNodes'),
         0xab: Name('node'),
-    }
+    })
+    return nm
+
+
+@pytest.fixture(scope='session')
+def inv_names_map(names_map: NamesMap):
+    inm = InvNamesMap([], names_map.module)
+    inm.update({v: k for k, v in names_map.items()})
+    return inm
 
 
 @pytest.fixture

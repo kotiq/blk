@@ -124,3 +124,8 @@ def file_bs():
 @pytest.fixture
 def file_istream(file_bs):
     return io.BytesIO(file_bs)
+
+
+@pytest.fixture
+def iostream():
+    return io.BytesIO()
