@@ -1,6 +1,6 @@
 from blk import Name, Section, Float2, Float3, Str
 
-
+# todo: move to conftest.py
 flat_section = Section([
     (Name('a'), [Float2((1, 2)), Float2((3, 4))]),
     (Name('b'), [Float3((5, 6, 7))]),

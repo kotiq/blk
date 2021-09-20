@@ -1,4 +1,3 @@
-import os
 import json
 import typing as t
 import blk_unpack as bbf3
@@ -24,12 +23,10 @@ def transform_mapping(m: t.MutableMapping):
             m[n] = v
 
 
-def test_mexico_4x4(binrespath, outpath):
+def test_mexico_4x4(currespath, outpath):
     rpath = 'mexico_4x4.blk'
-    ipath = os.path.join(binrespath, 'mexico-content.vromfs.bin_u', 'levels', rpath)
-    with open(ipath, 'rb') as istream:
-        bs = istream.read()
-
+    ipath = currespath / 'mexico-content.vromfs.bin_u' / 'levels' / rpath
+    bs = ipath.read_bytes()
     bbf3_parser = bbf3.BLK(bs)
     is_sorted = False
     bbf3_parser.output_type = jsn.JSON_2
@@ -37,7 +34,7 @@ def test_mexico_4x4(binrespath, outpath):
     unpacked_data = bbf3_parser._unpack_v3()
     transform_mapping(unpacked_data)
 
-    opath = os.path.join(outpath, f'{rpath}x')
+    opath = (outpath / rpath).with_suffix('.json')
     with create_text(opath) as ostream:
         text = json.dumps(unpacked_data, ensure_ascii=False, cls=bbf3.NoIndentEncoder, indent=2, separators=(',', ': '),
                           sort_keys=is_sorted)

@@ -1,10 +1,12 @@
 import os
 import sys
+from pathlib import Path
 from traceback import print_exc
 import typing as t
 import click
 import blk_unpack as bbf3
 import blk.binary as bin
+from blk.binary.constructor import Name
 import blk.text as txt
 import blk.json as jsn
 
@@ -14,44 +16,43 @@ INDENT = ' '*4
 
 def serialize_text(root, ostream, out_type, is_sorted):
     if out_type == txt.STRICT_BLK:
-        return txt.serialize(root, ostream, dialect=txt.StrictDialect)
+        txt.serialize(root, ostream, dialect=txt.StrictDialect)
     elif out_type in (jsn.JSON, jsn.JSON_2, jsn.JSON_3):
-        return jsn.serialize(root, ostream, out_type, is_sorted)
+        jsn.serialize(root, ostream, out_type, is_sorted)
 
 
-def is_text(bs: bytes) -> bool:
+def is_text(bs: t.Iterable[bytes]) -> bool:
     restricted = bytes.fromhex('00 01 02 03 04 05 06 07 08 0b 0c 0e 0f 10 11 12 14 13 15 16 17 18 19')
     return not any(b in restricted for b in bs)
 
 
-def create_text(path):
+def create_text(path: os.PathLike) -> t.TextIO:
     return open(path, 'w', newline='', encoding='utf8')
 
 
-def names_path(file_path: str, nm: str):
-    file_path = os.path.abspath(file_path)
-    drive, _ = os.path.splitdrive(file_path)
-    root = drive + os.path.sep
+def names_path(file_path: Path, nm: str) -> t.Optional[Path]:
+    file_path = file_path.absolute()
+    root_path = Path(file_path.drive + os.path.sep)
 
-    dir_path = os.path.dirname(file_path)
-    nm_path = os.path.join(dir_path, nm)
-    if nm_path and os.path.isfile(nm_path):
+    dir_path = file_path.parent
+    nm_path = dir_path / nm
+    if nm_path.is_file():
         return nm_path
 
-    while dir_path != root:
-        dir_path = os.path.dirname(dir_path)
-        nm_path = os.path.join(dir_path, nm)
-        if nm_path and os.path.isfile(nm_path):
+    while dir_path != root_path:
+        dir_path = dir_path.parent
+        nm_path = dir_path / nm
+        if nm_path.is_file():
             return nm_path
 
     return None
 
 
-def process_file(file_path: str, names: t.Optional[t.Sequence], out_type: int, is_sorted: bool):
-    if not file_path.endswith('.blk'):
+def process_file(file_path: Path, names: t.Optional[t.Sequence], out_type: int, is_sorted: bool):
+    if not file_path.suffix == '.blk':
         return
 
-    out_path = file_path + 'x'
+    out_path = file_path.with_suffix('.blkx')
     print(file_path)
 
     try:
@@ -60,16 +61,15 @@ def process_file(file_path: str, names: t.Optional[t.Sequence], out_type: int, i
             # пустой файл
             if not bs:
                 print(f'{INDENT}Empty file')
-                with open(out_path, 'wb') as _:
-                    pass
+                out_path.write_bytes(b'')
             # файл прежнего формата
             elif bs in (b'\x00BBF', b'\x00BBz'):
                 istream.seek(0)
                 bs = istream.read()
                 bbf3_parser = bbf3.BLK(bs)
-                bs = bbf3_parser.unpack(out_type, is_sorted=False)
+                ss = bbf3_parser.unpack(out_type, is_sorted=False)
                 with create_text(out_path) as ostream:
-                    ostream.write(bs)
+                    ostream.write(ss)
             # файл с именами в nm
             elif not bs[0]:
                 if names is None:
@@ -101,8 +101,7 @@ def process_file(file_path: str, names: t.Optional[t.Sequence], out_type: int, i
                     bs = istream.read()
                     if is_text(bs):
                         print(f'{INDENT}Copied as is')
-                        with open(out_path, 'wb') as ostream:
-                            ostream.write(bs)
+                        out_path.write_bytes(bs)
                     else:
                         print(f'{INDENT}Unknown file format')
 
@@ -111,37 +110,36 @@ def process_file(file_path: str, names: t.Optional[t.Sequence], out_type: int, i
         print_exc(file=sys.stdout)
 
 
-def process_dir(dir_path: str, out_type: int, is_sorted: bool):
-    entries = tuple(os.scandir(dir_path))
+def process_dir(dir_path: Path, out_type: int, is_sorted: bool):
+    paths = tuple(dir_path.iterdir())
 
-    for entry in entries:
-        if entry.is_file() and os.path.basename(entry.path) == 'nm':
-            nm_path = entry.path
+    for path in paths:
+        if path.is_file() and path.name == 'nm':
             try:
-                print(f'Loading NameMap from {nm_path!r}')
-                with open(nm_path, 'rb') as nm_istream:
+                print(f'Loading NameMap from {path!r}')
+                with open(path, 'rb') as nm_istream:
                     names = bin.compose_names(nm_istream)
 
                 process_slim_dir(dir_path, names, out_type, is_sorted)
                 return
             except bin.ComposeError as e:
-                print(f'{nm_path}')
+                print(f'{path}')
                 print(f'{INDENT}{e}')
                 return
 
-    for entry in entries:
-        if entry.is_dir():
-            process_dir(entry.path, out_type, is_sorted)
-        elif entry.is_file():
-            process_file(entry.path, None, out_type, is_sorted)
+    for path in paths:
+        if path.is_dir():
+            process_dir(path, out_type, is_sorted)
+        elif path.is_file():
+            process_file(path, None, out_type, is_sorted)
 
 
-def process_slim_dir(dir_path: str, names: t.Sequence, out_type: int, is_sorted: bool, ):
-    for entry in os.scandir(dir_path):
-        if entry.is_dir():
-            process_slim_dir(entry.path, names, out_type, is_sorted)
-        elif entry.is_file():
-            process_file(entry.path, names, out_type, is_sorted)
+def process_slim_dir(dir_path: Path, names: t.Sequence[Name], out_type: int, is_sorted: bool):
+    for path in dir_path.iterdir():
+        if path.is_dir():
+            process_slim_dir(path, names, out_type, is_sorted)  # @r
+        elif path.is_file():
+            process_file(path, names, out_type, is_sorted)
 
 
 @click.command()
@@ -158,7 +156,8 @@ def main(path: str, out_format: str, is_sorted: bool):
         'json_3': jsn.JSON_3,
     }[out_format]
 
-    if os.path.isfile(path):
+    path = Path(path)
+    if path.is_file():
         process_file(path, None, out_type, is_sorted)
     else:
         process_dir(path, out_type, is_sorted)

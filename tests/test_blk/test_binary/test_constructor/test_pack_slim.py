@@ -1,10 +1,10 @@
-import os
+from pathlib import Path
 from collections import OrderedDict
 from blk.types import *
 import blk.binary as bin
 import blk.text as txt
 import pytest
-from helpers import make_outpath
+from helpers import make_outpath, create_text
 
 outpath = make_outpath(__name__)
 
@@ -41,19 +41,19 @@ def section():
     return root
 
 
-def test_pack_slim(outpath, section: Section):
-    txtname = os.path.join(outpath, 'simple.txt')
-    with open(txtname, 'w') as ostream:
+def test_pack_slim(outpath: Path, section: Section):
+    text_path = outpath / 'simple.txt'
+    with create_text(text_path) as ostream:
         txt.serialize(section, ostream, dialect=txt.StrictDialect)
 
     names_map = OrderedDict()
     bin.update_names_map(names_map, section)
 
-    path = os.path.join(outpath, 'simple.bin')
-    with open(path, 'wb') as ostream:
+    bin_path = outpath / 'simple.bin'
+    with open(bin_path, 'wb') as ostream:
         bin.serialize_slim(section, names_map, ostream)
 
-    nm_path = os.path.join(outpath, 'simple_nm.bin')
+    nm_path = outpath / 'simple_nm.bin'
     with open(nm_path, 'wb') as ostream:
         names = names_map.keys()
         bin.serialize_names(names, ostream)
@@ -61,7 +61,7 @@ def test_pack_slim(outpath, section: Section):
     with open(nm_path, 'rb') as istream:
         names = bin.compose_names(istream)
 
-    with open(path, 'rb') as istream:
+    with open(bin_path, 'rb') as istream:
         root = bin.compose_slim(names, istream)
 
     assert root == section

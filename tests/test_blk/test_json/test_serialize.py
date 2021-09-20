@@ -24,7 +24,7 @@ json_section_with_same_id_sub_deep_json_2 = lazy_fixture('json_section_with_same
     pytest.param(mixed_section, jsn.JSON_2, json_mixed_json_2, id='mixed-json_2'),
     pytest.param(sections_only_section, jsn.JSON_2, json_sections_only_json_2, id='sections only-json_2'),
     pytest.param(section_with_same_id_sub, jsn.JSON_2, json_section_with_same_id_sub_json_2,
-                id='same id sub-json_2'),
+                 id='same id sub-json_2'),
     pytest.param(section_with_same_id_sub_deep, jsn.JSON_2, json_section_with_same_id_sub_deep_json_2,
                  id='same id sub deep-json_2'),
 ])

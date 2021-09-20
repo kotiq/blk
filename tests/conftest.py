@@ -1,11 +1,18 @@
+from pathlib import Path
 import pytest
 
 
 def pytest_addoption(parser):
-    binrespath = {
-        'name': 'binrespath',
-        'help': 'Директория с образцами двоичных blk.',
+    currespath = {
+        'name': 'currespath',
+        'help': 'Директория с образцами двоичных blk текущего формата.',
     }
+
+    bbfrespath = {
+        'name': 'bbfrespath',
+        'help': 'Директория с образцами двоичных blk фрмата BBF3.'
+    }
+
     buildpath = {
         'name': 'buildpath',
         'help': 'Директория для построения тестами.'
@@ -14,20 +21,25 @@ def pytest_addoption(parser):
         'name': 'cdkpath',
         'help': 'Директория WarThunderCDK.'
     }
-    for m in binrespath, buildpath, cdkpath:
+    for m in currespath, bbfrespath, buildpath, cdkpath:
         parser.addini(**m)
 
 
 @pytest.fixture(scope='session')
-def binrespath(pytestconfig):
-    return pytestconfig.getini('binrespath')
+def currespath(pytestconfig):
+    return Path(pytestconfig.getini('currespath'))
+
+
+@pytest.fixture(scope='session')
+def bbfrespath(pytestconfig):
+    return Path(pytestconfig.getini('bbfrespath'))
 
 
 @pytest.fixture(scope='session')
 def buildpath(pytestconfig):
-    return pytestconfig.getini('buildpath')
+    return Path(pytestconfig.getini('buildpath'))
 
 
 @pytest.fixture(scope='session')
 def cdkpath(pytestconfig):
-    return pytestconfig.getini('cdkpath')
+    return Path(pytestconfig.getini('cdkpath'))

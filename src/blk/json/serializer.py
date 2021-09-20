@@ -79,8 +79,10 @@ class Mapper:
             return tuple(Var(tuple(dgen_float_element(x) for x in value[i:i+3])) for i in range(0, 10, 3))
         elif isinstance(value, Color):
             return f"#{''.join(format(x, '02x') for x in value)}"
-        elif isinstance(value, Vector):
+        elif isinstance(value, (Float2, Float3, Float4)):
             return Var(tuple(float(format(x, 'e')) for x in value))
+        elif isinstance(value, (Int2, Int3)):
+            return Var(value)
         elif isinstance(value, Float):
             return dgen_float(value)
         elif isinstance(value, Bool):

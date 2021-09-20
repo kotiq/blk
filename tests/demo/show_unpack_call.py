@@ -5,6 +5,7 @@ cpython_venv и pypy_venv с общим корнем venv_home
 """
 
 import os
+from pathlib import Path
 from functools import reduce
 import itertools as itt
 import subprocess
@@ -14,27 +15,27 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-project = reduce(lambda acc, _: os.path.dirname(acc), '...', __file__)
-build = os.path.join(project, 'build')
-tests = os.path.join(project, 'tests')
-out = os.path.join(build, 'tests', 'test_blk', 'test_compare', 'test_time')
+project = reduce(lambda acc, _: acc.parent, '...', Path(__file__))
+build = project / 'build'
+tests = project / 'tests'
+out = build / 'tests' / 'test_blk' / 'test_compare' / 'help_time'
 
-log = os.path.join(out, 'time.log')
-test = os.path.join(tests, 'test_blk', 'test_compare', 'test_time.py')
+log = out / 'time.log'
+test = tests / 'test_blk' / 'test_compare' / 'help_time.py'
 
 
 with open(log, 'w'):
     pass
 
-venv_home = os.path.expanduser('~/.virtualenvs')
+venv_home = Path('~/.virtualenvs').expanduser()
 cpython_venv = 'blk'
 pypy_venv = 'blk_pypy3'
 lang = 'en_US.UTF-8'
 
 for venv in (cpython_venv, pypy_venv):
-    path = os.path.join(venv_home, venv, 'bin')
+    path = venv_home / venv / 'bin'
     args = shlex.split(f'python -m pytest {test} --durations=0 -vs')
-    subprocess.run(args, env=dict(PATH=path, LANG=lang))
+    subprocess.run(args, env={'PATH': str(path), 'LANG': lang})
 
 with open(log) as istream:
     rs = [json.loads(line) for line in istream]
@@ -82,6 +83,6 @@ for rect, label in zip(rects, labels):
     ax.text(rect.get_x() + rect.get_width() / 2, height + ystep, label, ha="center", va="bottom")
 
 ax.legend((rects1[0], rects2[0]), ('Новый формат', 'Старый формат'))
-svg = os.path.join(out, 'time.svg')
+svg = out / 'time.svg'
 plt.savefig(svg)
-shutil.copy2(svg, os.path.join(tests, 'demo'))
+shutil.copy2(svg, tests / 'demo')

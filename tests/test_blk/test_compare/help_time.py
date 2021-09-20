@@ -1,17 +1,17 @@
 import os
+from pathlib import Path
 import subprocess
 from subprocess import DEVNULL
 import platform
 import time
 import json
 import shutil
-from functools import partial
-import itertools as itt
 import pytest
 import demo
 from helpers import make_tmppath, make_outpath
+from test_blk.test_compare import pass_dir_nm_blk, is_nm_blk, clean_tree
 
-demo_prefix = demo.__path__[0]
+demo_prefix = Path(demo.__path__[0])
 tmppath = make_tmppath(__name__)
 outpath = make_outpath(__name__)
 
@@ -22,39 +22,39 @@ dir_rpaths = [
 ]
 
 
-def is_dir_nm_blk(parent, name):
-    full_name = os.path.join(parent, name)
-    return os.path.isdir(full_name) or name.endswith('.blk') or name == 'nm'
-
-
-def pass_dir_nm_blk(parent, names):
-    return set(itt.filterfalse(partial(is_dir_nm_blk, parent), names))
-
-
 @pytest.fixture(scope='module')
-def tmprespath(binrespath, tmppath):
+def tmprespath(currespath: Path, tmppath: Path):
+    dst_paths = []
     for dir_rpath in dir_rpaths:
-        src = os.path.join(binrespath, dir_rpath)
-        dst = os.path.join(tmppath, dir_rpath)
+        src = currespath / dir_rpath
+        dst = tmppath / dir_rpath
         shutil.copytree(src, dst, ignore=pass_dir_nm_blk)
-    return tmppath
+        dst_paths.append(dst)
+
+    yield tmppath
+
+    for dst in dst_paths:
+        clean_tree(dst, is_nm_blk)
 
 
 @pytest.fixture(scope='module')
-def time_log(outpath):
-    with open(os.path.join(outpath, 'time.log'), 'a') as log:
+def time_log(outpath: Path):
+    log_path = outpath / 'time.log'
+    with open(log_path, 'a') as log:
         yield log
 
 
 @pytest.fixture(scope='function')
-def log_unpack_call(time_log,):
+def log_unpack_call(time_log):
     ns = dict()
 
     def init(**kwargs):
         ns.update(**kwargs)
 
     start = time.perf_counter()
+
     yield init
+
     stop = time.perf_counter()
     ns['call'] = round(stop - start, 3)
     json.dump(ns, time_log)
@@ -67,10 +67,10 @@ def log_unpack_call(time_log,):
     'blk_unpack_demo.py',
     'blk_unpack_demo_mp.py',
 ])
-def test_unpack(tmprespath, runpacker, rpath, request, log_unpack_call):
-    path = os.path.join(tmprespath, rpath)
-    unpacker = os.path.join(demo_prefix, runpacker)
-    subprocess.run(['python', unpacker, path], stdout=DEVNULL, stderr=DEVNULL)
+def test_unpack(tmprespath: Path, runpacker: str, rpath: str, request, log_unpack_call: callable):
+    path = tmprespath / rpath
+    unpacker = demo_prefix / runpacker
+    subprocess.run(['python', str(unpacker), str(path)], stdout=DEVNULL, stderr=DEVNULL)
     impl = platform.python_implementation()
     ver = platform.python_version()
     name = request.node.originalname

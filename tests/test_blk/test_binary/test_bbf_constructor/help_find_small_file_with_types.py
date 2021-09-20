@@ -1,6 +1,6 @@
 """Поиск небольшого файла со всеми типами значений."""
 
-import os
+from pathlib import Path
 import heapq
 import json
 import pytest
@@ -31,19 +31,19 @@ def get_types(section: Section, classes: set) -> set:
 
 
 @pytest.fixture(scope='module')
-def typespath(outpath):
-    return os.path.join(outpath, 'types.json')
+def typespath(outpath: Path):
+    return outpath / 'types.json'
 
 
-def test_collect(bbfpath, typespath):
+def test_collect(bbfrespath: Path, typespath: Path):
     m = {}
-    for path in bbf_paths(bbfpath):
+    for path in bbf_paths(bbfrespath):
         with open(path, 'rb') as istream:
             section = compose_bbf(istream)
             classes = {Bool, Str, Int, Long, Float, Int2, Int3, Color, Float2, Float3, Float4, Float12, Section}
             types_ = get_types(section, classes)
-            size = os.stat(path).st_size
-            rpath = os.path.relpath(path, bbfpath)
+            size = path.stat().st_size
+            rpath = str(path.relative_to(bbfrespath))
             cls_names = [cls.__name__ for cls in types_]
             m[rpath] = {'size': size, 'types': cls_names}
 
@@ -71,7 +71,7 @@ def with_section(xs: set) -> bool:
     return 'Section' in xs
 
 
-def test_get_small_files(typespath):
+def test_get_small_files(typespath: Path):
     with open(typespath) as istream:
         m = json.load(istream)
 
