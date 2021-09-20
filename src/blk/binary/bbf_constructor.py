@@ -1,6 +1,7 @@
 """Только для версии 3."""
 
 import io
+import itertools as itt
 import typing as t
 import zlib
 import construct as ct
@@ -249,11 +250,6 @@ PartialValueInfoCon = TypedNamedTuple(
 )
 
 
-class Size(t.NamedTuple):
-    params_count: int
-    blocks_count: int
-
-
 SizeCon = TypedNamedTuple(
     Size,
     ct.Sequence(
@@ -308,8 +304,9 @@ class Block(ct.Construct):
         inv_names_map: t.Mapping[Name, int] = context.names
         inv_strings: t.Mapping[Str, int] = context.strings
 
-        splitted_values = (param_pairs, section_pairs) = obj.split_values()
-        size = Size(*map(len, splitted_values))
+        size = obj.size()
+        sorted_pairs = obj.sorted_pairs()
+        param_pairs = tuple(itt.islice(sorted_pairs, size.params_count))
         SizeCon._build(size, stream, context, path)
         for name, param in param_pairs:
             if param is true:
@@ -329,11 +326,11 @@ class Block(ct.Construct):
                     con = Offset
                     value = inv_strings[param]
                 else:
-                    con = types_cons_map[cls]
+                    con = types_cons_map[cls]  # type: ignore
                     value = param
                 con._build(value, stream, context, path)
 
-        for name, section_ in section_pairs:
+        for name, section_ in sorted_pairs:
             name_id = inv_names_map[name]
             type_id = types_codes_map[Section]
             PartialValueInfoCon._build(PartialValueInfo(name_id, type_id), stream, context, path)

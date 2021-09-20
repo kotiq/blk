@@ -6,7 +6,7 @@ from math import isfinite, isclose
 
 __all__ = ['Value', 'Parameter', 'Vector', 'Bool', 'true', 'false', 'Str', 'Float', 'Float2', 'Float3', 'Float4',
            'Name', 'Section', 'Int', 'Long', 'UByte', 'Int2', 'Int3', 'Color', 'Float2', 'Float3', 'Float4', 'Float12',
-           'EncodedStr', 'Var', 'method', 'dgen_float', 'dgen_float_element', 'CycleError']
+           'EncodedStr', 'Var', 'method', 'dgen_float', 'dgen_float_element', 'CycleError', 'Size']
 
 
 class CycleError(Exception):
@@ -292,6 +292,10 @@ StringsGen = t.Generator[Str, None, None]
 PairsGenOf = t.Callable[['Section'], t.Iterable[Pair]]
 
 
+class Size(t.NamedTuple):
+    params_count: int
+    blocks_count: int
+
 # todo: ограничить уровень вложенности секций до 512
 class Section(OrderedDict, Value):
     def append(self, name: Name, value: Value):
@@ -329,18 +333,6 @@ class Section(OrderedDict, Value):
                 for value in values:
                     yield name, value
 
-    def split_values(self) -> t.Tuple[t.Sequence[ParameterPair], t.Sequence[SectionPair]]:
-        """Последовательности пар параметров и секций в порядке появления в двоичном файле."""
-
-        parameter_pairs = []
-        section_pairs = []
-
-        for item in self.pairs():
-            value = item[1]
-            (section_pairs if isinstance(value, Section) else parameter_pairs).append(item)
-
-        return parameter_pairs, section_pairs
-
     def sorted_pairs(self) -> PairsGen:
         """Пары в порядке появления в двоичном файле.
         Сначала все параметры на уровне затем все секции на уровне, в порядке добавления первого имени."""
@@ -350,7 +342,7 @@ class Section(OrderedDict, Value):
             value = item[1]
             if isinstance(value, Section):
                 sections_pairs.append(item)
-            else:
+            elif isinstance(value, Parameter):
                 yield item
 
         yield from sections_pairs
@@ -402,7 +394,7 @@ class Section(OrderedDict, Value):
 
     strings = strings_dfs_nlr_rec
 
-    def size(self) -> t.Tuple[int, int]:
+    def size(self) -> Size:
         """Размер секции на уровне.
 
         :return: (число параметров, число секций)
@@ -415,7 +407,7 @@ class Section(OrderedDict, Value):
             elif isinstance(value, Section):
                 sections_count += 1
 
-        return params_count, sections_count
+        return Size(params_count, sections_count)
 
     def check_cycle(self):
         """
