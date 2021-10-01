@@ -1,10 +1,12 @@
-from io import BytesIO
+import io
 import pytest
+from pytest_lazyfixture import lazy_fixture
 from blk.types import *
 from blk.binary.constructor import *
 
 
-def make_sections_only_section():
+@pytest.fixture(scope='module')
+def sections_only_section():
     a = Section()
     b = Section()
     c = Section()
@@ -36,37 +38,49 @@ def make_sections_only_section():
     return a
 
 
-sections_only_section = make_sections_only_section()
-sections_only_section_fat_bs = bytes.fromhex(
-    '0b'  # names_count
-    '16'  # names_bytes_count
-    '6200 6300 6600 6700 6b00 6c00 6400 6500 6800 6900 6a00'  # names_bytes
-    '0c'  # blocks_count
-    '00'  # params_count
-    '00'  # params_data
-    '00 00 04 01'  # blocks_count
-    '01 00 00'
-    '02 00 02 05'
-    '07 00 00'
-    '08 00 03 07'
-    '03 00 00'
-    '04 00 02 0a'
-    '09 00 00'
-    '0a 00 00'
-    '0b 00 00'
-    '05 00 00'
-    '06 00 00'
-)
+@pytest.fixture(scope='module')
+def sections_only_section_fat_bs():
+    return bytes.fromhex(
+        '0b'  # names_count
+        '16'  # names_bytes_count
+        '6200 6300 6600 6700 6b00 6c00 6400 6500 6800 6900 6a00'  # names_bytes
+        '0c'  # blocks_count
+        '00'  # params_count
+        '00'  # params_data
+        '00 00 04 01'  # blocks_count
+        '01 00 00'
+        '02 00 02 05'
+        '07 00 00'
+        '08 00 03 07'
+        '03 00 00'
+        '04 00 02 0a'
+        '09 00 00'
+        '0a 00 00'
+        '0b 00 00'
+        '05 00 00'
+        '06 00 00'
+    )
+
+
+@pytest.fixture
+def iostream():
+    return io.BytesIO()
+
+
+sections_only_section_ = lazy_fixture('sections_only_section')
+sections_only_section_fat_bs_ = lazy_fixture('sections_only_section_fat_bs')
 
 
 @pytest.mark.parametrize(['section', 'bs'], [
-    pytest.param(sections_only_section, sections_only_section_fat_bs, id='sections only section')
+    pytest.param(sections_only_section_, sections_only_section_fat_bs_, id='sections only section')
 ])
-def test_fat(section, bs):
-    stream = BytesIO()
-    serialize_fat(section, stream)
-    assert stream.getvalue() == bs
+def test_fat(section, iostream, bs):
+    serialize_fat(section, iostream)
+    assert iostream.tell() == len(bs)
+    iostream.seek(0)
+    built_bs = iostream.read()
+    assert built_bs == bs
 
-    stream.seek(0)
-    s = compose_fat(stream)
+    iostream.seek(0)
+    s = compose_fat(iostream)
     assert s == section

@@ -130,12 +130,14 @@ def getvalue(val: VT[T], context) -> T:
 
 
 class FileAdapter(ct.Adapter):
-    def __init__(self, subcon, names_or_names_map: t.Union[t.Callable, NamesT, NamesI, NamesMap]):
+    def __init__(self, subcon,
+                 names_or_names_map: VT[t.Union[NamesT, NamesI, NamesMap]],
+                 strings_in_names: VT[bool] = False):
         super().__init__(subcon)
         self.params_data: BytesIO = ...
 
         self.names_or_names_map = names_or_names_map
-        self.strings_in_names: bool = ...
+        self.strings_in_names = strings_in_names
 
     def parse_params_data(self, con: ct.Construct, offset) -> t.Any:
         self.params_data.seek(offset)
@@ -147,11 +149,9 @@ class FileAdapter(ct.Adapter):
         return offset
 
     def _decode(self, obj: ct.Container, context, path) -> Section:
-        names_or_names_map: NamesT = getvalue(self.names_or_names_map, context)
-        self.strings_in_names = isinstance(names_or_names_map, t.Mapping)
+        names = getvalue(self.names_or_names_map, context)
 
         self.params_data = BytesIO(obj.params_data)
-        names = names_or_names_map
         params: Parameters = []
         blocks: Sections = []
         param_offset = 0
@@ -199,18 +199,13 @@ class FileAdapter(ct.Adapter):
         return blocks[0][1]
 
     def _encode(self, obj: Section, context, path) -> ct.Container:
-        names_or_names_map: t.Union[NamesI, NamesMap] = getvalue(self.names_or_names_map, context)
-        self.strings_in_names = isinstance(names_or_names_map, t.Mapping)
+        names_map = getvalue(self.names_or_names_map, context)
+        self.strings_in_names = getvalue(self.strings_in_names, context)
 
         self.params_data = BytesIO()
         params: ParameterInfos = []
         blocks: BlockInfos = []
         block_offset_var = Var(0)
-
-        if isinstance(names_or_names_map, t.OrderedDict):
-            names_map = names_or_names_map
-        else:
-            names_map = OrderedDict((name, i) for i, name in enumerate(names_or_names_map))
 
         values_maps: ValuesMap = dict((cls, OrderedDict())
                                       for cls in (Str, Float12, Float4, Float3, Float2, Int2, Int3, Long))
@@ -298,11 +293,12 @@ def serialize_fat(section: Section, ostream):
     """Дамп секции со встроенными именами в поток.
     Все строковые параметры находятся в своем блоке."""
 
-    names_map = OrderedDict.fromkeys(section.names())
+    names_map = OrderedDict()
+    update_names_map(names_map, section)
     try:
         names = names_map.keys()
         Names.build_stream(names, ostream)
-        FileAdapter(FileStruct, names).build_stream(section, ostream)
+        FileAdapter(FileStruct, names_map).build_stream(section, ostream)
     except (TypeError, ValueError, ct.ConstructError) as e:
         raise SerializeError(str(e))
 
@@ -346,7 +342,7 @@ def serialize_slim(section, names_map: NamesMap, ostream):
 
     add_new_strings(names_map, section)
     try:
-        FileAdapter(SlimFile, names_map).build_stream(section, ostream)
+        FileAdapter(SlimFile, names_map, True).build_stream(section, ostream)
     except (TypeError, ValueError, ct.ConstructError) as e:
         raise SerializeError(str(e))
 
