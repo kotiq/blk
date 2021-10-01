@@ -8,8 +8,8 @@ from .constants import *
 from .error import *
 from .typed_named_tuple import TypedNamedTuple
 
-__all__ = ['serialize_fat', 'serialize_fat_s', 'compose_fat', 'compose_names', 'compose_slim', 'serialize_slim',
-           'update_names_map', 'serialize_names']
+__all__ = ['serialize_fat', 'compose_fat', 'compose_names', 'compose_slim', 'serialize_slim',
+           'serialize_names', 'InvNames']
 
 RawCString = ct.NullTerminated(ct.GreedyBytes).compile()
 
@@ -105,8 +105,8 @@ SlimFile = """"Файл с таблицей имен в другом файле"
 ).compile()
 
 Pair = t.Tuple[Name, Value]
-NamesI = t.Iterable[Name]
-NamesT = t.Sequence[Name]
+NamesIt = t.Iterable[t.Union[Name, Str]]
+NamesSeq = t.Sequence[t.Union[Name, Str]]
 NamesMap = t.OrderedDict[t.Union[Name, Str], int]
 LongValue = t.Union[Str, Float12, Float4, Float3, Float2, Int3, Int2, Long]
 LongValueType = t.Union[t.Type[Str], t.Type[Float12], t.Type[Float4], t.Type[Float3], t.Type[Float2], t.Type[Int3],
@@ -129,14 +129,54 @@ def getvalue(val: VT[T], context) -> T:
     return val(context) if callable(val) else val
 
 
+class InvNames(OrderedDict):
+    """Name => name_id"""
+
+    def __init__(self, names: t.Iterable[t.Union[Name, Str]] = None):
+        super().__init__()
+        if names:
+            for i, name in enumerate(names):
+                self[name] = i
+
+    @classmethod
+    def of(cls, section: Section) -> 'InvNames':
+        inst = InvNames()
+        inst.update_(section)
+        return inst
+
+    def names(self) -> t.Sequence[t.Union[Name, Str]]:
+        return tuple(self.keys())
+
+    def update_(self, section: Section):
+        self.add_names(section)
+        self.add_strings(section)
+
+    def add_names(self, section: Section):
+        for name in section.names():
+            if name not in self:
+                self[name] = len(self)
+
+    def add_strings(self, section: Section):
+        for item in section.bfs_sorted_pairs():
+            value = item[1]
+            if isinstance(value, Str):
+                if value not in self:
+                    self[value] = len(self)
+
+
 class FileAdapter(ct.Adapter):
     def __init__(self, subcon,
-                 names_or_names_map: VT[t.Union[NamesT, NamesI, NamesMap]],
+                 names_or_inv_names: VT[t.Union[NamesSeq, NamesIt, NamesMap]],
                  strings_in_names: VT[bool] = False):
+        """
+        names: int => Name для разбора
+        inv_names: Name => int для построения
+        """
+
         super().__init__(subcon)
         self.params_data: BytesIO = ...
 
-        self.names_or_names_map = names_or_names_map
+        self.names_or_inv_names = names_or_inv_names
         self.strings_in_names = strings_in_names
 
     def parse_params_data(self, con: ct.Construct, offset) -> t.Any:
@@ -149,7 +189,7 @@ class FileAdapter(ct.Adapter):
         return offset
 
     def _decode(self, obj: ct.Container, context, path) -> Section:
-        names = getvalue(self.names_or_names_map, context)
+        names: NamesSeq = getvalue(self.names_or_inv_names, context)
 
         self.params_data = BytesIO(obj.params_data)
         params: Parameters = []
@@ -199,7 +239,7 @@ class FileAdapter(ct.Adapter):
         return blocks[0][1]
 
     def _encode(self, obj: Section, context, path) -> ct.Container:
-        names_map = getvalue(self.names_or_names_map, context)
+        inv_names: NamesMap = getvalue(self.names_or_inv_names, context)
         self.strings_in_names = getvalue(self.strings_in_names, context)
 
         self.params_data = BytesIO()
@@ -220,7 +260,7 @@ class FileAdapter(ct.Adapter):
             self.params_data.write(b'\x00'*pad)
 
         for item in obj.bfs_sorted_pairs():
-            self.build_item(item, names_map, values_maps, params, blocks, block_offset_var)
+            self.build_item(item, inv_names, values_maps, params, blocks, block_offset_var)
 
         return {
             'params_data': self.params_data.getvalue(),
@@ -279,8 +319,13 @@ class FileAdapter(ct.Adapter):
             blocks.append((name_id, params_count, blocks_count, block_offset))
 
 
-def compose_fat(istream) -> Section:
-    """Сборка секции из потока со встроенными именами."""
+def compose_fat(istream: t.BinaryIO) -> Section:
+    """
+    Сборка секции из потока со встроенными именами.
+
+    :param istream: входной поток
+    :return: секция
+    """
 
     try:
         names = Names.parse_stream(istream)
@@ -289,35 +334,32 @@ def compose_fat(istream) -> Section:
         raise ComposeError(e)
 
 
-def serialize_fat(section: Section, ostream):
+def serialize_fat(section: Section, ostream: t.BinaryIO, strings_in_names: bool = False):
     """Дамп секции со встроенными именами в поток.
-    Все строковые параметры находятся в своем блоке."""
 
-    names_map = OrderedDict()
-    update_names_map(names_map, section)
+    :param section: секция
+    :param ostream: выходной поток
+    :param strings_in_names: значения строковых параметров находятся в своем блоке или в блоке имен.
+    :return:
+    """
+
+    inv_names = InvNames.of(section)
     try:
-        names = names_map.keys()
+        names = inv_names.keys()
         Names.build_stream(names, ostream)
-        FileAdapter(FileStruct, names_map).build_stream(section, ostream)
+        FileAdapter(FileStruct, inv_names, strings_in_names).build_stream(section, ostream)
     except (TypeError, ValueError, ct.ConstructError) as e:
         raise SerializeError(str(e))
 
 
-def serialize_fat_s(section: Section, ostream):
-    """Дамп секции со встроенными именами в поток.
-    Все строковые параметры находятся в блоке имен"""
+def compose_slim(names: NamesSeq, istream: t.BinaryIO) -> Section:
+    """
+    Сборка секции из потока. Имена в списке.
 
-    names_map = OrderedDict()
-    update_names_map(names_map, section)
-    try:
-        Names.build_stream(names_map.keys(), ostream)
-        FileAdapter(FileStruct, names_map).build_stream(section, ostream)
-    except (TypeError, ValueError, ct.ConstructError) as e:
-        raise SerializeError(str(e))
-
-
-def compose_slim(names: NamesT, istream) -> Section:
-    """Сборка секции из потока. Имена в списке."""
+    :param names: общие имена или строки
+    :param istream: входной поток
+    :return: секция
+    """
 
     try:
         return FileAdapter(SlimFile, names).parse_stream(istream)
@@ -325,8 +367,13 @@ def compose_slim(names: NamesT, istream) -> Section:
         raise ComposeError(str(e))
 
 
-def compose_names(istream) -> NamesT:
-    """Сборка списка имен из потока."""
+def compose_names(istream: t.BinaryIO) -> NamesSeq:
+    """
+    Сборка списка имен из потока.
+
+    :param istream: входной поток
+    :return: имена или строки
+    """
 
     try:
         return Names.parse_stream(istream)
@@ -334,39 +381,25 @@ def compose_names(istream) -> NamesT:
         raise ComposeError(str(e))
 
 
-def serialize_slim(section, names_map: NamesMap, ostream):
+def serialize_slim(section: Section, inv_names: InvNames, ostream: t.BinaryIO):
     """Сборка секции c именами из отображения в поток.
     Отображение имен может расширяться.
     Все строковые параметры находятся в блоке имен.
+
+    :param section: секция
+    :param inv_names: отображение имя или строка => индекс
+    :param ostream:
+    :return:
     """
 
-    add_new_strings(names_map, section)
+    inv_names.add_strings(section)
     try:
-        FileAdapter(SlimFile, names_map, True).build_stream(section, ostream)
+        FileAdapter(SlimFile, inv_names, True).build_stream(section, ostream)
     except (TypeError, ValueError, ct.ConstructError) as e:
         raise SerializeError(str(e))
 
 
-def add_new_names(names_map: NamesMap, section: Section):
-    for name in section.names():
-        if name not in names_map:
-            names_map[name] = len(names_map)
-
-
-def add_new_strings(names_map: NamesMap, section: Section):
-    for item in section.bfs_sorted_pairs():
-        value = item[1]
-        if isinstance(value, Str):
-            if value not in names_map:
-                names_map[value] = len(names_map)
-
-
-def update_names_map(names_map: NamesMap, section: Section):
-    add_new_names(names_map, section)
-    add_new_strings(names_map, section)
-
-
-def serialize_names(names: NamesT, ostream):
+def serialize_names(names: NamesSeq, ostream):
     """Сборка имен в поток."""
 
     try:

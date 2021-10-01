@@ -1,5 +1,6 @@
 """Только для версии 3."""
 
+from collections import OrderedDict
 import io
 import itertools as itt
 import typing as t
@@ -114,7 +115,7 @@ class NamesMap(dict):
             self[h] = Name.of(uniq_raw_name)
 
 
-class InvNamesMap(dict):
+class InvNamesMap(OrderedDict):
     """Name => name_id"""
 
     def __init__(self, names: t.Iterable[Name], module: int):

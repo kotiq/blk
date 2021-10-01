@@ -1,12 +1,10 @@
 from pathlib import Path
-from collections import OrderedDict
 import io
 import typing as t
 from functools import partial
 import pytest
 from helpers import make_outpath, create_text
-from blk.binary.constructor import (compose_fat, serialize_fat, serialize_fat_s,
-                                    compose_slim, Names, serialize_slim)
+from blk.binary.constructor import (compose_fat, serialize_fat, compose_slim, Names, InvNames, serialize_slim)
 import blk.text as txt
 
 serialize_text = partial(txt.serialize, dialect=txt.StrictDialect)
@@ -33,11 +31,11 @@ def test_compose_fat(currespath: Path, rpath: str, outpath: Path):
         serialize_text(root, ostream)
 
 
-@pytest.mark.parametrize(['serialize_bin', 'rpath'], [
-    pytest.param(serialize_fat, 'game.vromfs.bin_u/gamedata/scenes/tank_compatibility_test_level.blk', id='fat file'),
-    pytest.param(serialize_fat_s, 'game.vromfs.bin_u/config/_net.blk', id='fat_s file')
+@pytest.mark.parametrize(['strings_in_names', 'rpath'], [
+    pytest.param(False, 'game.vromfs.bin_u/gamedata/scenes/tank_compatibility_test_level.blk', id='fat file'),
+    pytest.param(True, 'game.vromfs.bin_u/config/_net.blk', id='fat_s file')
 ])
-def test_serialize_fat(serialize_bin: callable, currespath: Path, rpath: str, outpath: Path, iostream: t.BinaryIO):
+def test_serialize_fat(strings_in_names: bool, currespath: Path, rpath: str, outpath: Path, iostream: t.BinaryIO):
     ipath = currespath / rpath
     opath_text = outpath / Path(rpath).with_suffix('.blkx').name
 
@@ -47,7 +45,7 @@ def test_serialize_fat(serialize_bin: callable, currespath: Path, rpath: str, ou
     with create_text(opath_text) as ostream:
         serialize_text(root, ostream)
 
-    serialize_bin(root, iostream)
+    serialize_fat(root, iostream, strings_in_names)
 
     opath_bin = outpath / Path(rpath).with_suffix('.bin').name
     iostream.seek(0)
@@ -87,13 +85,13 @@ def test_serialize_slim(currespath: Path, outpath: Path, iostream: t.BinaryIO):
     with open(ipath, 'rb') as istream:
         root = compose_slim(names, istream)
 
-    names_map = OrderedDict((name, i) for i, name in enumerate(names))
-    len_before = len(names_map)
-    serialize_slim(root, names_map, iostream)
+    inv_names = InvNames(names)
+    len_before = len(inv_names)
+    serialize_slim(root, inv_names, iostream)
 
     iostream.seek(0)
     opath.write_bytes(iostream.read())
 
     iostream.seek(0)
     assert root == compose_slim(names, iostream)
-    assert len_before == len(names_map)
+    assert len_before == len(inv_names)

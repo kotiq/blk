@@ -46,16 +46,15 @@ def test_pack_slim(outpath: Path, section: Section):
     with create_text(text_path) as ostream:
         txt.serialize(section, ostream, dialect=txt.StrictDialect)
 
-    names_map = OrderedDict()
-    bin.update_names_map(names_map, section)
+    inv_names = bin.InvNames.of(section)
 
     bin_path = outpath / 'simple.bin'
     with open(bin_path, 'wb') as ostream:
-        bin.serialize_slim(section, names_map, ostream)
+        bin.serialize_slim(section, inv_names, ostream)
 
     nm_path = outpath / 'simple_nm.bin'
     with open(nm_path, 'wb') as ostream:
-        names = names_map.keys()
+        names = inv_names.names()
         bin.serialize_names(names, ostream)
 
     with open(nm_path, 'rb') as istream:
