@@ -9,7 +9,7 @@ from .error import *
 from .typed_named_tuple import TypedNamedTuple
 
 __all__ = ['serialize_fat_data', 'compose_fat_data', 'compose_names_data', 'compose_slim_data', 'serialize_slim_data',
-           'serialize_names_data', 'InvNames']
+           'serialize_names_data', 'InvNames', 'compose_fat', 'serialize_fat']
 
 RawCString = ct.NullTerminated(ct.GreedyBytes).compile()
 
@@ -337,7 +337,16 @@ def compose_fat_data(istream: t.BinaryIO) -> Section:
         names = Names.parse_stream(istream)
         return BlockAdapter(BlockCon, names).parse_stream(istream)
     except (TypeError, ValueError, ct.ConstructError) as e:
-        raise ComposeError(e)
+        raise ComposeError(str(e))
+
+
+def compose_fat(istream: t.BinaryIO) -> Section:
+    try:
+        ct.Const(b'\x01').parse_stream(istream)
+    except ct.ConstructError as e:
+        raise ComposeError(str(e))
+
+    return compose_fat_data(istream)
 
 
 def serialize_fat_data(section: Section, ostream: t.BinaryIO, strings_in_names: bool = False):
@@ -355,6 +364,15 @@ def serialize_fat_data(section: Section, ostream: t.BinaryIO, strings_in_names: 
         BlockAdapter(BlockCon, inv_names, strings_in_names).build_stream(section, ostream)
     except (TypeError, ValueError, ct.ConstructError) as e:
         raise SerializeError(str(e))
+
+
+def serialize_fat(section: Section, ostream: t.BinaryIO, strings_in_names: bool = False):
+    try:
+        ct.Const(b'\x01').build_stream(None, ostream)
+    except ct.ConstructError as e:
+        raise SerializeError(str(e))
+
+    serialize_fat_data(section, ostream, strings_in_names)
 
 
 def compose_slim_data(names: NamesSeq, istream: t.BinaryIO) -> Section:
