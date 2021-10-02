@@ -75,12 +75,12 @@ sections_only_section_fat_bs_ = lazy_fixture('sections_only_section_fat_bs')
     pytest.param(sections_only_section_, sections_only_section_fat_bs_, id='sections only section')
 ])
 def test_fat(section, iostream, bs):
-    serialize_fat(section, iostream)
+    serialize_fat_data(section, iostream)
     assert iostream.tell() == len(bs)
     iostream.seek(0)
     built_bs = iostream.read()
     assert built_bs == bs
 
     iostream.seek(0)
-    s = compose_fat(iostream)
+    s = compose_fat_data(iostream)
     assert s == section

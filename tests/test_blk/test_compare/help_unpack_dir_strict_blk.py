@@ -74,7 +74,7 @@ def test_unpack_fat_dir(tmprespath: Path, dir_rpath: str, request):
         out_path = path.with_suffix('.blkx')
         try:
             with open(path, 'rb') as istream:
-                root = bin.compose_fat(istream)
+                root = bin.compose_fat_data(istream)
             with create_text(out_path) as ostream:
                 txt.serialize(root, ostream, dialect=txt.StrictDialect)
             print(f'[ OK ] {path.relative_to(tmprespath)}', file=log)
@@ -100,13 +100,13 @@ def test_unpack_slim_dir(tmprespath: Path, dir_rpath: str, request):
     dir_path = tmprespath / dir_rpath
     names_path = dir_path / 'nm'
     with open(names_path, 'rb') as istream:
-        names = bin.compose_names(istream)
+        names = bin.compose_names_data(istream)
 
     def process_file(path: Path, log):
         out_path = path.with_suffix('.blkx')
         try:
             with open(path, 'rb') as istream:
-                root = bin.compose_slim(names, istream)
+                root = bin.compose_slim_data(names, istream)
             with create_text(out_path) as ostream:
                 txt.serialize(root, ostream, txt.StrictDialect)
             print(f'[ OK ] {path.relative_to(tmprespath)}', file=log)
@@ -131,7 +131,7 @@ def process_file_mp(path: Path, names: t.Sequence[Name], log, tmprespath: Path):
     out_path = path.with_suffix('.blkx')
     try:
         with open(path, 'rb') as istream:
-            root = bin.compose_slim(names, istream)
+            root = bin.compose_slim_data(names, istream)
         with create_text(out_path) as ostream:
             txt.serialize(root, ostream, dialect=txt.StrictDialect)
         ok_msg = f'[ OK ] {path.relative_to(tmprespath)}\n'
@@ -175,7 +175,7 @@ def test_unpack_slim_dir_mp(tmprespath: Path, slim_dir_rpath: str, request, proc
     slim_dir_path = tmprespath / slim_dir_rpath
     names_path = slim_dir_path / 'nm'
     with open(names_path, 'rb') as istream:
-        names = bin.compose_names(istream)
+        names = bin.compose_names_data(istream)
 
     utc = datetime.utcnow()
     log_name = '_'.join([utc.strftime(time_fmt), request.node.name, 'unpack.log'])

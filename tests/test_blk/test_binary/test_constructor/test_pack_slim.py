@@ -50,17 +50,16 @@ def test_pack_slim(outpath: Path, section: Section):
 
     bin_path = outpath / 'simple.bin'
     with open(bin_path, 'wb') as ostream:
-        bin.serialize_slim(section, inv_names, ostream)
+        bin.serialize_slim_data(section, inv_names, ostream)
 
     nm_path = outpath / 'simple_nm.bin'
     with open(nm_path, 'wb') as ostream:
-        names = inv_names.names()
-        bin.serialize_names(names, ostream)
+        bin.serialize_names_data(inv_names, ostream)
 
     with open(nm_path, 'rb') as istream:
-        names = bin.compose_names(istream)
+        names = bin.compose_names_data(istream)
 
     with open(bin_path, 'rb') as istream:
-        root = bin.compose_slim(names, istream)
+        root = bin.compose_slim_data(names, istream)
 
     assert root == section

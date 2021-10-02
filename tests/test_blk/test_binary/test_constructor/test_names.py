@@ -5,7 +5,7 @@ import io
 import typing as t
 import pytest
 from blk.types import Name
-from blk.binary.constructor import Names
+from blk.binary.constructor import Names, InvNames
 
 
 @pytest.fixture(scope='module')
@@ -64,6 +64,11 @@ def names():
         b'background_model.bullets:list<t>')))
 
 
+@pytest.fixture(scope='module')
+def inv_names(names):
+    return InvNames(names)
+
+
 @pytest.fixture
 def istream(names_bs):
     return io.BytesIO(names_bs)
@@ -80,8 +85,8 @@ def test_parse(istream: io.BufferedIOBase, names: t.Sequence[Name], names_bs: by
     assert list(parsed_names) == list(names)
 
 
-def test_build(iostream: io.BufferedIOBase, names: t.Sequence[Name], names_bs: bytes):
-    Names.build_stream(names, iostream)
+def test_build(iostream: io.BufferedIOBase, inv_names: t.Mapping[Name, int], names_bs: bytes):
+    Names.build_stream(inv_names, iostream)
     iostream.seek(0)
     built_bs = iostream.read()
     assert built_bs == names_bs

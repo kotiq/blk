@@ -81,10 +81,10 @@ def process_file(file_path: Path, names: t.Optional[t.Sequence], out_type: int, 
                     if nm_path:
                         logging.info(f'Loading NameMap from {nm_path!r}')
                         with open(nm_path, 'rb') as nm_istream:
-                            names = bin.compose_names(nm_istream)
+                            names = bin.compose_names_data(nm_istream)
                 if names:
                     istream.seek(0)
-                    root = bin.compose_slim(names, istream)
+                    root = bin.compose_slim_data(names, istream)
                     with create_text(out_path) as ostream:
                         serialize_text(root, ostream, out_type, is_sorted)
                 else:  # не найдена таблица имен
@@ -93,7 +93,7 @@ def process_file(file_path: Path, names: t.Optional[t.Sequence], out_type: int, 
             else:
                 istream.seek(0)
                 try:
-                    root = bin.compose_fat(istream)
+                    root = bin.compose_fat_data(istream)
                     with create_text(out_path) as ostream:
                         serialize_text(root, ostream, out_type, is_sorted)
                 except bin.ComposeError:  # текст
@@ -125,7 +125,7 @@ def process_dir(dir_path: Path, out_type: int, is_sorted: bool, pool: mp.Pool):
             try:
                 logging.info(f'Loading NameMap from {path!r}')
                 with open(path, 'rb') as nm_istream:
-                    names = bin.compose_names(nm_istream)
+                    names = bin.compose_names_data(nm_istream)
 
                 with mp.Pool(None) as pool:
                     file_paths = file_paths_r(dir_path)

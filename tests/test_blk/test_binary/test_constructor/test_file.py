@@ -4,7 +4,7 @@ import typing as t
 from functools import partial
 import pytest
 from helpers import make_outpath, create_text
-from blk.binary.constructor import (compose_fat, serialize_fat, compose_slim, Names, InvNames, serialize_slim)
+from blk.binary.constructor import (compose_fat_data, serialize_fat_data, compose_slim_data, Names, InvNames, serialize_slim_data)
 import blk.text as txt
 
 serialize_text = partial(txt.serialize, dialect=txt.StrictDialect)
@@ -25,7 +25,7 @@ def test_compose_fat(currespath: Path, rpath: str, outpath: Path):
     opath = outpath / Path(rpath).with_suffix('.blkx').name
 
     with open(ipath, 'rb') as istream:
-        root = compose_fat(istream)
+        root = compose_fat_data(istream)
 
     with create_text(opath) as ostream:
         serialize_text(root, ostream)
@@ -40,19 +40,19 @@ def test_serialize_fat(strings_in_names: bool, currespath: Path, rpath: str, out
     opath_text = outpath / Path(rpath).with_suffix('.blkx').name
 
     with open(ipath, 'rb') as istream:
-        root = compose_fat(istream)
+        root = compose_fat_data(istream)
 
     with create_text(opath_text) as ostream:
         serialize_text(root, ostream)
 
-    serialize_fat(root, iostream, strings_in_names)
+    serialize_fat_data(root, iostream, strings_in_names)
 
     opath_bin = outpath / Path(rpath).with_suffix('.bin').name
     iostream.seek(0)
     opath_bin.write_bytes(iostream.read())
 
     iostream.seek(0)
-    assert root == compose_fat(iostream)
+    assert root == compose_fat_data(iostream)
 
 
 def test_compose_slim(currespath: Path, outpath: Path):
@@ -66,7 +66,7 @@ def test_compose_slim(currespath: Path, outpath: Path):
         names = Names.parse_stream(istream)
 
     with open(ipath, 'rb') as istream:
-        root = compose_slim(names, istream)
+        root = compose_slim_data(names, istream)
 
     with create_text(opath) as ostream:
         serialize_text(root, ostream)
@@ -83,15 +83,15 @@ def test_serialize_slim(currespath: Path, outpath: Path, iostream: t.BinaryIO):
         names = Names.parse_stream(istream)
 
     with open(ipath, 'rb') as istream:
-        root = compose_slim(names, istream)
+        root = compose_slim_data(names, istream)
 
     inv_names = InvNames(names)
     len_before = len(inv_names)
-    serialize_slim(root, inv_names, iostream)
+    serialize_slim_data(root, inv_names, iostream)
 
     iostream.seek(0)
     opath.write_bytes(iostream.read())
 
     iostream.seek(0)
-    assert root == compose_slim(names, iostream)
+    assert root == compose_slim_data(names, iostream)
     assert len_before == len(inv_names)
