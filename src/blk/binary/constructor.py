@@ -9,7 +9,7 @@ from .error import *
 from .typed_named_tuple import TypedNamedTuple
 
 __all__ = ['serialize_fat_data', 'compose_fat_data', 'compose_names_data', 'compose_slim_data', 'serialize_slim_data',
-           'serialize_names_data', 'InvNames', 'compose_fat', 'serialize_fat']
+           'serialize_names_data', 'InvNames', 'compose_fat', 'serialize_fat', 'Fat']
 
 RawCString = ct.NullTerminated(ct.GreedyBytes).compile()
 
@@ -64,14 +64,15 @@ class InvNames(OrderedDict):
                 self[name] = i
 
     @classmethod
-    def of(cls, section: Section) -> 'InvNames':
+    def of(cls, section: Section, include_strings: bool = True) -> 'InvNames':
         inst = InvNames()
-        inst.update_(section)
+        inst.update_(section, include_strings)
         return inst
 
-    def update_(self, section: Section):
+    def update_(self, section: Section, include_strings: bool):
         self.add_names(section)
-        self.add_strings(section)
+        if include_strings:
+            self.add_strings(section)
 
     def add_names(self, section: Section):
         for name in section.names():
@@ -185,6 +186,7 @@ class BlockAdapter(ct.Adapter):
 
         self.names_or_inv_names = names_or_inv_names
         self.strings_in_names = strings_in_names
+        self._strings_in_names: bool = ...
         self.external_names = external_names
 
     def parse_params_data(self, con: ct.Construct, offset) -> t.Any:
@@ -248,10 +250,10 @@ class BlockAdapter(ct.Adapter):
 
     def _encode(self, obj: Section, context, path) -> ct.Container:
         inv_names: InvNames = getvalue(self.names_or_inv_names, context)
-        self.strings_in_names = getvalue(self.strings_in_names, context)
+        self._strings_in_names = getvalue(self.strings_in_names, context)
         external_names = getvalue(self.external_names, context)
         if external_names:
-            inv_names.update_(obj)
+            inv_names.update_(obj, include_strings=True)
 
         self.params_data = BytesIO()
         params: ParameterInfos = []
@@ -262,7 +264,7 @@ class BlockAdapter(ct.Adapter):
                                       for cls in (Str, Float12, Float4, Float3, Float2, Int2, Int3, Long))
         """value -> offset"""
 
-        if not self.strings_in_names:
+        if not self._strings_in_names:
             map_ = values_maps[Str]
             for _, value in obj.bfs_sorted_pairs():
                 if isinstance(value, Str) and (value not in map_):
@@ -291,7 +293,7 @@ class BlockAdapter(ct.Adapter):
             code = types_codes_map[cls]
 
             if cls is Str:
-                if self.strings_in_names:
+                if self._strings_in_names:
                     map_ = inv_names
                     tag = 1
                 else:
@@ -323,6 +325,14 @@ class BlockAdapter(ct.Adapter):
                 block_offset = block_offset_var.value
                 block_offset_var.value += blocks_count
             blocks.append((name_id, params_count, blocks_count, block_offset))
+
+
+Fat = ct.FocusedSeq(
+    'block',
+    'header' / ct.Const(1, ct.Byte),
+    'names' / ct.Rebuild(Names, lambda ctx: InvNames.of(ctx.block, ctx._params.strings_in_names)),
+    'block' / BlockAdapter(BlockCon, this.names, lambda ctx: ctx._params.strings_in_names),
+)
 
 
 def compose_fat_data(istream: t.BinaryIO) -> Section:
@@ -358,7 +368,7 @@ def serialize_fat_data(section: Section, ostream: t.BinaryIO, strings_in_names: 
     :return:
     """
 
-    inv_names = InvNames.of(section)
+    inv_names = InvNames.of(section, strings_in_names)
     try:
         Names.build_stream(inv_names, ostream)
         BlockAdapter(BlockCon, inv_names, strings_in_names).build_stream(section, ostream)
