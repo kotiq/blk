@@ -1,7 +1,7 @@
 import io
 import pytest
 from blk.types import *
-from blk.binary.constructor import *
+from blk.binary.constructor import InvNames
 
 
 @pytest.fixture(scope='module')
@@ -191,16 +191,54 @@ def all_params_fat_s_data_bs():
         '040000 01 0e000080'  # 4  ('str', Str, #0xe~'hello')
         '050000 09 01000000'
         '060000 0a 03020104'
-        '0c0000030000a03f'
-        '0800000718000000'
-        '0d00000520000000'
-        '080000072c000000'
-        '0900000434000000'
-        '0a00000b3c000000'
+        '0c0000 03 0000a03f'
+        '080000 07 18000000'
+        '0d0000 05 20000000'
+        '080000 07 2c000000'
+        '090000 04 34000000'
+        '0a0000 0b 3c000000'
         # blocks        
         '00 03 02 01'
         '04 03 01 03'
         '0c 03 00'
+        '08 03 00'
+    )
+
+
+@pytest.fixture(scope='module')
+def all_params_slim_data_bs():
+    return bytes.fromhex(
+        # external names
+        '00'
+        # block
+        '04'
+        '0C'
+        # params_data
+        '6C'
+        '0000A03F 00002040 0000A040 00002041'  # 00
+        '40000000 00000000 01000000 02000000'  # 10
+        '0000A03F 00002040 0000A040 03000000'  # 20
+        '04000000 0000A03F 00002040 0000803F'  # 30
+        '00000000 00000000 00000000 0000803F'  # 40
+        '00000000 00000000 00000000 0000803F'  # 50
+        '0000A03F 00002040 0000A040'           # 60
+        # params
+        '000000 06 00000000'
+        '010000 02 2A000000'
+        '020000 0C 10000000'
+        '040000 01 0E000080'
+        '050000 09 01000000'
+        '060000 0A 03020104'
+        '0C0000 03 0000A03F'
+        '080000 07 18000000'
+        '0D0000 05 20000000'
+        '080000 07 2C000000'
+        '090000 04 34000000'
+        '0A0000 0B 3C000000'
+        # blocks
+        '00 03 02 01'
+        '04 03 01 03'
+        '0C 03 00'
         '08 03 00'
     )
 
@@ -213,6 +251,29 @@ def all_params_fat_bs(all_params_fat_data_bs):
 @pytest.fixture(scope='module')
 def all_params_fat_s_bs(all_params_fat_s_data_bs):
     return b'\x01' + all_params_fat_s_data_bs
+
+
+@pytest.fixture(scope='module')
+def all_params_names_seq():
+    return [Name(t) for t in (
+        'vec4f', 'int', 'long', 'alpha', 'str', 'bool', 'color', 'gamma', 'vec2i', 'vec2f', 'transform', 'beta',
+        'float', 'vec3f', 'hello'
+    )]
+
+
+@pytest.fixture(scope='module')
+def all_params_inv_names(all_params_names_seq):
+    return InvNames(all_params_names_seq)
+
+
+@pytest.fixture
+def empty_inv_names():
+    return InvNames()
+
+
+@pytest.fixture(scope='module')
+def all_params_slim_bs(all_params_slim_data_bs):
+    return b'\x03' + all_params_slim_data_bs
 
 
 @pytest.fixture
@@ -238,6 +299,16 @@ def all_params_fat_istream(all_params_fat_bs):
 @pytest.fixture
 def all_params_fat_s_istream(all_params_fat_s_bs):
     return io.BytesIO(all_params_fat_s_bs)
+
+
+@pytest.fixture
+def all_params_slim_data_istream(all_params_slim_data_bs):
+    return io.BytesIO(all_params_slim_data_bs)
+
+
+@pytest.fixture
+def all_params_slim_istream(all_params_slim_bs):
+    return io.BytesIO(all_params_slim_bs)
 
 
 @pytest.fixture

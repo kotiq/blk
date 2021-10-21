@@ -334,6 +334,13 @@ Fat = ct.FocusedSeq(
     'block' / BlockAdapter(BlockCon, this.names, lambda ctx: ctx._params.strings_in_names),
 )
 
+Slim = ct.FocusedSeq(
+    'block',
+    'header' / ct.Const(3, ct.Byte),
+    'names' / ct.Rebuild(Names, {}),
+    'block' / BlockAdapter(BlockCon, lambda ctx: ctx._params.names_or_inv_names, True, True),
+)
+
 
 def compose_fat_data(istream: t.BinaryIO) -> Section:
     """

@@ -1,10 +1,6 @@
-import io
-import sys
 import pytest
 from pytest_lazyfixture import lazy_fixture
-from blk.types import *
 from blk.binary.constructor import compose_fat_data, serialize_fat_data, Fat
-from blk.text.serializer import serialize
 
 
 sections_only = lazy_fixture('sections_only')
