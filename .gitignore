@@ -141,3 +141,6 @@ cython_debug/
 
 .idea/
 /blk.iml
+
+# setuptools_scm version
+src/blk/_version.py
