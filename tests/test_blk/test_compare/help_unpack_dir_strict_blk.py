@@ -1,9 +1,7 @@
 import os
 from pathlib import Path
 from contextlib import contextmanager
-import shutil
 import multiprocessing as mp
-import itertools as itt
 from functools import partial
 from datetime import datetime
 import typing as t
@@ -11,11 +9,11 @@ import pytest
 import blk.binary as bin
 from blk.binary.constructor import Name
 import blk.text as txt
-from helpers import make_tmppath, create_text
-from . import pass_dir_nm_blk, is_nm_blk, clean_tree
+from helpers import create_text
+from . import fat_dir_rpaths, slim_dir_rpaths, bbf_dir_rpaths
 
 
-def is_fat_blk(path: Path) -> bool:
+def is_not_empty_blk(path: Path) -> bool:
     if not path.is_file():
         return False
     if path.suffix != '.blk':
@@ -26,44 +24,60 @@ def is_fat_blk(path: Path) -> bool:
 
 
 def is_slim_blk(path: Path) -> bool:
-    if not is_fat_blk(path):
+    if not is_not_empty_blk(path):
         return False
     try:
         with open(path, 'rb') as file:
             bs = file.read(4)
-            return not bs[0] and bs[1:4] != b'BBF\x03'
     except EnvironmentError:
         return False
+    else:
+        return not bs[0] and bs[1:4] != b'BBF'
+
+
+def is_bbf_blk(path: Path) -> bool:
+    if not is_not_empty_blk(path):
+        return False
+    try:
+        with open(path, 'rb') as file:
+            bs = file.read(4)
+    except EnvironmentError:
+        return False
+    else:
+        return bs == b'\x00BBF'
 
 
 time_fmt = '%d%m%y_%H%M%S'
 
-tmppath = make_tmppath(__name__)
 
+@pytest.mark.parametrize('dir_rpath', bbf_dir_rpaths)
+def test_unpack_bbf_dir(bbf_tmprespath: Path, dir_rpath: str, request):
+    tmprespath = bbf_tmprespath
+    dir_path = tmprespath / dir_rpath
 
-fat_dir_rpaths = [
-    'game.vromfs.bin_u',
-]
+    def process_file(path: Path, log):
+        out_path = path.with_suffix('.blkx')
+        try:
+            with open(path, 'rb') as istream:
+                root = bin.compose_bbf(istream)
+            with create_text(out_path) as ostream:
+                txt.serialize(root, ostream, dialect=txt.StrictDialect)
+            print(f'[ OK ] {path.relative_to(tmprespath)}', file=log)
+        except Exception as e:
+            print(f'[FAIL] {path.relative_to(tmprespath)}: {e}', file=log)
 
-slim_dir_rpaths = [
-    'aces.vromfs.bin_u',
-]
+    def process_dir(path: Path, log):
+        for p in path.iterdir():
+            if p.is_dir():
+                process_dir(p, log)
+            elif is_bbf_blk(p):
+                process_file(p, log)
 
-
-# todo: разделить фикстуры
-@pytest.fixture(scope='module')
-def tmprespath(currespath: Path, tmppath: Path):
-    dst_paths = []
-    for dir_rpath in itt.chain(fat_dir_rpaths, slim_dir_rpaths):
-        src = currespath / dir_rpath
-        dst = tmppath / dir_rpath
-        shutil.copytree(src, dst, ignore=pass_dir_nm_blk)
-        dst_paths.append(dst)
-
-    yield tmppath
-
-    for dst in dst_paths:
-        clean_tree(dst, is_nm_blk)
+    utc = datetime.utcnow()
+    log_name = '_'.join([utc.strftime(time_fmt), request.node.name, 'unpack.log'])
+    log_path = dir_path / log_name
+    with open(log_path, 'a') as log:
+        process_dir(dir_path, log)
 
 
 @pytest.mark.parametrize('dir_rpath', fat_dir_rpaths)
@@ -85,7 +99,7 @@ def test_unpack_fat_dir(tmprespath: Path, dir_rpath: str, request):
         for p in path.iterdir():
             if p.is_dir():
                 process_dir(p, log)
-            elif is_fat_blk(p):
+            elif is_not_empty_blk(p):
                 process_file(p, log)
 
     utc = datetime.utcnow()

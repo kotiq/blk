@@ -13,7 +13,7 @@ from .constructor import getvalue, VT
 from .error import *
 from .typed_named_tuple import TypedNamedTuple
 
-__all__ = ['compose_bbf', 'compoze_bbf_zlib', 'serialize_bbf', 'serialize_bbf_zlib']
+__all__ = ['compose_bbf', 'compose_bbf_zlib', 'serialize_bbf', 'serialize_bbf_zlib']
 
 
 class Version(ct.SymmetricAdapter):
@@ -399,7 +399,7 @@ def serialize_bbf(section: Section, ostream: t.BinaryIO, version: t.Tuple[int, i
         raise SerializeError(str(e))
 
 
-def compoze_bbf_zlib(istream: t.BinaryIO) -> Section:
+def compose_bbf_zlib(istream: t.BinaryIO) -> Section:
     """Сборка секции из сжатого потока."""
 
     try:

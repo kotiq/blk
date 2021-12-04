@@ -1,15 +1,12 @@
-import os
 from pathlib import Path
 import subprocess
 from subprocess import DEVNULL
 import platform
 import time
 import json
-import shutil
 import pytest
 import demo
 from helpers import make_tmppath, make_outpath
-from test_blk.test_compare import pass_dir_nm_blk, is_nm_blk, clean_tree
 
 demo_prefix = Path(demo.__path__[0])
 tmppath = make_tmppath(__name__)
@@ -20,21 +17,6 @@ dir_rpaths = [
     'aces.vromfs.bin_u',
     'aces.vromfs.bin_u_old',
 ]
-
-
-@pytest.fixture(scope='module')
-def tmprespath(currespath: Path, tmppath: Path):
-    dst_paths = []
-    for dir_rpath in dir_rpaths:
-        src = currespath / dir_rpath
-        dst = tmppath / dir_rpath
-        shutil.copytree(src, dst, ignore=pass_dir_nm_blk)
-        dst_paths.append(dst)
-
-    yield tmppath
-
-    for dst in dst_paths:
-        clean_tree(dst, is_nm_blk)
 
 
 @pytest.fixture(scope='module')
@@ -62,6 +44,7 @@ def log_unpack_call(time_log):
     time_log.flush()
 
 
+@pytest.mark.skip("Перенести в wt-tools")
 @pytest.mark.parametrize('rpath', dir_rpaths)
 @pytest.mark.parametrize('runpacker', [
     'blk_unpack_demo.py',
