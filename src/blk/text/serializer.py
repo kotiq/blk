@@ -28,6 +28,7 @@ def quoted_text(inst, quote):
 
 
 quoteless_name = re.compile(r"^[\w.\-]+$")
+newline = re.compile(r'\r\n|\r|\n')
 
 
 def dq_str_text(x):
@@ -195,8 +196,9 @@ class Serializer:
         return m_text(map(r_text, ts))
 
     def serialize_pairs(self, pairs, stream):
-        for name, value in pairs:
-            is_section = isinstance(value, Section)
+        for p in pairs:
+            name, value = p
+            is_section = isinstance(value, (Section, RawSection))
 
             if self.fst:
                 self.fst = False
@@ -207,22 +209,38 @@ class Serializer:
                         stream.write(self.sec_opener)
 
             self.indent()
-            stream.write(self.name_text(name))
-            if is_section:
-                if self.name_opener_sep:
-                    stream.write(self.name_opener_sep)
-                stream.write('{')
-                self.level += 1
-                self.serialize_pairs(value.pairs(), stream)  # @r
-                self.level -= 1
-                stream.write('\n')
-                self.indent()
-                stream.write('}')
+
+            if isinstance(p, Pre):
+                if isinstance(p, Include):
+                    stream.write(f'include {self.name_text(value)}')
+                elif isinstance(p, LineComment):
+                    stream.write(f'// {value}')
+                elif isinstance(p, BlockComment):
+                    stream.write('/*')
+                    for i, line in enumerate(newline.split(value)):
+                        stream.write('\n')
+                        self.indent()
+                        stream.write(line)
+                    stream.write('\n')
+                    self.indent()
+                    stream.write('*/')
             else:
-                type_ = value.__class__
-                value_text = self.types_text_map[type_](value)
-                tag = types_tags_map[type_]
-                stream.write(f'{self.name_type_sep}{tag}{self.type_value_sep}{value_text}')
+                stream.write(self.name_text(name))
+                if is_section:
+                    if self.name_opener_sep:
+                        stream.write(self.name_opener_sep)
+                    stream.write('{')
+                    self.level += 1
+                    self.serialize_pairs(value.pairs(), stream)  # @r
+                    self.level -= 1
+                    stream.write('\n')
+                    self.indent()
+                    stream.write('}')
+                else:
+                    type_ = value.__class__
+                    value_text = self.types_text_map[type_](value)
+                    tag = types_tags_map[type_]
+                    stream.write(f'{self.name_type_sep}{tag}{self.type_value_sep}{value_text}')
 
 
 def serialize(root, stream, dialect=DefaultDialect, check_cycle=False):

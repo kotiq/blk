@@ -6,7 +6,8 @@ from math import isfinite, isclose
 
 __all__ = ['Value', 'Parameter', 'Vector', 'Bool', 'true', 'false', 'Str', 'Float', 'Float2', 'Float3', 'Float4',
            'Name', 'Section', 'Int', 'Long', 'UByte', 'Int2', 'Int3', 'Color', 'Float2', 'Float3', 'Float4', 'Float12',
-           'EncodedStr', 'Var', 'method', 'dgen_float', 'dgen_float_element', 'CycleError', 'Size']
+           'EncodedStr', 'Var', 'method', 'dgen_float', 'dgen_float_element', 'CycleError', 'Size', 'Include',
+           'LineComment', 'BlockComment', 'Comment', 'Command', 'Pre', 'Post', 'RawSection', 'Override', 'CloneLast']
 
 
 class CycleError(Exception):
@@ -315,7 +316,7 @@ class Section(OrderedDict, Value):
 
         self.append(name, value)
 
-    def getf(self, name: Name, default=None) -> t.Optional[Value]:
+    def get_first(self, name: Name, default=None) -> t.Optional[Value]:
         """Первое значение в мультизначении по имени."""
 
         try:
@@ -437,3 +438,229 @@ class Section(OrderedDict, Value):
 
     def __repr__(self):
         return f'{self.__class__.__name__}([{", ".join(map(repr, self.items()))}])'
+
+
+class Item(t.NamedTuple):
+    name: Name
+    value: Value
+
+
+class Command(Item):
+    prefix = "@"
+    sep = ':'
+
+
+class Pre:
+    pass
+
+
+class Post:
+    pass
+
+
+class Include(Command, Pre):
+    """
+    include text
+    """
+
+    name = Name(Command.prefix + 'include')
+
+    def __new__(cls, value: str):
+        value = Str(value)
+        return super().__new__(cls, cls.name, value)
+
+    @classmethod
+    def like(cls, name: Name, value: Value) -> bool:
+        return name == cls.name and isinstance(value, Str)
+
+    @property
+    def path(self):
+        return self.value
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({str.__repr__(self.value)})'
+
+
+class Comment(Command, Pre):
+    prefix = Command.prefix + 'comment'
+
+    def __new__(cls, value: str):
+        value = Str(value)
+        return super().__new__(cls, cls.name, value)
+
+    @property
+    def text(self):
+        return self.value
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({str.__repr__(self.value)})'
+
+
+class LineComment(Comment):
+    """
+    // text
+    """
+
+    name = Name(Comment.prefix + 'CPP')
+
+    @staticmethod
+    def _check(text: str):
+        if '\n' in text or '\r' in text:
+            raise ValueError('Однострочный комментарий содержит перенос строки: {}'.format(text))
+
+    @classmethod
+    def of(cls, text: str):
+        cls._check(text)
+        return cls(text)
+
+    @classmethod
+    def like(cls, name: Name, value: Value) -> bool:
+        if name == cls.name and isinstance(value, Str):
+            try:
+                cls._check(value)
+            except ValueError:
+                return False
+            else:
+                return True
+        return False
+
+
+class BlockComment(Comment):
+    """
+    /*
+    text
+    */
+    """
+
+    name = Name(Comment.prefix + 'C')
+
+    @classmethod
+    def like(cls, name: Name, value: Value) -> bool:
+        return name == cls.name and isinstance(value, Str)
+
+
+# todo: при добавлении в секцию предупреждать в случае отсутствия include и target выше
+class Targeted(Command, Post):
+    def __new__(cls, name: str, value: Value):
+        name = Name(cls.prefix + name)
+        return super().__new__(cls, name, value)
+
+    @classmethod
+    def like(cls, name: Name, value: Value) -> bool:
+        return name.startswith(cls.prefix) and name[len(cls.prefix):] and isinstance(value, Value)
+
+    @property
+    def target(self) -> Name:
+        return Name(self.name[len(self.prefix):])
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({str.__repr__(self.target)}, {self.value!r})'
+
+
+class Override(Targeted):
+    """
+    Перегрузка первого значения.
+    """
+
+    prefix = Command.prefix + 'override' + Command.sep
+
+
+class CloneLast(Targeted):
+    """
+    Копия последней пары.
+    """
+
+    prefix = Command.prefix + 'clone-last' + Command.sep
+
+
+class RawSection(list, Value):
+    """
+    Представление текста без учета разделителей пар. Пары с сохранением порядка.
+    """
+
+    def append(self, name_or_command: t.Union[Name, Command], value: t.Optional[Value] = None):
+        if value is None:
+            item = name_or_command
+        else:
+            name = name_or_command
+            item = Item(name, value)
+
+        super().append(item)
+
+    def add(self, name_or_command: t.Union[str, Command], value: t.Optional[Value] = None):
+        """
+        Добавление пары в секцию.
+        """
+
+        if isinstance(name_or_command, str) and value is not None:
+            name = name_or_command
+            if not isinstance(name, EncodedStr):
+                name = Name.of(name)
+            elif isinstance(name, Str):
+                name = Name(name)
+            self.append(name, value)
+        elif isinstance(name_or_command, Command) and value is None:
+            command = name_or_command
+            self.append(command)
+        else:
+            raise ValueError('Недопустимая комбинация аргументов: {}, {}'.format(name_or_command, value))
+
+    def pairs(self) -> t.Iterable[Pair]:
+        return iter(self)
+
+    def getindex(self, p: t.Callable[[Item], bool]) -> int:
+        """
+        Индекс первой пары, для которой выполняется предикат.
+
+        :param p: предикат
+        :return: индекс
+        """
+
+        for i, item in enumerate(self):
+            if p(item):
+                return i
+        raise ValueError('Нет пар, удовлетворяющих предикату: {}'.format(p))
+
+    def getindexes(self, p: t.Callable[[Item], bool]) -> t.Sequence[int]:
+        return tuple(i for i, item in enumerate(self) if p(item))
+
+    # здесь желателен двусвязный список, чтобы быстро перемещаться назад
+    # def getlastindex(self, p: t.Callable[[Item], bool], index: int):
+    #     j = None
+    #     for i, item in enumerate(self):
+    #         if i == index:
+    #             break
+    #         if p(item):
+    #             j = i
+    #     if j is not None:
+    #         return j
+    #     raise ValueError('Нет пар с индексом до {1}, удовлетворяющих предикату: {0}'.format(p, index))
+
+    def getitem(self, p: t.Callable[[Item], bool]) -> int:
+        for item in self:
+            if p(item):
+                return item
+        raise ValueError('Нет пар, удовлетворяющих предикату: {}'.format(p))
+
+    def getitems(self, p: t.Callable[[Item], bool]) -> t.Sequence[Item]:
+        return tuple(filter(p, self))
+
+    def setitem(self, p: t.Callable[[Item], bool], item: Item):
+        i = self.getindex(p)
+        super().__setitem__(i, item)
+
+    def __call__(self) -> Section:
+        """
+        Выполнение команд, удаление комментариев.
+        """
+
+        raise NotImplementedError
+
+    def check_cycle(self):
+        """
+        Проверка секции на цикл.
+
+        :raises CycleError: найден цикл
+        """
+
+        raise NotImplementedError

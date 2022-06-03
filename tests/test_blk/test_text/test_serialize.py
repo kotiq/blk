@@ -1,13 +1,7 @@
-import io
 import pytest
 from pytest_lazyfixture import lazy_fixture
 from blk.types import CycleError
 import blk.text as txt
-
-
-@pytest.fixture()
-def ostream():
-    return io.StringIO()
 
 
 mixed_section = lazy_fixture('mixed_section')
@@ -51,9 +45,5 @@ section_with_cycle_deep = lazy_fixture('section_with_cycle_deep')
 ])
 def test_serialize_section_with_cycle(section, ostream, check_cycle):
     dialect = txt.DefaultDialect
-    if check_cycle:
-        with pytest.raises(CycleError):
-            txt.serialize(section, ostream, dialect, check_cycle)
-    else:
-        with pytest.raises(RecursionError):
-            txt.serialize(section, ostream, dialect, check_cycle)
+    with pytest.raises(CycleError if check_cycle else RecursionError):
+        txt.serialize(section, ostream, dialect, check_cycle)

@@ -1,5 +1,7 @@
+import io
 import textwrap
 import pytest
+from blk.types import RawSection, Include, LineComment, BlockComment, Str, Int
 
 
 @pytest.fixture(scope='session')
@@ -109,3 +111,54 @@ def text_section_with_same_id_sub_deep_default():
     """
     return textwrap.dedent(text)
 
+
+@pytest.fixture(scope='module')
+def section_single_level():
+    root = RawSection()
+    root.add(Include('relative/path'))
+    root.add(LineComment('line comment'))
+    root.add(BlockComment('block\ncomment'))
+    return root
+
+
+@pytest.fixture(scope='module')
+def section_multi_level():
+    root = RawSection()
+    root.add('scalar', Int(42))
+    sub = RawSection()
+    sub.add('scalar', Int(42))
+    sub.add(Include('relative/path'))
+    sub.add('scalar', Int(42))
+    root.add('sub', sub)
+    return root
+
+
+@pytest.fixture(scope='module')
+def text_single_level_default():
+    text = """\
+    include "relative/path"
+    // line comment
+    /*
+    block
+    comment
+    */
+    """
+    return textwrap.dedent(text)
+
+
+@pytest.fixture(scope='module')
+def text_multi_level_default():
+    text = """\
+    "scalar":i = 42
+    "sub" {
+      "scalar":i = 42
+      include "relative/path"
+      "scalar":i = 42
+    }
+    """
+    return textwrap.dedent(text)
+
+
+@pytest.fixture()
+def ostream():
+    return io.StringIO()
