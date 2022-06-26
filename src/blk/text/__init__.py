@@ -1,5 +1,10 @@
 from .constants import STRICT_BLK
-from .dialect import *
+from .dialect import DefaultDialect, StrictDialect
 from .serializer import serialize
 
-__all__ = ['serialize', 'DefaultDialect', 'StrictDialect', 'STRICT_BLK']
+__all__ = [
+    'DefaultDialect',
+    'StrictDialect',
+    'STRICT_BLK',
+    'serialize'
+]

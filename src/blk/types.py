@@ -1,13 +1,54 @@
-import typing as t
+import abc
+# import typing as t
+from typing import Any, Callable, Generator, Iterable, NamedTuple, Optional, Sequence, Set, Tuple, Type, Union, overload
 from ctypes import c_float
 from collections import OrderedDict, deque
 from math import isfinite, isclose
 
 
-__all__ = ['Value', 'Parameter', 'Vector', 'Bool', 'true', 'false', 'Str', 'Float', 'Float2', 'Float3', 'Float4',
-           'Name', 'Section', 'Int', 'Long', 'UByte', 'Int2', 'Int3', 'Color', 'Float2', 'Float3', 'Float4', 'Float12',
-           'EncodedStr', 'Var', 'method', 'dgen_float', 'dgen_float_element', 'CycleError', 'Size', 'Include',
-           'LineComment', 'BlockComment', 'Comment', 'Command', 'Pre', 'Post', 'RawSection', 'Override', 'CloneLast']
+__all__ = [
+    'BlockComment',
+    'Bool',
+    'CloneLast',
+    'Color',
+    'Command',
+    'Comment',
+    'CycleError',
+    'DictSection',
+    'EncodedStr',
+    'Float',
+    'Float12',
+    'Float2',
+    'Float2',
+    'Float3',
+    'Float3',
+    'Float4',
+    'Float4',
+    'Include',
+    'Int',
+    'Int2',
+    'Int3',
+    'LineComment',
+    'ListSection',
+    'Long',
+    'Name',
+    'Override',
+    'Parameter',
+    'Post',
+    'Pre',
+    'Section',
+    'Size',
+    'Str',
+    'UByte',
+    'Value',
+    'Var',
+    'Vector',
+    'dgen_float',
+    'dgen_float_element',
+    'false',
+    'method',
+    'true'
+]
 
 
 class CycleError(Exception):
@@ -17,26 +58,26 @@ class CycleError(Exception):
 class Var:
     __slots__ = ('value', )
 
-    def __init__(self, init):
+    def __init__(self, init) -> None:
         self.value = init
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.value!r})'
 
 
-def method(cls: type) -> t.Callable[[type], type]:
-    def decorator(f):
+def method(cls: type) -> Callable[[Callable], Callable]:
+    def decorator(f: Callable) -> Callable:
         setattr(cls, f.__name__, f)
         return f
 
     return decorator
 
 
-def dgen_float(x):
+def dgen_float(x: float) -> float:
     return round(x, 4)
 
 
-def dgen_float_element(x):
+def dgen_float_element(x: float) -> float:
     return float(format(x, 'e'))
 
 
@@ -53,7 +94,7 @@ class Scalar(Parameter):
 
 
 class Bool(int, Scalar):
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'true' if self else 'false'
 
 
@@ -65,7 +106,27 @@ class EncodedStr(str):
     encodings = ('utf8', 'cp1251')
 
     @classmethod
-    def of(cls, xs: t.Union[bytes, str], encodings: t.Optional[t.Tuple[str, ...]] = None):
+    @overload
+    def of(cls, xs: bytes) -> 'EncodedStr':
+        ...
+
+    @classmethod
+    @overload
+    def of(cls, xs: str) -> 'EncodedStr':
+        ...
+
+    @classmethod
+    @overload
+    def of(cls, xs: bytes, encodings: Tuple[str, ...]) -> 'EncodedStr':
+        ...
+
+    @classmethod
+    @overload
+    def of(cls, xs: str, encodings: Tuple[str, ...]) -> 'EncodedStr':
+        ...
+
+    @classmethod
+    def of(cls, xs: Union[bytes, str], encodings: Optional[Tuple[str, ...]] = None) -> 'EncodedStr':
         if isinstance(xs, bytes):
             if isinstance(encodings, str):
                 try:
@@ -89,7 +150,7 @@ class EncodedStr(str):
 
 
 class Str(EncodedStr, Scalar):
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}({str.__repr__(self)})'
 
 
@@ -103,11 +164,11 @@ class Integer(int, Scalar):
     max: int = NotImplemented
 
     @classmethod
-    def of(cls, x: int):
+    def of(cls, x: int) -> 'Integer':
         return cls(cls.validated(x))
 
     @classmethod
-    def validated(cls, x: int):
+    def validated(cls, x: int) -> int:
         if not isinstance(x, int):
             raise TypeError('x: ожидалось int: {!r}'.format(type(x)))
         if not cls.min <= x <= cls.max:
@@ -115,7 +176,7 @@ class Integer(int, Scalar):
         return x
 
 
-def ranged(cls):
+def ranged(cls: Type[Integer]) -> Type[Integer]:
     if not (hasattr(cls, 'min') and isinstance(cls.min, int)):
         cls.min = -2 ** (cls.max_bit_length - 1) if cls.signed else 0
 
@@ -131,7 +192,7 @@ class Int(Integer):
     max_bit_length = 32
     fmt = ''
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}({int.__repr__(self)})'
 
 
@@ -144,7 +205,7 @@ class UByte(Integer):
     max_bit_length = 8
     fmt = '#x'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}({int.__repr__(self)})'
 
 
@@ -157,12 +218,12 @@ class Long(Integer):
     max_bit_length = 64
     fmt = ''
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}({int.__repr__(self)})'
 
 
 SafeLong = Long.of
-NumberT = t.Union[float, int]
+Number = Union[float, int]
 
 
 class Float(float, Scalar):
@@ -170,15 +231,15 @@ class Float(float, Scalar):
     abs_tol = 1e-08
     fmt = '.7g'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}({float.__format__(self, self.fmt)})'
 
     @classmethod
-    def of(cls, x: NumberT):
+    def of(cls, x: Number) -> 'Float':
         return cls(cls.validated(x))
 
     @classmethod
-    def validated(cls, x: NumberT):
+    def validated(cls, x: Number) -> float:
         if not isinstance(x, (float, int)):
             raise TypeError('x: ожидалось float | int: {!r}'.format(type(x)))
         y = c_float(x).value
@@ -186,7 +247,7 @@ class Float(float, Scalar):
             raise ValueError('x: разрешены только конечные числа')
         return y
 
-    def __eq__(self, other: NumberT):
+    def __eq__(self, other: Number) -> bool:
         if self is other:
             return True
         if not isinstance(other, (float, int)):
@@ -198,25 +259,28 @@ SafeFloat = Float.of
 
 
 class Vector(tuple, Parameter):
-    type: t.Type[t.Union[Float, Int, UByte]] = NotImplemented
+    type: Type[Union[Float, Int, UByte]] = NotImplemented
     size: int = NotImplemented
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         fmt = self.type.fmt
         return f'{self.__class__.__name__}(({", ".join(map(lambda x: format(x, fmt), self))}))'
 
     @classmethod
-    def of(cls, xs: t.Sequence[NumberT]):
+    def of(cls, xs: Sequence[Number]) -> 'Vector':
         sz = len(xs)
         if sz != cls.size:
             raise TypeError('Ожидалось {} компонент: {}'.format(cls.size, sz))
         return cls(map(cls.type.validated, xs))
 
-    def __eq__(self, other: t.Sequence[t.Union[float, int]]):
-        return (self is other) or len(self) == len(other) and all(self.type.__eq__(x, y) for x, y in zip(self, other))
+    def __eq__(self, other: Sequence[Union[float, int]]) -> bool:
+        if self is other:
+            return True
+        if not len(self) == len(other):
+            return False
+        return all(self.type.__eq__(x, y) for x, y in zip(self, other))
 
-    def __hash__(self):
-        return super().__hash__()
+    __hash__ = tuple.__hash__
 
 
 class Int2(Vector):
@@ -278,35 +342,47 @@ SafeFloat12 = Float12.of
 class Name(EncodedStr):
     of_root = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}({str.__repr__(self)})'
 
 
 SafeName = Name.of
 
-Pair = t.Tuple[Name, Value]
-ParameterPair = t.Tuple[Name, Parameter]
-SectionPair = t.Tuple[Name, 'Section']
-PairsGen = t.Generator[Pair, None, None]
-NamesGen = t.Generator[Name, None, None]
-StringsGen = t.Generator[Str, None, None]
-PairsGenOf = t.Callable[['Section'], t.Iterable[Pair]]
+Pair = Tuple[Name, Value]
+ParameterPair = Tuple[Name, Parameter]
+SectionPair = Tuple[Name, 'Section']
+PairsGenOf = Callable[['Section'], Iterable[Pair]]
 
 
-class Size(t.NamedTuple):
+class Size(NamedTuple):
     params_count: int
     blocks_count: int
 
+
+class Section(Value, metaclass=abc.ABCMeta):
+    def append(self, name: Name, value: Value) -> None:
+        raise NotImplementedError
+
+    def add(self, name: str, value: Value) -> None:
+        raise NotImplementedError
+
+    def pairs(self) -> Iterable[Pair]:
+        raise NotImplementedError
+
+    def check_cycle(self) -> None:
+        raise NotImplementedError
+
+
 # todo: ограничить уровень вложенности секций до 512
-class Section(OrderedDict, Value):
-    def append(self, name: Name, value: Value):
+class DictSection(OrderedDict, Section):
+    def append(self, name: Name, value: Value) -> None:
         """Небезопасное добавление пары в секцию."""
 
         if name not in self:
             self[name] = []
         self[name].append(value)
 
-    def add(self, name: str, value: Value):
+    def add(self, name: str, value: Value) -> None:
         """Добавление пары в секцию."""
 
         if not isinstance(name, EncodedStr):
@@ -316,7 +392,7 @@ class Section(OrderedDict, Value):
 
         self.append(name, value)
 
-    def get_first(self, name: Name, default=None) -> t.Optional[Value]:
+    def get_first(self, name: Name, default=None) -> Optional[Value]:
         """Первое значение в мультизначении по имени."""
 
         try:
@@ -324,7 +400,7 @@ class Section(OrderedDict, Value):
         except (IndexError, KeyError):
             return default
 
-    def pairs(self) -> PairsGen:
+    def pairs(self) -> Iterable[Pair]:
         """Пары в порядке добавления первого имени."""
 
         for name, values in self.items():
@@ -334,7 +410,7 @@ class Section(OrderedDict, Value):
                 for value in values:
                     yield name, value
 
-    def sorted_pairs(self) -> PairsGen:
+    def sorted_pairs(self) -> Iterable[Pair]:
         """Пары в порядке появления в двоичном файле.
         Сначала все параметры на уровне затем все секции на уровне, в порядке добавления первого имени."""
 
@@ -348,7 +424,7 @@ class Section(OrderedDict, Value):
 
         yield from sections_pairs
 
-    def bfs_pairs_gen(self, pairs_of: PairsGenOf) -> PairsGen:
+    def bfs_pairs_gen(self, pairs_of: PairsGenOf) -> Iterable[Pair]:
         """
         Генератор пар при обходе секции в ширину с параметром.
 
@@ -367,29 +443,29 @@ class Section(OrderedDict, Value):
                 for item in pairs_of(value):
                     queue.append(item)
 
-    def bfs_sorted_pairs(self) -> PairsGen:
+    def bfs_sorted_pairs(self) -> Iterable[Pair]:
         """Генератор пар при обходе секции в ширину."""
 
         yield from self.bfs_pairs_gen(lambda s: s.sorted_pairs())
 
-    def names_dfs_nlr_rec(self) -> NamesGen:
+    def names_dfs_nlr_rec(self) -> Iterable[Name]:
         """Генератор имен при обходе секции в глубину, рекурсивная версия."""
 
         for name, values in self.items():
             yield name
             for value in values:
-                if isinstance(value, Section):
-                    yield from Section.names_dfs_nlr_rec(value)  # @r
+                if isinstance(value, DictSection):
+                    yield from DictSection.names_dfs_nlr_rec(value)  # @r
 
     names = names_dfs_nlr_rec
 
-    def strings_dfs_nlr_rec(self) -> StringsGen:
+    def strings_dfs_nlr_rec(self) -> Iterable[Str]:
         """Генератор строк при обходе секции в глубину, рекурсивная версия."""
 
         for name, values in self.items():
             for value in values:
-                if isinstance(value, Section):
-                    yield from Section.strings_dfs_nlr_rec(value)  # @r
+                if isinstance(value, DictSection):
+                    yield from DictSection.strings_dfs_nlr_rec(value)  # @r
                 elif isinstance(value, Str):
                     yield value
 
@@ -410,14 +486,14 @@ class Section(OrderedDict, Value):
 
         return Size(params_count, sections_count)
 
-    def check_cycle(self):
+    def check_cycle(self) -> None:
         """
         Проверка секции на цикл.
 
         :raises CycleError: найден цикл
         """
 
-        def g(section: Section, ids: t.Set[int]) -> None:
+        def g(section: Section, ids: Set[int]) -> None:
             """
             :param section: проверяемая секция
             :param ids: id верхних уровней
@@ -436,11 +512,11 @@ class Section(OrderedDict, Value):
 
         g(self, {id(self)})
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}([{", ".join(map(repr, self.items()))}])'
 
 
-class Item(t.NamedTuple):
+class Item(NamedTuple):
     name: Name
     value: Value
 
@@ -465,7 +541,7 @@ class Include(Command, Pre):
 
     name = Name(Command.prefix + 'include')
 
-    def __new__(cls, value: str):
+    def __new__(cls, value: str) -> 'Include':
         value = Str(value)
         return super().__new__(cls, cls.name, value)
 
@@ -477,22 +553,22 @@ class Include(Command, Pre):
     def path(self):
         return self.value
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}({str.__repr__(self.value)})'
 
 
 class Comment(Command, Pre):
     prefix = Command.prefix + 'comment'
 
-    def __new__(cls, value: str):
+    def __new__(cls, value: str) -> 'Comment':
         value = Str(value)
         return super().__new__(cls, cls.name, value)
 
     @property
-    def text(self):
+    def text(self) -> str:
         return self.value
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}({str.__repr__(self.value)})'
 
 
@@ -504,12 +580,12 @@ class LineComment(Comment):
     name = Name(Comment.prefix + 'CPP')
 
     @staticmethod
-    def _check(text: str):
+    def _check(text: str) -> None:
         if '\n' in text or '\r' in text:
             raise ValueError('Однострочный комментарий содержит перенос строки: {}'.format(text))
 
     @classmethod
-    def of(cls, text: str):
+    def of(cls, text: str) -> 'LineComment':
         cls._check(text)
         return cls(text)
 
@@ -541,19 +617,23 @@ class BlockComment(Comment):
 
 # todo: при добавлении в секцию предупреждать в случае отсутствия include и target выше
 class Targeted(Command, Post):
-    def __new__(cls, name: str, value: Value):
+    def __new__(cls, name: str, value: Value) -> 'Targeted':
         name = Name(cls.prefix + name)
         return super().__new__(cls, name, value)
 
     @classmethod
     def like(cls, name: Name, value: Value) -> bool:
-        return name.startswith(cls.prefix) and name[len(cls.prefix):] and isinstance(value, Value)
+        return (
+            name.startswith(cls.prefix)
+            and name[len(cls.prefix):]
+            and isinstance(value, Value)
+        )
 
     @property
     def target(self) -> Name:
         return Name(self.name[len(self.prefix):])
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}({str.__repr__(self.target)}, {self.value!r})'
 
 
@@ -573,42 +653,61 @@ class CloneLast(Targeted):
     prefix = Command.prefix + 'clone-last' + Command.sep
 
 
-class RawSection(list, Value):
+class ListSection(list, Section):
     """
     Представление текста без учета разделителей пар. Пары с сохранением порядка.
     """
 
-    def append(self, name_or_command: t.Union[Name, Command], value: t.Optional[Value] = None):
-        if value is None:
+    @classmethod
+    def of(cls, m: DictSection) -> DictSection:
+        raise NotImplementedError
+
+    @overload
+    def append(self, name: Name, value: Value) -> None:
+        ...
+
+    @overload
+    def append(self, command: Command) -> None:
+        ...
+
+    def append(self, name_or_command: Union[Name, Command], maybe_value: Optional[Value] = None) -> None:
+        if maybe_value is None:
             item = name_or_command
         else:
-            name = name_or_command
-            item = Item(name, value)
+            item = Item(name_or_command, maybe_value)
 
         super().append(item)
 
-    def add(self, name_or_command: t.Union[str, Command], value: t.Optional[Value] = None):
+    @overload
+    def add(self, name: str, value: Value) -> None:
+        ...
+
+    @overload
+    def add(self, command: Command) -> None:
+        ...
+
+    def add(self, name_or_command: Union[str, Command], maybe_value: Optional[Value] = None) -> None:
         """
         Добавление пары в секцию.
         """
 
-        if isinstance(name_or_command, str) and value is not None:
+        if isinstance(name_or_command, str) and maybe_value is not None:
             name = name_or_command
             if not isinstance(name, EncodedStr):
                 name = Name.of(name)
             elif isinstance(name, Str):
                 name = Name(name)
-            self.append(name, value)
-        elif isinstance(name_or_command, Command) and value is None:
+            self.append(name, maybe_value)
+        elif isinstance(name_or_command, Command) and maybe_value is None:
             command = name_or_command
             self.append(command)
         else:
-            raise ValueError('Недопустимая комбинация аргументов: {}, {}'.format(name_or_command, value))
+            raise ValueError('Недопустимая комбинация аргументов: {}, {}'.format(name_or_command, maybe_value))
 
-    def pairs(self) -> t.Iterable[Pair]:
+    def pairs(self) -> Iterable[Pair]:
         return iter(self)
 
-    def getindex(self, p: t.Callable[[Item], bool]) -> int:
+    def getindex(self, p: Callable[[Item], bool]) -> int:
         """
         Индекс первой пары, для которой выполняется предикат.
 
@@ -621,7 +720,7 @@ class RawSection(list, Value):
                 return i
         raise ValueError('Нет пар, удовлетворяющих предикату: {}'.format(p))
 
-    def getindexes(self, p: t.Callable[[Item], bool]) -> t.Sequence[int]:
+    def getindexes(self, p: Callable[[Item], bool]) -> Sequence[int]:
         return tuple(i for i, item in enumerate(self) if p(item))
 
     # здесь желателен двусвязный список, чтобы быстро перемещаться назад
@@ -636,27 +735,27 @@ class RawSection(list, Value):
     #         return j
     #     raise ValueError('Нет пар с индексом до {1}, удовлетворяющих предикату: {0}'.format(p, index))
 
-    def getitem(self, p: t.Callable[[Item], bool]) -> int:
+    def getitem(self, p: Callable[[Item], bool]) -> int:
         for item in self:
             if p(item):
                 return item
         raise ValueError('Нет пар, удовлетворяющих предикату: {}'.format(p))
 
-    def getitems(self, p: t.Callable[[Item], bool]) -> t.Sequence[Item]:
+    def getitems(self, p: Callable[[Item], bool]) -> Sequence[Item]:
         return tuple(filter(p, self))
 
-    def setitem(self, p: t.Callable[[Item], bool], item: Item):
+    def setitem(self, p: Callable[[Item], bool], item: Item):
         i = self.getindex(p)
         super().__setitem__(i, item)
 
-    def __call__(self) -> Section:
+    def __call__(self) -> DictSection:
         """
         Выполнение команд, удаление комментариев.
         """
 
         raise NotImplementedError
 
-    def check_cycle(self):
+    def check_cycle(self) -> None:
         """
         Проверка секции на цикл.
 

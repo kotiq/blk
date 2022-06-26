@@ -1,10 +1,16 @@
 import pytest
+from pytest import param as _
 from blk.types import false, true
 
 
+def test_bool():
+    assert true
+    assert not false
+
+
 @pytest.mark.parametrize(['value', 'text'], [
-    pytest.param(false, 'false', id='false'),
-    pytest.param(true, 'true', id='true'),
+    _(false, 'false', id='false'),
+    _(true, 'true', id='true'),
 ])
 def test_repr(value, text):
     assert repr(value) == text

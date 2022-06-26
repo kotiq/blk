@@ -1,16 +1,16 @@
 import pytest
-from blk.types import *
+from blk.types import DictSection, Str
 
 
-@pytest.fixture()
-def section():
-    root = Section()
+@pytest.fixture(scope='session')
+def dict_section():
+    root = DictSection()
     names = 'abcderfghijkl'
 
     def parameter_name(n):
         return f'{n}1'
 
-    sections_map = {t: Section() for t in names}
+    sections_map = {t: DictSection() for t in names}
     parameters_map = {parameter_name(t): Str(parameter_name(t)) for t in names}
     adjacency_list = {
         None: 'abc',
@@ -27,22 +27,14 @@ def section():
     return root
 
 
-def maybe_str(t):
-    return t if t is None else str(t)
+@pytest.fixture(scope='module')
+def sorted_pairs_names():
+    return ['a1', 'b1', 'c1', 'a', 'b', 'c']
 
 
-def ans(ps):
-    return [maybe_str(p[0]) for p in ps]
-
-
-def test_sorted_pairs(section: Section):
-    sorted_pairs = ans(section.sorted_pairs())
-    assert sorted_pairs == ['a1', 'b1', 'c1', 'a', 'b', 'c']
-
-
-def test_bfs_pairs(section: Section):
-    all_names = ans(section.bfs_sorted_pairs())
-    assert all_names == [
+@pytest.fixture(scope='module')
+def bfs_sorted_pairs_names():
+    return [
         None,
         'a1', 'b1', 'c1', 'a', 'b', 'c',
         'd1', 'e1', 'f1', 'd', 'e', 'f',
@@ -51,9 +43,9 @@ def test_bfs_pairs(section: Section):
     ]
 
 
-def test_names_dfs_nlr(section: Section):
-    names = list(map(maybe_str, section.names()))
-    assert names == [
+@pytest.fixture(scope='module')
+def dfs_nlr_names():
+    return [
         'a',
         'd', 'd1', 'e', 'e1', 'f', 'f1', 'a1',
         'b',

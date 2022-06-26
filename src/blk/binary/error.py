@@ -1,4 +1,8 @@
-__all__ = ['ConstructError', 'ComposeError', 'SerializeError']
+__all__ = [
+    'ConstructError',
+    'ComposeError',
+    'SerializeError'
+]
 
 
 class ConstructError(Exception):

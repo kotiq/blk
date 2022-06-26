@@ -1,7 +1,7 @@
-import io
+from io import BytesIO
 import pytest
-from blk.types import Name, Str, Section
-from blk.binary.bbf_constructor import NamesMap, InvNamesMap
+from blk.types import DictSection, Name, Str
+from blk.binary.bbf_constructor import InvNamesMap, NamesMap
 
 
 @pytest.fixture(scope='session')
@@ -25,7 +25,7 @@ def names_map():
 
 
 @pytest.fixture(scope='session')
-def inv_names_map(names_map: NamesMap):
+def inv_names_map(names_map):
     inm = InvNamesMap([], names_map.module)
     inm.update({v: k for k, v in names_map.items()})
     return inm
@@ -33,7 +33,7 @@ def inv_names_map(names_map: NamesMap):
 
 @pytest.fixture
 def names_istream(names_bs):
-    return io.BytesIO(names_bs)
+    return BytesIO(names_bs)
 
 
 @pytest.fixture(scope='session')
@@ -52,12 +52,7 @@ def strings():
 
 @pytest.fixture
 def strings_istream(strings_bs):
-    return io.BytesIO(strings_bs)
-
-
-@pytest.fixture
-def iostream():
-    return io.BytesIO()
+    return BytesIO(strings_bs)
 
 
 @pytest.fixture(scope='session')
@@ -84,13 +79,13 @@ def data_bs():
 
 @pytest.fixture
 def data_istream(data_bs):
-    return io.BytesIO(data_bs)
+    return BytesIO(data_bs)
 
 
 @pytest.fixture(scope='session')
-def section():
-    root = Section()
-    sub = Section()
+def dict_section():
+    root = DictSection()
+    sub = DictSection()
     sub.add('node', Str('pylon')),
     root.add('hideNodes', sub)
     return root
@@ -129,7 +124,7 @@ def file_bs():
 
 @pytest.fixture
 def file_istream(file_bs):
-    return io.BytesIO(file_bs)
+    return BytesIO(file_bs)
 
 
 @pytest.fixture(scope='session')
@@ -149,4 +144,4 @@ def compressed_file_bs():
 
 @pytest.fixture
 def compressed_file_istream(compressed_file_bs):
-    return io.BytesIO(compressed_file_bs)
+    return BytesIO(compressed_file_bs)

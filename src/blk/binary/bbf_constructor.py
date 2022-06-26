@@ -1,23 +1,29 @@
 """Только для версии 3."""
 
 from collections import OrderedDict
-import io
-import itertools as itt
-import typing as t
+from io import BufferedIOBase, BytesIO, SEEK_END
+from itertools import islice
+from typing import BinaryIO, Collection, Container, Iterable, List, Mapping, NamedTuple, Tuple, Sequence
 import zlib
 import construct as ct
 from construct import this, len_
-from blk.types import *
-from .constants import *
-from .constructor import getvalue, VT
-from .error import *
+from blk.types import (Bool, Color, DictSection, Float, Float2, Float3, Float4, Float12, Int, Int2, Int3, Long, Name,
+                       Size, Section, Str, UByte, false, true)
+from .constants import codes_types_map, types_codes_map
+from .constructor import VT
+from .error import ComposeError, SerializeError
 from .typed_named_tuple import TypedNamedTuple
 
-__all__ = ['compose_bbf', 'compose_bbf_zlib', 'serialize_bbf', 'serialize_bbf_zlib']
+__all__ = [
+    'compose_bbf',
+    'compose_bbf_zlib',
+    'serialize_bbf',
+    'serialize_bbf_zlib'
+]
 
 
 class Version(ct.SymmetricAdapter):
-    def _decode(self, obj: t.Tuple[int, int], context: ct.Container, path: str) -> t.Tuple[int, int]:
+    def _decode(self, obj: Tuple[int, int], context: ct.Container, path: str) -> Tuple[int, int]:
         hi, lo = obj
         if hi != 3:
             raise ct.ValidationError("Поддерживается только версия 3: {}".format(hi))
@@ -36,7 +42,7 @@ class VLQ(ct.Construct):
     Откуда максимальная длина строки 2**22 - 1 = 0x3f_ffff байтов.
     """
 
-    def _parse(self, stream: io.BufferedIOBase, context: ct.Container, path: str) -> int:
+    def _parse(self, stream: BufferedIOBase, context: ct.Container, path: str) -> int:
         head = ct.Byte._parsereport(stream, context, path)
         if (head & 0x80) == 0:
             return head
@@ -47,7 +53,7 @@ class VLQ(ct.Construct):
             tail = ct.Short._parsereport(stream, context, path)
             return ((head & 0x3f) << 16) | tail
 
-    def _build(self, obj: int, stream: io.BufferedIOBase, context: ct.Container, path: str) -> int:
+    def _build(self, obj: int, stream: BufferedIOBase, context: ct.Container, path: str) -> int:
         if obj < 0:
             raise ct.IntegerError('Отрицательное число: {}'.format(obj))
         elif obj < 0x80:
@@ -88,7 +94,7 @@ TagModule = ct.ByteSwapped(ct.Bitwise(ct.Struct(
 )))
 
 
-def hash_(bs: bytes, module: int, hashes: t.Container[int]) -> int:
+def hash_(bs: bytes, module: int, hashes: Container[int]) -> int:
     # DJBX33A, модуль uint14
     h = 5381
     for b in bs:
@@ -106,7 +112,7 @@ def hash_(bs: bytes, module: int, hashes: t.Container[int]) -> int:
 class NamesMap(dict):
     """name_id => Name"""
 
-    def __init__(self, uniq_raw_names: t.Iterable[bytes], module: int):
+    def __init__(self, uniq_raw_names: Iterable[bytes], module: int) -> None:
         super().__init__()
         self.module = module
 
@@ -118,7 +124,7 @@ class NamesMap(dict):
 class InvNamesMap(OrderedDict):
     """Name => name_id"""
 
-    def __init__(self, names: t.Iterable[Name], module: int):
+    def __init__(self, names: Iterable[Name], module: int) -> None:
         super().__init__()
         self.module = module
 
@@ -132,7 +138,7 @@ class InvNamesMap(OrderedDict):
 class InvStrings(dict):
     """Str => index"""
 
-    def __init__(self, strings: t.Iterable[str]):
+    def __init__(self, strings: Iterable[str]) -> None:
         super().__init__()
         for string in strings:
             if string in self:
@@ -143,7 +149,7 @@ class InvStrings(dict):
 
 @ct.singleton
 class Names(ct.Construct):
-    def _parse(self, stream: io.BufferedIOBase, context: ct.Container, path: str) -> NamesMap:
+    def _parse(self, stream: BufferedIOBase, context: ct.Container, path: str) -> NamesMap:
         tag_module = TagModule._parsereport(stream, context, path)
         tag = tag_module.tag
         module = tag_module.module
@@ -159,7 +165,7 @@ class Names(ct.Construct):
         return NamesMap(uniq_raw_names, module)
 
     def _build(self, obj: InvNamesMap,
-               stream: io.BufferedIOBase, context: ct.Container, path: str) -> InvNamesMap:
+               stream: BufferedIOBase, context: ct.Container, path: str) -> InvNamesMap:
         module = obj.module
         uniq_raw_names = tuple(name.encode() for name in obj)
         names_count = len(uniq_raw_names)
@@ -187,7 +193,7 @@ TagSize = ct.ByteSwapped(ct.Bitwise(ct.Struct(
 
 @ct.singleton
 class Strings(ct.Construct):
-    def _parse(self, stream: io.BufferedIOBase, context: ct.Container, path: str) -> t.List[Name]:
+    def _parse(self, stream: BufferedIOBase, context: ct.Container, path: str) -> List[Name]:
         tag_size = TagSize._parsereport(stream, context, path)
         tag = tag_size.tag
         strings_data_size = tag_size.size
@@ -202,12 +208,12 @@ class Strings(ct.Construct):
         else:
             raise ct.ValidationError('Код конструктора количества строк: {}'.format(tag))
         strings_count = strings_count_con._parsereport(stream, context, path)
-        strings_data_stream = io.BytesIO(ct.stream_read(stream, strings_data_size))
+        strings_data_stream = BytesIO(ct.stream_read(stream, strings_data_size))
         strings = String[strings_count]._parsereport(strings_data_stream, context, path)
         return strings
 
-    def _build(self, obj: t.Mapping[Str, int],
-               stream: io.BufferedIOBase, context: ct.Container, path: str) -> t.Collection[Str]:
+    def _build(self, obj: Mapping[Str, int],
+               stream: BufferedIOBase, context: ct.Container, path: str) -> Collection[Str]:
         strings_count = len(obj)
         if strings_count == 0:
             strings_count_con = ct.Error
@@ -228,16 +234,16 @@ class Strings(ct.Construct):
             size = 0
             TagSize._build(dict(tag=tag, size=size), stream, context, path)
         else:
-            strings_data_stream = io.BytesIO()
+            strings_data_stream = BytesIO()
             String[strings_count]._build(obj, strings_data_stream, context, path)
-            size = strings_data_stream.seek(0, io.SEEK_END)
+            size = strings_data_stream.seek(0, SEEK_END)
             TagSize._build(dict(tag=tag, size=size), stream, context, path)
             strings_count_con._build(strings_count, stream, context, path)
             ct.stream_write(stream, strings_data_stream.getvalue(), size)
         return obj
 
 
-class PartialValueInfo(t.NamedTuple):
+class PartialValueInfo(NamedTuple):
     name_id: int
     type_id: int
 
@@ -265,10 +271,10 @@ false_id = 0x80 | true_id
 
 @ct.singleton
 class Block(ct.Construct):
-    def _parse(self, stream: io.BufferedIOBase, context: ct.Container, path: str) -> Section:
-        names: t.Mapping[int, Name] = context.names
-        strings: t.Sequence[Str] = context.strings
-        root = Section()
+    def _parse(self, stream: BufferedIOBase, context: ct.Container, path: str) -> DictSection:
+        names: Mapping[int, Name] = context.names
+        strings: Sequence[Str] = context.strings
+        root = DictSection()
         params_count, blocks_count = SizeCon._parsereport(stream, context, path)
         partial_params_info = PartialValueInfoCon[params_count]._parsereport(stream, context, path)
 
@@ -301,13 +307,13 @@ class Block(ct.Construct):
 
         return root
 
-    def _build(self, obj: Section, stream: io.BufferedIOBase, context: ct.Container, path: str) -> Section:
-        inv_names_map: t.Mapping[Name, int] = context.names
-        inv_strings: t.Mapping[Str, int] = context.strings
+    def _build(self, obj: DictSection, stream: BufferedIOBase, context: ct.Container, path: str) -> DictSection:
+        inv_names_map: Mapping[Name, int] = context.names
+        inv_strings: Mapping[Str, int] = context.strings
 
         size = obj.size()
         sorted_pairs = obj.sorted_pairs()
-        param_pairs = tuple(itt.islice(sorted_pairs, size.params_count))
+        param_pairs = tuple(islice(sorted_pairs, size.params_count))
         SizeCon._build(size, stream, context, path)
         for name, param in param_pairs:
             if param is true:
@@ -358,18 +364,18 @@ class ZlibCompressed(ct.Tunnel):
     def __init__(self, subcon,
                  level: VT[int] = -1,
                  max_length: VT[int] = 0,
-                 ):
+                 ) -> None:
         super().__init__(subcon)
         self.level = level
         self.max_length = max_length
 
-    def _decode(self, data, context, path):
-        max_lenght = getvalue(self.max_length, context)
+    def _decode(self, data: bytes, context: ct.Container, path: str) -> bytes:
+        max_lenght = ct.evaluate(self.max_length, context)
         dctx = zlib.decompressobj()
         return dctx.decompress(data, max_lenght)
 
-    def _encode(self, data, context, path):
-        level = getvalue(self.level, context)
+    def _encode(self, data: bytes, context: ct.Container, path: str) -> bytes:
+        level = ct.evaluate(self.level, context)
         cctx = zlib.compressobj(level)
         return cctx.compress(data)
 
@@ -383,7 +389,7 @@ CompressedBBFFile = ct.FocusedSeq(
 
 
 # todo: readable/writable protocol
-def compose_bbf(istream: t.BinaryIO) -> Section:
+def compose_bbf(istream: BinaryIO) -> DictSection:
     """Сборка секции из потока."""
 
     try:
@@ -392,14 +398,14 @@ def compose_bbf(istream: t.BinaryIO) -> Section:
         raise ComposeError(e)
 
 
-def serialize_bbf(section: Section, ostream: t.BinaryIO, version: t.Tuple[int, int] = (3, 1), module: int = 0x100):
+def serialize_bbf(section: DictSection, ostream: BinaryIO, version: Tuple[int, int] = (3, 1), module: int = 0x100):
     try:
         return BBFFile.build_stream(section, ostream, version=version, module=module)
     except (TypeError, ValueError, ct.ConstructError) as e:
         raise SerializeError(str(e))
 
 
-def compose_bbf_zlib(istream: t.BinaryIO) -> Section:
+def compose_bbf_zlib(istream: BinaryIO) -> DictSection:
     """Сборка секции из сжатого потока."""
 
     try:
@@ -409,7 +415,8 @@ def compose_bbf_zlib(istream: t.BinaryIO) -> Section:
         raise ComposeError(str(e))
 
 
-def serialize_bbf_zlib(section: Section, ostream: t.BinaryIO, version: t.Tuple[int, int] = (3, 1), module: int = 0x100):
+def serialize_bbf_zlib(section: DictSection, ostream: BinaryIO,
+                       version: Tuple[int, int] = (3, 1), module: int = 0x100) -> None:
     try:
         data_bs = BBFFile.build(section, version=version, module=module)
         CompressedBBFFile.build_stream(data_bs, ostream)

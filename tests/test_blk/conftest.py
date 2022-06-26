@@ -1,12 +1,13 @@
 import pytest
-from blk.types import *
+from blk.types import (Color, DictSection, Float, Float2, Float3, Float4, Float12, Int, Int2, Int3, Long, Str, false,
+                       true)
 
 
 @pytest.fixture(scope='session')
-def mixed_section():
+def mixed_dict_section():
     """Секция со всеми типами значений."""
 
-    root = Section()
+    root = DictSection()
     root.add('bool', true)
     root.add('str', Str('hello'))
     root.add('int', Int(0))
@@ -26,7 +27,7 @@ def mixed_section():
         10.0, 11.0, 12.0,
     )))
 
-    inner = Section()
+    inner = DictSection()
     inner.add('a', Int(1))
     inner.add('b', Long(2))
     root.add('inner', inner)
@@ -34,36 +35,40 @@ def mixed_section():
 
 
 @pytest.fixture(scope='session')
-def sections_only_section():
-    root = Section()
-    alpha = Section()
-    beta = Section()
+def dict_sections_only_dict_section():
+    """DictSection только из секций."""
+
+    root = DictSection()
+    alpha = DictSection()
+    beta = DictSection()
     root.add('alpha', alpha)
     root.add('beta', beta)
     return root
 
 
 @pytest.fixture(scope='session')
-def section_with_cycle():
-    """Для вывода текста нижние урони не должны содержать ссылки из верхних уровней."""
+def expected_names():
+    return 'scalar', 'section', 'scalar', 'section', 'scalar'
 
-    root = Section()
+
+@pytest.fixture(scope='session')
+def dict_section_with_cycle():
+    """DictSection с циклом.
+    Для вывода текста нижние уровни не должны содержать ссылки из верхних уровней."""
+
+    root = DictSection()
     root.add('scalar', Int(42))
     root.add('section', root)
     return root
 
 
 @pytest.fixture(scope='session')
-def expected_some_names():
-    return 'scalar', 'section', 'scalar', 'section', 'scalar'
+def dict_section_with_same_id_sub():
+    """DictSection с идентичной подсекцией на одном уровне.
+    Для вывода текста одинаковые ссылки на одном уровне допустимы."""
 
-
-@pytest.fixture(scope='session')
-def section_with_same_id_sub():
-    """Для вывода текста одинаковые ссылки на одном уровне допустимы."""
-
-    root = Section()
-    sub = Section()
+    root = DictSection()
+    sub = DictSection()
     sub.add('scalar', Int(42))
     root.add('sub1', sub)
     root.add('sub2', sub)
@@ -71,12 +76,12 @@ def section_with_same_id_sub():
 
 
 @pytest.fixture(scope='session')
-def section_with_cycle_deep():
-    """Секция с одинаковой ссылкой через уровень."""
+def dict_section_with_cycle_deep():
+    """DictSection с идентичными подсекциями через уровень."""
 
-    root = Section()
+    root = DictSection()
     root.add('scalar', Int(42))
-    sub = Section()
+    sub = DictSection()
     sub.add('scalar', Int(42))
     sub.add('section', root)
     root.add('section', sub)
@@ -84,15 +89,15 @@ def section_with_cycle_deep():
 
 
 @pytest.fixture(scope='session')
-def section_with_same_id_sub_deep():
-    """Секция с одинаковыми ссылками на уровне с разными родителями."""
+def dict_section_with_same_id_sub_deep():
+    """DictSection с идентичными подсекциями на уровне с разными родителями."""
 
-    root = Section()
-    sub = Section()
+    root = DictSection()
+    sub = DictSection()
     sub.add('scalar', Int(42))
-    inter1 = Section()
+    inter1 = DictSection()
     inter1.add('sub', sub)
-    inter2 = Section()
+    inter2 = DictSection()
     inter2.add('sub', sub)
     root.add('inter1', inter1)
     root.add('inter2', inter2)

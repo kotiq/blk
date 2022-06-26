@@ -1,11 +1,7 @@
-"""Проверка конструктора имен.
-Блок имен из 'game.vromfs.bin_u/gamedata/scenes/tank_compatibility_test_level.blk'"""
-
-import io
-import typing as t
+from io import BytesIO
 import pytest
 from blk.types import Name
-from blk.binary.constructor import Names, InvNames
+from blk.binary.constructor import InvNames
 
 
 @pytest.fixture(scope='module')
@@ -18,7 +14,7 @@ def names_bs():
         '7761795F706F696E742E6E616D6500' '7761795F706F696E742E6D6F76655479706500'
         '7761795F706F696E742E737065656400' '726F7574652E726F757465496400'
         '726F7574652E776179506F696E74734E616D65733A6C6973743C743E00' '6E00'
-        '73657474696E672E756E69745479706500' '73657474696E672E706C617965724E6F00' 
+        '73657474696E672E756E69745479706500' '73657474696E672E706C617965724E6F00'
         '73657474696E672E636C6173734E616D6500' '73657474696E672E756E69745F636C61737300'
         '73657474696E672E6E616D6500' '73657474696E672E6F626A4C6179657200'
         '73657474696E672E636C6F7365645F776179706F696E747300' '73657474696E672E69735368697053706C696E6500'
@@ -70,23 +66,5 @@ def inv_names(names):
 
 
 @pytest.fixture
-def istream(names_bs):
-    return io.BytesIO(names_bs)
-
-
-@pytest.fixture
-def iostream():
-    return io.BytesIO()
-
-
-def test_parse(istream: io.BufferedIOBase, names: t.Sequence[Name], names_bs: bytes):
-    parsed_names = Names.parse_stream(istream)
-    assert istream.tell() == len(names_bs)
-    assert list(parsed_names) == list(names)
-
-
-def test_build(iostream: io.BufferedIOBase, inv_names: t.Mapping[Name, int], names_bs: bytes):
-    Names.build_stream(inv_names, iostream)
-    iostream.seek(0)
-    built_bs = iostream.read()
-    assert built_bs == names_bs
+def names_istream(names_bs):
+    return BytesIO(names_bs)

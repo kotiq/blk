@@ -56,10 +56,10 @@ def serialize_text(root: Section, ostream: t.TextIO, out_type: int, is_sorted: b
     pytest.param(lazy_fixture('multi_map'), 'multi_map', id='multi_map'),
 ])
 @pytest.mark.parametrize('out_type_name', out_type_map.keys())
-def test_out_types(section, section_name, out_type_name: str, outpath: Path):
+def test_out_types(dict_section, section_name, out_type_name: str, outpath: Path):
     out_type = out_type_map[out_type_name]
     suffix = '.txt' if out_type_name == 'strict_blk' else '.json'
     text_path = outpath / f'{section_name}-{out_type_name}{suffix}'
     with create_text(text_path) as ostream:
         ostream.write(f'// {text_path.name}\n\n')
-        serialize_text(section, ostream, out_type, False)
+        serialize_text(dict_section, ostream, out_type, False)

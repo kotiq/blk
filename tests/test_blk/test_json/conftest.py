@@ -1,9 +1,10 @@
-import textwrap
+from io import StringIO
+from textwrap import dedent
 import pytest
 
 
 @pytest.fixture(scope='session')
-def json_mixed_json_2():
+def json_mixed_dict_section_json_2():
     json = """\
     {
       "bool": [
@@ -59,11 +60,11 @@ def json_mixed_json_2():
         }
       ]
     }"""
-    return textwrap.dedent(json)
+    return dedent(json)
 
 
 @pytest.fixture(scope='session')
-def json_sections_only_json_2():
+def json_dict_sections_only_dict_section_json_2():
     json = """\
     {
       "alpha": [
@@ -73,11 +74,11 @@ def json_sections_only_json_2():
         []
       ]
     }"""
-    return textwrap.dedent(json)
+    return dedent(json)
 
 
 @pytest.fixture(scope='session')
-def json_section_with_same_id_sub_json_2():
+def json_dict_section_with_same_id_sub_json_2():
     json = """\
     {
       "sub1": [
@@ -95,11 +96,11 @@ def json_section_with_same_id_sub_json_2():
         }
       ]
     }"""
-    return textwrap.dedent(json)
+    return dedent(json)
 
 
 @pytest.fixture(scope='session')
-def json_section_with_same_id_sub_deep_json_2():
+def json_dict_section_with_same_id_sub_deep_json_2():
     json = """\
     {
       "inter1": [
@@ -125,4 +126,9 @@ def json_section_with_same_id_sub_deep_json_2():
         }
       ]
     }"""
-    return textwrap.dedent(json)
+    return dedent(json)
+
+
+@pytest.fixture()
+def ostream():
+    return StringIO()

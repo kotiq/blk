@@ -2,7 +2,8 @@ import platform
 import re
 import json
 import typing as t
-from blk.types import *
+from blk.types import (Bool, Color, DictSection, Float, Float2, Float3, Float4, Float12, Int2, Int3, ListSection,
+                       Section, Var, Value, dgen_float, dgen_float_element)
 
 __all__ = ['serialize', 'JSON', 'JSON_2', 'JSON_3']
 
@@ -68,12 +69,12 @@ elif implementation == 'PyPy':
 
 class Mapper:
     @classmethod
-    def _map_section(cls, section: Section) -> t.Union[t.Sequence, t.Mapping]:
+    def _map_section(cls, section: DictSection) -> t.Union[t.Sequence, t.Mapping]:
         raise NotImplementedError
 
     @classmethod
     def _map_value(cls, value: Value):
-        if isinstance(value, (Section, t.Mapping)):
+        if isinstance(value, (DictSection, t.Mapping)):
             return cls._map_section(value)
         elif isinstance(value, Float12):
             return tuple(Var(tuple(dgen_float_element(x) for x in value[i:i+3])) for i in range(0, 10, 3))
@@ -97,7 +98,7 @@ class Mapper:
 
 class JSONMapper(Mapper):
     @classmethod
-    def _map_section(cls, section: Section) -> t.Union[t.Sequence, t.Mapping]:
+    def _map_section(cls, section: DictSection) -> t.Union[t.Sequence, t.Mapping]:
         items = section.items()
         if not items:
             return []
@@ -119,7 +120,7 @@ class JSONMapper(Mapper):
 
 class JSON2Mapper(Mapper):
     @classmethod
-    def _map_section(cls, section: Section) -> t.Union[t.Sequence, t.Mapping]:
+    def _map_section(cls, section: DictSection) -> t.Union[t.Sequence, t.Mapping]:
         items = section.items()
         if not items:
             return []
@@ -129,7 +130,7 @@ class JSON2Mapper(Mapper):
 
 class JSON3Mapper(Mapper):
     @classmethod
-    def _map_section(cls, section: Section) -> t.Mapping:
+    def _map_section(cls, section: DictSection) -> t.Mapping:
         items = section.items()
         if not items:
             return {}
@@ -140,7 +141,7 @@ class JSON3Mapper(Mapper):
 class JSONMinMapper(Mapper):
     pass
 
-
+# todo: собрать в перечисление
 JSON = 0
 JSON_MIN = 1
 JSON_2 = 3
@@ -157,5 +158,8 @@ def serialize(root: Section, ostream, out_type: int, is_sorted=False, check_cycl
     if root:
         if check_cycle:
             root.check_cycle()
-        json.dump(mapper.map(root), ostream, cls=NoIndentEncoder, ensure_ascii=False, indent=2, separators=(',', ': '),
-                  sort_keys=is_sorted)
+        if isinstance(root, DictSection):
+            json.dump(mapper.map(root), ostream, cls=NoIndentEncoder, ensure_ascii=False, indent=2, separators=(',', ': '),
+                      sort_keys=is_sorted)
+        elif isinstance(root, ListSection):
+            raise NotImplementedError

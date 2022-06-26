@@ -1,26 +1,21 @@
 from pathlib import Path
-import io
-import typing as t
 from functools import partial
 import pytest
-from helpers import make_outpath, create_text
-from blk.binary.constructor import (compose_fat_data, serialize_fat_data, compose_slim_data, Names, InvNames, serialize_slim_data)
+from pytest import param as _
+from helpers import create_text, make_outpath
+from blk.binary.constructor import (InvNames, Names, compose_fat_data, compose_slim_data, serialize_fat_data,
+                                    serialize_slim_data)
 import blk.text as txt
 
 serialize_text = partial(txt.serialize, dialect=txt.StrictDialect)
 outpath = make_outpath(__name__)
 
 
-@pytest.fixture()
-def iostream():
-    return io.BytesIO()
-
-
 @pytest.mark.parametrize('rpath', [
-    pytest.param('game.vromfs.bin_u/gamedata/scenes/tank_compatibility_test_level.blk',  id='fat file'),
-    pytest.param('game.vromfs.bin_u/config/_net.blk', id='fat_s file'),
+    _('game.vromfs.bin_u/gamedata/scenes/tank_compatibility_test_level.blk',  id='fat file'),
+    _('game.vromfs.bin_u/config/_net.blk', id='fat_s file'),
 ])
-def test_compose_fat(currespath: Path, rpath: str, outpath: Path):
+def test_compose_fat(currespath, rpath, outpath):
     ipath = currespath / rpath
     opath = outpath / Path(rpath).with_suffix('.blkx').name
 
@@ -32,10 +27,10 @@ def test_compose_fat(currespath: Path, rpath: str, outpath: Path):
 
 
 @pytest.mark.parametrize(['strings_in_names', 'rpath'], [
-    pytest.param(False, 'game.vromfs.bin_u/gamedata/scenes/tank_compatibility_test_level.blk', id='fat file'),
-    pytest.param(True, 'game.vromfs.bin_u/config/_net.blk', id='fat_s file')
+    _(False, 'game.vromfs.bin_u/gamedata/scenes/tank_compatibility_test_level.blk', id='fat file'),
+    _(True, 'game.vromfs.bin_u/config/_net.blk', id='fat_s file')
 ])
-def test_serialize_fat(strings_in_names: bool, currespath: Path, rpath: str, outpath: Path, iostream: t.BinaryIO):
+def test_serialize_fat(strings_in_names, currespath, rpath, outpath, iostream):
     ipath = currespath / rpath
     opath_text = outpath / Path(rpath).with_suffix('.blkx').name
 
@@ -55,7 +50,7 @@ def test_serialize_fat(strings_in_names: bool, currespath: Path, rpath: str, out
     assert root == compose_fat_data(iostream)
 
 
-def test_compose_slim(currespath: Path, outpath: Path):
+def test_compose_slim(currespath, outpath):
     nm_rpath = currespath / 'aces.vromfs.bin_u/nm'
     rpath = 'aces.vromfs.bin_u/settings.blk'
     nm_ipath = currespath / nm_rpath
@@ -72,7 +67,7 @@ def test_compose_slim(currespath: Path, outpath: Path):
         serialize_text(root, ostream)
 
 
-def test_serialize_slim(currespath: Path, outpath: Path, iostream: t.BinaryIO):
+def test_serialize_slim(currespath, outpath, iostream):
     nm_rpath = currespath / 'aces.vromfs.bin_u/nm'
     rpath = 'aces.vromfs.bin_u/settings.blk'
     nm_ipath = currespath / nm_rpath

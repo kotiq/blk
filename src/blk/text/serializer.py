@@ -198,7 +198,7 @@ class Serializer:
     def serialize_pairs(self, pairs, stream):
         for p in pairs:
             name, value = p
-            is_section = isinstance(value, (Section, RawSection))
+            is_section = isinstance(value, Section)
 
             if self.fst:
                 self.fst = False

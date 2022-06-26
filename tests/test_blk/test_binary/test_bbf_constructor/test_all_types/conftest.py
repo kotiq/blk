@@ -1,11 +1,12 @@
-import io
+from io import BytesIO
 import pytest
-from blk.types import *
+from blk.types import (Color, DictSection, Float, Float2, Float3, Float4, Float12, Int, Int2, Int3, Long, Str, false,
+                       true)
 
 
 @pytest.fixture(scope='session')
-def section():
-    root = Section()
+def dict_section():
+    root = DictSection()
     root.add('str', Str('hello'))
     root.add('int', Int(1))
     root.add('float', Float(1.0))
@@ -19,16 +20,16 @@ def section():
     root.add('float12', Float12((1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0)))
     root.add('long', Long(1))
 
-    section_11 = Section()
+    section_11 = DictSection()
     section_11.add('str', Str('world'))
     section_11.add('int', Int(2))
-    section_21 = Section()
+    section_21 = DictSection()
     section_21.add('float', Float(2.0))
     section_21.add('bool', false)
     section_11.add('section_21', section_21)
     root.add('section_11', section_11)
 
-    section_12 = Section()
+    section_12 = DictSection()
     section_12.add('int', Int(3))
     section_12.add('int', Int(4))
     section_12.add('int', Int(5))
@@ -123,9 +124,4 @@ def file_bs():
 
 @pytest.fixture
 def file_istream(file_bs):
-    return io.BytesIO(file_bs)
-
-
-@pytest.fixture
-def iostream():
-    return io.BytesIO()
+    return BytesIO(file_bs)

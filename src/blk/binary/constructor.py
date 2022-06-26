@@ -1,15 +1,27 @@
 from io import BytesIO
 from collections import OrderedDict
-import typing as t
+from typing import (Any, BinaryIO, Callable, Container, Iterable, Mapping, MutableSequence, NamedTuple, Optional,
+                    OrderedDict as ODict, Sequence, Tuple, Type, TypeVar, Union)
 import construct as ct
 from construct import len_, this
-from blk.types import *
-from .constants import *
-from .error import *
+from blk.types import (Bool, Color, DictSection, Float, Float2, Float3, Float4, Float12, Int, Int2, Int3, Long, Name,
+                       Parameter, Section, Str, UByte, Var, Value, false, true)
+from .constants import codes_types_map, types_codes_map
+from .error import ComposeError, SerializeError
 from .typed_named_tuple import TypedNamedTuple
 
-__all__ = ['serialize_fat_data', 'compose_fat_data', 'compose_names_data', 'compose_slim_data', 'serialize_slim_data',
-           'serialize_names_data', 'InvNames', 'compose_fat', 'serialize_fat', 'Fat']
+__all__ = [
+    'Fat',
+    'InvNames',
+    'compose_fat',
+    'compose_fat_data',
+    'compose_names_data',
+    'compose_slim_data',
+    'serialize_fat',
+    'serialize_fat_data',
+    'serialize_names_data',
+    'serialize_slim_data'
+]
 
 RawCString = ct.NullTerminated(ct.GreedyBytes).compile()
 
@@ -48,38 +60,38 @@ NamesCon = ct.FocusedSeq(
                     ct.Prefixed(ct.VarInt, NameCon[ct.this.names_count]))
 ).compile()
 
-NameStr = t.Union[Name, Str]
-NamesSeq = t.Sequence[NameStr]
-NamesIt = t.Iterable[NameStr]
-NamesMap = t.OrderedDict[NameStr, int]
+NameStr = Union[Name, Str]
+NamesSeq = Sequence[NameStr]
+NamesIt = Iterable[NameStr]
+NamesMap = ODict[NameStr, int]
 
 
 class InvNames(OrderedDict):
     """Name => name_id"""
 
-    def __init__(self, names: t.Iterable[t.Union[Name, Str]] = None):
+    def __init__(self, names: Iterable[Union[Name, Str]] = None) -> None:
         super().__init__()
         if names:
             for i, name in enumerate(names):
                 self[name] = i
 
     @classmethod
-    def of(cls, section: Section, include_strings: bool = True) -> 'InvNames':
+    def of(cls, section: DictSection, include_strings: bool = True) -> 'InvNames':
         inst = InvNames()
         inst.update_(section, include_strings)
         return inst
 
-    def update_(self, section: Section, include_strings: bool):
+    def update_(self, section: DictSection, include_strings: bool):
         self.add_names(section)
         if include_strings:
             self.add_strings(section)
 
-    def add_names(self, section: Section):
+    def add_names(self, section: DictSection):
         for name in section.names():
             if name not in self:
                 self[name] = len(self)
 
-    def add_strings(self, section: Section):
+    def add_strings(self, section: DictSection):
         for item in section.bfs_sorted_pairs():
             value = item[1]
             if isinstance(value, Str):
@@ -88,10 +100,10 @@ class InvNames(OrderedDict):
 
 
 class NamesAdapter(ct.Adapter):
-    def _decode(self, obj: t.Optional[NamesSeq], context: t.Container, path: str) -> NamesSeq:
+    def _decode(self, obj: Optional[NamesSeq], context: Container, path: str) -> NamesSeq:
         return () if obj is None else obj
 
-    def _encode(self, obj: NamesMap, context: t.Container, path: str) -> NamesIt:
+    def _encode(self, obj: NamesMap, context: Container, path: str) -> NamesIt:
         return obj.keys()
 
 
@@ -100,7 +112,7 @@ Names = NamesAdapter(NamesCon)
 TaggedOffset = ct.ByteSwapped(ct.Bitwise(ct.Sequence(ct.Bit, ct.BitsInteger(31)))).compile()
 
 
-class ParamInfo(t.NamedTuple):
+class ParamInfo(NamedTuple):
     name_id: int
     type_id: int
     data: bytes
@@ -118,11 +130,11 @@ ParamInfoCon = TypedNamedTuple(
 Id_of_root = None
 
 
-class BlockInfo(t.NamedTuple):
+class BlockInfo(NamedTuple):
     name_id: int
     params_count: int
     blocks_count: int
-    block_offset: t.Optional[int]
+    block_offset: Optional[int]
 
 
 BlockInfoCon = TypedNamedTuple(
@@ -148,31 +160,27 @@ BlockCon = """Структура файла, за исключением таб�
     'blocks' / BlockInfoCon[this.blocks_count],
 ).compile()
 
-Pair = t.Tuple[Name, Value]
-LongValue = t.Union[Str, Float12, Float4, Float3, Float2, Int3, Int2, Long]
-LongValueType = t.Union[t.Type[Str], t.Type[Float12], t.Type[Float4], t.Type[Float3], t.Type[Float2], t.Type[Int3],
-                        t.Type[Int2], t.Type[Long]]
-ParametersMap = t.OrderedDict[t.Union[Name, LongValue], int]
-ValuesMap = t.Mapping[LongValueType, ParametersMap]
-ParameterInfo = t.Tuple[int, int, bytes]
-ParameterInfos = t.MutableSequence[ParameterInfo]
-BlockInfoT = t.Tuple[int, int, int, t.Optional[int]]
-BlockInfos = t.MutableSequence[BlockInfoT]
-ParameterT = t.Tuple[Name, Parameter]
-Parameters = t.MutableSequence[ParameterT]
-SectionT = t.Tuple[t.Optional[Name], Section]
-Sections = t.MutableSequence[SectionT]
-T = t.TypeVar('T')
-VT = t.Union[T, t.Callable[[ct.Container], T]]
-
-
-def getvalue(val: VT[T], context) -> T:
-    return val(context) if callable(val) else val
+Pair = Tuple[Name, Value]
+LongValue = Union[Str, Float12, Float4, Float3, Float2, Int3, Int2, Long]
+LongValueType = Union[Type[Str], Type[Float12], Type[Float4], Type[Float3], Type[Float2], Type[Int3], Type[Int2],
+                      Type[Long]]
+ParametersMap = ODict[Union[Name, LongValue], int]
+ValuesMap = Mapping[LongValueType, ParametersMap]
+ParameterInfo = Tuple[int, int, bytes]
+ParameterInfos = MutableSequence[ParameterInfo]
+BlockInfoT = Tuple[int, int, int, Optional[int]]
+BlockInfos = MutableSequence[BlockInfoT]
+ParameterT = Tuple[Name, Parameter]
+Parameters = MutableSequence[ParameterT]
+SectionT = Tuple[Optional[Name], DictSection]
+Sections = MutableSequence[SectionT]
+T = TypeVar('T')
+VT = Union[T, Callable[[ct.Container], T]]
 
 
 class BlockAdapter(ct.Adapter):
     def __init__(self, subcon,
-                 names_or_inv_names: VT[t.Union[NamesSeq, NamesIt, InvNames]],
+                 names_or_inv_names: VT[Union[NamesSeq, NamesIt, InvNames]],
                  strings_in_names: VT[bool] = False,
                  external_names: VT[bool] = False
                  ):
@@ -189,7 +197,7 @@ class BlockAdapter(ct.Adapter):
         self._strings_in_names: bool = ...
         self.external_names = external_names
 
-    def parse_params_data(self, con: ct.Construct, offset) -> t.Any:
+    def parse_params_data(self, con: ct.Construct, offset) -> Any:
         self.params_data.seek(offset)
         return con.parse_stream(self.params_data)
 
@@ -198,8 +206,8 @@ class BlockAdapter(ct.Adapter):
         con.build_stream(value, self.params_data)
         return offset
 
-    def _decode(self, obj: ct.Container, context, path) -> Section:
-        names: NamesSeq = getvalue(self.names_or_inv_names, context)
+    def _decode(self, obj: ct.Container, context, path) -> DictSection:
+        names: NamesSeq = ct.evaluate(self.names_or_inv_names, context)
 
         self.params_data = BytesIO(obj.params_data)
         params: Parameters = []
@@ -230,7 +238,7 @@ class BlockAdapter(ct.Adapter):
 
         for name_id, *_ in obj.blocks:
             name = Name.of_root if name_id is Id_of_root else names[name_id]
-            value = Section()
+            value = DictSection()
             blocks.append((name, value))
 
         for (_, params_count, blocks_count, block_offset), (_, section) in zip(obj.blocks, blocks):
@@ -248,10 +256,10 @@ class BlockAdapter(ct.Adapter):
 
         return blocks[0][1]
 
-    def _encode(self, obj: Section, context, path) -> ct.Container:
-        inv_names: InvNames = getvalue(self.names_or_inv_names, context)
-        self._strings_in_names = getvalue(self.strings_in_names, context)
-        external_names = getvalue(self.external_names, context)
+    def _encode(self, obj: DictSection, context, path) -> ct.Container:
+        inv_names: InvNames = ct.evaluate(self.names_or_inv_names, context)
+        self._strings_in_names = ct.evaluate(self.strings_in_names, context)
+        external_names = ct.evaluate(self.external_names, context)
         if external_names:
             inv_names.update_(obj, include_strings=True)
 
@@ -342,7 +350,7 @@ Slim = ct.FocusedSeq(
 )
 
 
-def compose_fat_data(istream: t.BinaryIO) -> Section:
+def compose_fat_data(istream: BinaryIO) -> DictSection:
     """
     Сборка секции из потока со встроенными именами.
 
@@ -357,7 +365,7 @@ def compose_fat_data(istream: t.BinaryIO) -> Section:
         raise ComposeError(str(e))
 
 
-def compose_fat(istream: t.BinaryIO) -> Section:
+def compose_fat(istream: BinaryIO) -> DictSection:
     try:
         ct.Const(b'\x01').parse_stream(istream)
     except ct.ConstructError as e:
@@ -366,7 +374,7 @@ def compose_fat(istream: t.BinaryIO) -> Section:
     return compose_fat_data(istream)
 
 
-def serialize_fat_data(section: Section, ostream: t.BinaryIO, strings_in_names: bool = False):
+def serialize_fat_data(section: DictSection, ostream: BinaryIO, strings_in_names: bool = False) -> None:
     """Дамп секции со встроенными именами в поток.
 
     :param section: секция
@@ -383,7 +391,7 @@ def serialize_fat_data(section: Section, ostream: t.BinaryIO, strings_in_names: 
         raise SerializeError(str(e))
 
 
-def serialize_fat(section: Section, ostream: t.BinaryIO, strings_in_names: bool = False):
+def serialize_fat(section: DictSection, ostream: BinaryIO, strings_in_names: bool = False):
     try:
         ct.Const(b'\x01').build_stream(None, ostream)
     except ct.ConstructError as e:
@@ -392,7 +400,7 @@ def serialize_fat(section: Section, ostream: t.BinaryIO, strings_in_names: bool 
     serialize_fat_data(section, ostream, strings_in_names)
 
 
-def compose_slim_data(names: NamesSeq, istream: t.BinaryIO) -> Section:
+def compose_slim_data(names: NamesSeq, istream: BinaryIO) -> DictSection:
     """
     Сборка секции из потока. Имена в списке.
 
@@ -408,7 +416,7 @@ def compose_slim_data(names: NamesSeq, istream: t.BinaryIO) -> Section:
         raise ComposeError(str(e))
 
 
-def compose_names_data(istream: t.BinaryIO) -> NamesSeq:
+def compose_names_data(istream: BinaryIO) -> NamesSeq:
     """
     Сборка списка имен из потока.
 
@@ -422,7 +430,7 @@ def compose_names_data(istream: t.BinaryIO) -> NamesSeq:
         raise ComposeError(str(e))
 
 
-def serialize_slim_data(section: Section, inv_names: InvNames, ostream: t.BinaryIO):
+def serialize_slim_data(section: DictSection, inv_names: InvNames, ostream: BinaryIO) -> None:
     """Сборка секции c именами из отображения в поток.
     Отображение имен может расширяться.
     Все строковые параметры находятся в блоке имен.
@@ -440,7 +448,7 @@ def serialize_slim_data(section: Section, inv_names: InvNames, ostream: t.Binary
         raise SerializeError(str(e))
 
 
-def serialize_names_data(inv_names: NamesMap, ostream):
+def serialize_names_data(inv_names: NamesMap, ostream) -> None:
     """Сборка имен в поток."""
 
     try:

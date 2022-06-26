@@ -1,6 +1,9 @@
-from blk.types import *
+from blk.types import Bool, Color, Float, Float2, Float3, Float4, Float12, Int, Int2, Int3, Long, Section, Str
 
-__all__ = ['types_codes_map', 'codes_types_map']
+__all__ = [
+    'codes_types_map',
+    'types_codes_map'
+]
 
 
 types_codes_map = {

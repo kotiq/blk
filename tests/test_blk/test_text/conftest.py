@@ -1,11 +1,11 @@
 import io
 import textwrap
 import pytest
-from blk.types import RawSection, Include, LineComment, BlockComment, Str, Int
+from blk.types import ListSection, Include, LineComment, BlockComment, Str, Int
 
 
-@pytest.fixture(scope='session')
-def text_mixed_default():
+@pytest.fixture(scope='module')
+def text_mixed_dict_section_default():
     """Текст секции со всеми типами значений, DefaultDialect."""
 
     text = """\
@@ -30,8 +30,8 @@ def text_mixed_default():
     return textwrap.dedent(text)
 
 
-@pytest.fixture(scope='session')
-def text_sections_only_default():
+@pytest.fixture(scope='module')
+def text_dict_sections_only_dict_section_default():
     text = """\
     "alpha" {
     }
@@ -41,8 +41,8 @@ def text_sections_only_default():
     return textwrap.dedent(text)
 
 
-@pytest.fixture(scope='session')
-def text_sections_only_strict():
+@pytest.fixture(scope='module')
+def text_dict_sections_only_dict_section_strict():
     text = """\
     alpha{
     }
@@ -52,8 +52,8 @@ def text_sections_only_strict():
     return textwrap.dedent(text)
 
 
-@pytest.fixture(scope='session')
-def text_mixed_strict():
+@pytest.fixture(scope='module')
+def text_mixed_dict_section_strict():
     """Текст секции со всеми типами значений, StrictDialect."""
 
     text = """\
@@ -78,8 +78,8 @@ def text_mixed_strict():
     return textwrap.dedent(text)
 
 
-@pytest.fixture(scope='session')
-def text_section_with_same_id_sub_default():
+@pytest.fixture(scope='module')
+def text_dict_section_with_same_id_sub_default():
     """Текст секции с одинаковыми ссылками на уровне, DefaultDialect."""
 
     text = """\
@@ -93,8 +93,8 @@ def text_section_with_same_id_sub_default():
     return textwrap.dedent(text)
 
 
-@pytest.fixture(scope='session')
-def text_section_with_same_id_sub_deep_default():
+@pytest.fixture(scope='module')
+def text_dict_section_with_same_id_sub_deep_default():
     """Текст секции с одинаковыми ссылками с разными родителями, DefaultDialect."""
 
     text = """\
@@ -113,8 +113,8 @@ def text_section_with_same_id_sub_deep_default():
 
 
 @pytest.fixture(scope='module')
-def section_single_level():
-    root = RawSection()
+def list_section_single_level():
+    root = ListSection()
     root.add(Include('relative/path'))
     root.add(LineComment('line comment'))
     root.add(BlockComment('block\ncomment'))
@@ -122,19 +122,7 @@ def section_single_level():
 
 
 @pytest.fixture(scope='module')
-def section_multi_level():
-    root = RawSection()
-    root.add('scalar', Int(42))
-    sub = RawSection()
-    sub.add('scalar', Int(42))
-    sub.add(Include('relative/path'))
-    sub.add('scalar', Int(42))
-    root.add('sub', sub)
-    return root
-
-
-@pytest.fixture(scope='module')
-def text_single_level_default():
+def text_list_section_single_level_default():
     text = """\
     include "relative/path"
     // line comment
@@ -147,7 +135,19 @@ def text_single_level_default():
 
 
 @pytest.fixture(scope='module')
-def text_multi_level_default():
+def list_section_multi_level():
+    root = ListSection()
+    root.add('scalar', Int(42))
+    sub = ListSection()
+    sub.add('scalar', Int(42))
+    sub.add(Include('relative/path'))
+    sub.add('scalar', Int(42))
+    root.add('sub', sub)
+    return root
+
+
+@pytest.fixture(scope='module')
+def text_list_section_multi_level_default():
     text = """\
     "scalar":i = 42
     "sub" {

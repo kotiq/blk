@@ -1,23 +1,23 @@
-import io
+from io import BytesIO
 import pytest
-from blk.types import *
+from blk.types import Color, DictSection, Float, Float2, Float3, Float4, Float12, Int, Int2, Long, Name, Str, true
 from blk.binary.constructor import InvNames
 
 
 @pytest.fixture(scope='module')
-def sections_only():
-    a = Section()
-    b = Section()
-    c = Section()
-    d = Section()
-    e = Section()
-    f = Section()
-    g = Section()
-    h = Section()
-    i = Section()
-    j = Section()
-    k = Section()
-    l = Section()
+def dict_sections_only_dict_section():
+    a = DictSection()
+    b = DictSection()
+    c = DictSection()
+    d = DictSection()
+    e = DictSection()
+    f = DictSection()
+    g = DictSection()
+    h = DictSection()
+    i = DictSection()
+    j = DictSection()
+    k = DictSection()
+    l = DictSection()
 
     a.append(Name('b'), b)
     a.append(Name('c'), c)
@@ -38,10 +38,10 @@ def sections_only():
 
 
 @pytest.fixture(scope='module')
-def all_params():
-    root = Section()
+def all_params_dict_section():
+    root = DictSection()
 
-    gamma = Section()
+    gamma = DictSection()
     gamma.add('vec2i', Int2((3, 4)))
     gamma.add('vec2f', Float2((1.25, 2.5)))
     gamma.add('transform', Float12((1.0, 0.0, 0.0,
@@ -49,13 +49,13 @@ def all_params():
                                     0.0, 0.0, 1.0,
                                     1.25, 2.5, 5.0)))
 
-    alpha = Section()
+    alpha = DictSection()
     alpha.add('str', Str('hello'))
     alpha.add('bool', true)
     alpha.add('color', Color((1, 2, 3, 4)))
     alpha.add('gamma', gamma)
 
-    beta = Section()
+    beta = DictSection()
     beta.add('float', Float(1.25))
     beta.add('vec2i', Int2((1, 2)))
     beta.add('vec3f', Float3((1.25, 2.5, 5.0)))
@@ -70,7 +70,7 @@ def all_params():
 
 
 @pytest.fixture(scope='module')
-def sections_only_fat_data_bs():
+def dict_sections_only_dict_section_fat_data_bs():
     return bytes.fromhex(
         '0b'  # names_count
         '16'  # names_bytes_count
@@ -94,7 +94,7 @@ def sections_only_fat_data_bs():
 
 
 @pytest.fixture(scope='module')
-def all_params_fat_data_bs():
+def all_params_dict_section_fat_data_bs():
     return bytes.fromhex(
         # names
         '0e'  # names_count
@@ -151,7 +151,7 @@ def all_params_fat_data_bs():
 
 
 @pytest.fixture(scope='module')
-def all_params_fat_s_data_bs():
+def all_params_dict_section_fat_s_data_bs():
     return bytes.fromhex(
         # names
         '0f'
@@ -206,7 +206,7 @@ def all_params_fat_s_data_bs():
 
 
 @pytest.fixture(scope='module')
-def all_params_slim_data_bs():
+def all_params_dict_section_slim_data_bs():
     return bytes.fromhex(
         # external names
         '00'
@@ -244,17 +244,17 @@ def all_params_slim_data_bs():
 
 
 @pytest.fixture(scope='module')
-def all_params_fat_bs(all_params_fat_data_bs):
-    return b'\x01' + all_params_fat_data_bs
+def all_params_dict_section_fat_bs(all_params_dict_section_fat_data_bs):
+    return b'\x01' + all_params_dict_section_fat_data_bs
 
 
 @pytest.fixture(scope='module')
-def all_params_fat_s_bs(all_params_fat_s_data_bs):
-    return b'\x01' + all_params_fat_s_data_bs
+def all_params_dict_section_fat_s_bs(all_params_dict_section_fat_s_data_bs):
+    return b'\x01' + all_params_dict_section_fat_s_data_bs
 
 
 @pytest.fixture(scope='module')
-def all_params_names_seq():
+def all_params_dict_section_names_seq():
     return [Name(t) for t in (
         'vec4f', 'int', 'long', 'alpha', 'str', 'bool', 'color', 'gamma', 'vec2i', 'vec2f', 'transform', 'beta',
         'float', 'vec3f', 'hello'
@@ -262,8 +262,8 @@ def all_params_names_seq():
 
 
 @pytest.fixture(scope='module')
-def all_params_inv_names(all_params_names_seq):
-    return InvNames(all_params_names_seq)
+def all_params_dict_section_inv_names(all_params_dict_section_names_seq):
+    return InvNames(all_params_dict_section_names_seq)
 
 
 @pytest.fixture
@@ -272,45 +272,51 @@ def empty_inv_names():
 
 
 @pytest.fixture(scope='module')
-def all_params_slim_bs(all_params_slim_data_bs):
-    return b'\x03' + all_params_slim_data_bs
+def all_params_dict_section_slim_bs(all_params_dict_section_slim_data_bs):
+    return b'\x03' + all_params_dict_section_slim_data_bs
 
 
 @pytest.fixture
-def sections_only_fat_data_istream(sections_only_fat_data_bs):
-    return io.BytesIO(sections_only_fat_data_bs)
+def dict_sections_only_dict_section_fat_data_istream(dict_sections_only_dict_section_fat_data_bs):
+    return BytesIO(dict_sections_only_dict_section_fat_data_bs)
 
 
 @pytest.fixture
-def all_params_fat_data_istream(all_params_fat_data_bs):
-    return io.BytesIO(all_params_fat_data_bs)
+def all_params_dict_section_fat_data_istream(all_params_dict_section_fat_data_bs):
+    return BytesIO(all_params_dict_section_fat_data_bs)
 
 
 @pytest.fixture
-def all_params_fat_s_data_istream(all_params_fat_s_data_bs):
-    return io.BytesIO(all_params_fat_s_data_bs)
+def all_params_dict_section_fat_s_data_istream(all_params_dict_section_fat_s_data_bs):
+    return BytesIO(all_params_dict_section_fat_s_data_bs)
 
 
 @pytest.fixture
-def all_params_fat_istream(all_params_fat_bs):
-    return io.BytesIO(all_params_fat_bs)
+def all_params_dict_section_fat_istream(all_params_dict_section_fat_bs):
+    return BytesIO(all_params_dict_section_fat_bs)
 
 
 @pytest.fixture
-def all_params_fat_s_istream(all_params_fat_s_bs):
-    return io.BytesIO(all_params_fat_s_bs)
+def all_params_dict_section_fat_s_istream(all_params_dict_section_fat_s_bs):
+    return BytesIO(all_params_dict_section_fat_s_bs)
 
 
 @pytest.fixture
-def all_params_slim_data_istream(all_params_slim_data_bs):
-    return io.BytesIO(all_params_slim_data_bs)
+def all_params_dict_section_slim_data_istream(all_params_dict_section_slim_data_bs):
+    return BytesIO(all_params_dict_section_slim_data_bs)
 
 
 @pytest.fixture
-def all_params_slim_istream(all_params_slim_bs):
-    return io.BytesIO(all_params_slim_bs)
+def all_params_dict_section_slim_istream(all_params_dict_section_slim_bs):
+    return BytesIO(all_params_dict_section_slim_bs)
 
 
 @pytest.fixture
 def ostream():
-    return io.BytesIO()
+    return BytesIO()
+
+
+@pytest.fixture()
+def iostream():
+    return BytesIO()
+

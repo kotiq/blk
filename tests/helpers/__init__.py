@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-import typing as t
+from typing import TextIO, Union
 import pytest
 
 
@@ -26,5 +26,5 @@ def make_tmppath(name):
     return tmppath
 
 
-def create_text(path: t.Union[str, os.PathLike]) -> t.TextIO:
+def create_text(path: Union[str, os.PathLike]) -> TextIO:
     return open(path, 'w', newline='', encoding='utf8')
