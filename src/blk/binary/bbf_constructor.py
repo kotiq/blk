@@ -17,6 +17,8 @@ from .typed_named_tuple import TypedNamedTuple
 __all__ = [
     'compose_bbf',
     'compose_bbf_zlib',
+    'compose_partial_bbf',
+    'compose_partial_bbf_zlib',
     'serialize_bbf',
     'serialize_bbf_zlib'
 ]
@@ -359,6 +361,12 @@ BBFFile = ct.FocusedSeq(
     'data' / ct.Prefixed(ct.Int32ul, Data)
 )
 
+PartialBBFFile = ct.FocusedSeq(
+    'data',
+    'version' / ct.Rebuild(Version(ct.Int16ul[2]), this._.version),
+    'data' / ct.Prefixed(ct.Int32ul, Data)
+)
+
 
 class ZlibCompressed(ct.Tunnel):
     def __init__(self, subcon,
@@ -388,12 +396,26 @@ CompressedBBFFile = ct.FocusedSeq(
 )
 
 
+PartialCompressedBBFFile = ct.FocusedSeq(
+    'data_bs',
+    'size' / ct.Rebuild(ct.Int32ul, len_(this.data_bs)),
+    'data_bs' / ct.Prefixed(ct.Int32ul, ZlibCompressed(ct.GreedyBytes, max_length=this.size)),
+)
+
+
 # todo: readable/writable protocol
 def compose_bbf(istream: BinaryIO) -> DictSection:
     """Сборка секции из потока."""
 
     try:
         return BBFFile.parse_stream(istream)
+    except (TypeError, ValueError, KeyError, ct.ConstructError) as e:
+        raise ComposeError(e)
+
+
+def compose_partial_bbf(istream: BinaryIO) -> DictSection:
+    try:
+        return PartialBBFFile.parse_stream(istream)
     except (TypeError, ValueError, KeyError, ct.ConstructError) as e:
         raise ComposeError(e)
 
@@ -410,6 +432,14 @@ def compose_bbf_zlib(istream: BinaryIO) -> DictSection:
 
     try:
         data_bs = CompressedBBFFile.parse_stream(istream)
+        return BBFFile.parse(data_bs)
+    except (TypeError, ValueError, ct.ConstructError, zlib.error) as e:
+        raise ComposeError(str(e))
+
+
+def compose_partial_bbf_zlib(istream: BinaryIO) -> DictSection:
+    try:
+        data_bs = PartialCompressedBBFFile.parse_stream(istream)
         return BBFFile.parse(data_bs)
     except (TypeError, ValueError, ct.ConstructError, zlib.error) as e:
         raise ComposeError(str(e))

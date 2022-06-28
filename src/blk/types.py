@@ -1,6 +1,5 @@
 import abc
-# import typing as t
-from typing import Any, Callable, Generator, Iterable, NamedTuple, Optional, Sequence, Set, Tuple, Type, Union, overload
+from typing import Callable, Iterable, NamedTuple, Optional, Sequence, Set, Tuple, Type, Union, overload
 from ctypes import c_float
 from collections import OrderedDict, deque
 from math import isfinite, isclose
@@ -43,8 +42,6 @@ __all__ = [
     'Value',
     'Var',
     'Vector',
-    'dgen_float',
-    'dgen_float_element',
     'false',
     'method',
     'true'
@@ -71,14 +68,6 @@ def method(cls: type) -> Callable[[Callable], Callable]:
         return f
 
     return decorator
-
-
-def dgen_float(x: float) -> float:
-    return round(x, 4)
-
-
-def dgen_float_element(x: float) -> float:
-    return float(format(x, 'e'))
 
 
 class Value:

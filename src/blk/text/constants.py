@@ -1,7 +1,6 @@
 from blk.types import Bool, Color, Float, Float2, Float3, Float4, Float12, Int, Int2, Int3, Long, Str
 
 __all__ = [
-    'STRICT_BLK',
     'types_tags_map'
 ]
 
@@ -19,6 +18,3 @@ types_tags_map = {
     Float4: 'p4',
     Float12: 'm',
 }
-
-# todo: объединить в перечисление с вариантами json
-STRICT_BLK = 2

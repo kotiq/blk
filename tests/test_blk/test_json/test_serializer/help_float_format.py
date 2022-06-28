@@ -3,27 +3,28 @@ import hashlib
 import shlex
 import subprocess
 import pytest
-import blk_unpack as bbf3
+import wt_tools.blk_unpack as bbf3
 import blk.binary as bin
+from blk.format import Format
 import blk.json as jsn
 from helpers import make_outpath, create_text
 
 outpath = make_outpath(__name__)
-out_type = jsn.JSON
+out_type = Format.JSON
 
 
 @pytest.fixture(scope='module')
-def old_blk_path(currespath: Path):
+def old_blk_path(currespath: Path) -> Path:
     return currespath / 'aces_old.vromfs.bin_u_json' / 'config' / 'car_params.blk'
 
 
 @pytest.fixture(scope='module')
-def new_blk_path(currespath: Path):
+def new_blk_path(currespath: Path) -> Path:
     return currespath / 'aces_new.vromfs.bin_u_json' / 'config' / 'car_params.blk'
 
 
 @pytest.fixture(scope='module')
-def old_json_path(old_blk_path: Path, outpath: Path):
+def old_json_path(old_blk_path: Path, outpath: Path) -> Path:
     bs = old_blk_path.read_bytes()
     bbf3_parser = bbf3.BLK(bs)
     ss = bbf3_parser.unpack(out_type)
@@ -40,7 +41,7 @@ def new_nm_path(currespath: Path):
 
 
 @pytest.fixture(scope='module')
-def new_json_path(new_blk_path: Path, new_nm_path: Path, outpath: Path):
+def new_json_path(new_blk_path: Path, new_nm_path: Path, outpath: Path) -> Path:
     with open(new_nm_path, 'rb') as istream:
         names = bin.compose_names_data(istream)
 

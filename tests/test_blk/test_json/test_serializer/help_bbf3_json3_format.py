@@ -1,8 +1,8 @@
 import json
 import typing as t
-import blk_unpack as bbf3
-import blk.json as jsn
-from helpers import make_outpath, create_text
+import wt_tools.blk_unpack as bbf3
+from blk.format import Format
+from helpers import create_text, make_outpath
 
 outpath = make_outpath(__name__)
 
@@ -29,7 +29,7 @@ def test_mexico_4x4(currespath, outpath):
     bs = ipath.read_bytes()
     bbf3_parser = bbf3.BLK(bs)
     is_sorted = False
-    bbf3_parser.output_type = jsn.JSON_2
+    bbf3_parser.output_type = Format.JSON_2
     bbf3_parser.blk_version = 3
     unpacked_data = bbf3_parser._unpack_v3()
     transform_mapping(unpacked_data)

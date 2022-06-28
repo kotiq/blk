@@ -2,9 +2,12 @@
 
 import re
 from functools import partial
-from blk.types import *
-from .dialect import *
-from .constants import *
+from typing import TextIO, Type
+from blk.format import dgen_float, dgen_float_element
+from blk.types import (BlockComment, Bool, Color, Float, Float2, Float3, Float4, Float12, Include, Int, Int2, Int3,
+                       Section, Str, LineComment, Long, Pre)
+from .dialect import DefaultDialect, DGEN, DQN, VQN, DQS, VQS, bool_map, float_map, int_map
+from .constants import types_tags_map
 
 __all__ = ['serialize']
 
@@ -109,7 +112,7 @@ m_text = v_text(' ')
 
 
 class Serializer:
-    def __init__(self, stream, dialect, check_cycle):
+    def __init__(self, stream: TextIO, dialect: Type[DefaultDialect], check_cycle: bool):
         self.stream = stream
         self.scale = dialect.scale
         self.eof_newline = dialect.eof_newline
@@ -243,6 +246,7 @@ class Serializer:
                     stream.write(f'{self.name_type_sep}{tag}{self.type_value_sep}{value_text}')
 
 
-def serialize(root, stream, dialect=DefaultDialect, check_cycle=False):
+def serialize(root: Section, stream: TextIO,
+              dialect: Type[DefaultDialect] = DefaultDialect, check_cycle: bool = False) -> None:
     s = Serializer(stream, dialect, check_cycle)
     s.serialize(root)

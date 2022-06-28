@@ -1,11 +1,12 @@
 import platform
 import re
 import json
-import typing as t
+from typing import Any, Iterator, Mapping, Sequence, TextIO, Tuple, Union
+from blk.format import Format, dgen_float, dgen_float_element
 from blk.types import (Bool, Color, DictSection, Float, Float2, Float3, Float4, Float12, Int2, Int3, ListSection,
-                       Section, Var, Value, dgen_float, dgen_float_element)
+                       Section, Var, Value)
 
-__all__ = ['serialize', 'JSON', 'JSON_2', 'JSON_3']
+__all__ = ['serialize']
 
 implementation = platform.python_implementation()
 if implementation == 'CPython':
@@ -17,18 +18,18 @@ if implementation == 'CPython':
         fmt = r'@@{}@@'
         regex = re.compile(fmt.format(r'(\d+)'))
 
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             super().__init__(*args, **kwargs)
             self.kwargs = dict(kwargs)
             del self.kwargs['indent']
 
-        def default(self, o):
+        def default(self, o: Any) -> Any:
             if isinstance(o, Var):
                 value = o.value
                 return self.fmt.format(id(value))
             return super().default(o)
 
-        def iterencode(self, o, _one_shot=False):
+        def iterencode(self, o: Any, _one_shot: bool = False) -> Iterator[str]:
             for s in super().iterencode(o):
                 m = self.regex.search(s)
                 if m:
@@ -42,13 +43,13 @@ elif implementation == 'PyPy':
         fmt = r'@@{}@@'
         regex = re.compile(fmt.format(r'(\d+)'))
 
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             super().__init__(*args, **kwargs)
             self.kwargs = dict(kwargs)
             del self.kwargs['indent']
             self._objects_map = {}
 
-        def default(self, o):
+        def default(self, o: Any) -> Any:
             if isinstance(o, Var):
                 value = o.value
                 key = id(value)
@@ -56,7 +57,7 @@ elif implementation == 'PyPy':
                 return self.fmt.format(key)
             return super().default(o)
 
-        def iterencode(self, o, _one_shot=False):
+        def iterencode(self, o: Any, _one_shot: bool = False) -> Iterator[str]:
             for s in super().iterencode(o):
                 m = self.regex.search(s)
                 if m:
@@ -69,12 +70,12 @@ elif implementation == 'PyPy':
 
 class Mapper:
     @classmethod
-    def _map_section(cls, section: DictSection) -> t.Union[t.Sequence, t.Mapping]:
+    def _map_section(cls, section: DictSection) -> Union[Sequence, Mapping]:
         raise NotImplementedError
 
     @classmethod
-    def _map_value(cls, value: Value):
-        if isinstance(value, (DictSection, t.Mapping)):
+    def _map_value(cls, value: Value) -> Union[Sequence, Mapping, Tuple[(Var,)*4], str, Var, float, bool, Value]:
+        if isinstance(value, (DictSection, Mapping)):
             return cls._map_section(value)
         elif isinstance(value, Float12):
             return tuple(Var(tuple(dgen_float_element(x) for x in value[i:i+3])) for i in range(0, 10, 3))
@@ -92,18 +93,18 @@ class Mapper:
             return value
 
     @classmethod
-    def map(cls, root):
+    def map(cls, root: DictSection) -> Union[Section, Mapping]:
         return cls._map_section(root)
 
 
 class JSONMapper(Mapper):
     @classmethod
-    def _map_section(cls, section: DictSection) -> t.Union[t.Sequence, t.Mapping]:
+    def _map_section(cls, section: DictSection) -> Union[Sequence, Mapping]:
         items = section.items()
         if not items:
             return []
         else:
-            m: t.Union[list, dict] = {}
+            m: Union[list, dict] = {}
             for n, vs in items:
                 if len(vs) == 1:
                     v = vs[0]
@@ -120,7 +121,7 @@ class JSONMapper(Mapper):
 
 class JSON2Mapper(Mapper):
     @classmethod
-    def _map_section(cls, section: DictSection) -> t.Union[t.Sequence, t.Mapping]:
+    def _map_section(cls, section: DictSection) -> Union[Sequence, Mapping]:
         items = section.items()
         if not items:
             return []
@@ -130,7 +131,7 @@ class JSON2Mapper(Mapper):
 
 class JSON3Mapper(Mapper):
     @classmethod
-    def _map_section(cls, section: DictSection) -> t.Mapping:
+    def _map_section(cls, section: DictSection) -> Mapping:
         items = section.items()
         if not items:
             return {}
@@ -141,20 +142,15 @@ class JSON3Mapper(Mapper):
 class JSONMinMapper(Mapper):
     pass
 
-# todo: собрать в перечисление
-JSON = 0
-JSON_MIN = 1
-JSON_2 = 3
-JSON_3 = 4
 
-
-def serialize(root: Section, ostream, out_type: int, is_sorted=False, check_cycle=False):
+def serialize(root: Section, ostream: TextIO, out_format: Format,
+              is_sorted: bool = False, check_cycle: bool = False) -> None:
     mapper = {
-        JSON: JSONMapper,
-        JSON_MIN: JSONMinMapper,
-        JSON_2: JSON2Mapper,
-        JSON_3: JSON3Mapper,
-    }[out_type]
+        Format.JSON: JSONMapper,
+        Format.JSON_MIN: JSONMinMapper,
+        Format.JSON_2: JSON2Mapper,
+        Format.JSON_3: JSON3Mapper,
+    }[out_format]
     if root:
         if check_cycle:
             root.check_cycle()
