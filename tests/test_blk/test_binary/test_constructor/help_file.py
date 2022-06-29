@@ -3,7 +3,7 @@ from functools import partial
 import pytest
 from pytest import param as _
 from helpers import create_text, make_outpath
-from blk.binary.constructor import (InvNames, Names, compose_fat_data, compose_slim_data, serialize_fat_data,
+from blk.binary.constructor import (InvNames, Names, compose_partial_fat, compose_partial_slim, serialize_fat_data,
                                     serialize_slim_data)
 import blk.text as txt
 
@@ -20,7 +20,7 @@ def test_compose_fat(currespath, rpath, outpath):
     opath = outpath / Path(rpath).with_suffix('.blkx').name
 
     with open(ipath, 'rb') as istream:
-        root = compose_fat_data(istream)
+        root = compose_partial_fat(istream)
 
     with create_text(opath) as ostream:
         serialize_text(root, ostream)
@@ -35,7 +35,7 @@ def test_serialize_fat(strings_in_names, currespath, rpath, outpath, iostream):
     opath_text = outpath / Path(rpath).with_suffix('.blkx').name
 
     with open(ipath, 'rb') as istream:
-        root = compose_fat_data(istream)
+        root = compose_partial_fat(istream)
 
     with create_text(opath_text) as ostream:
         serialize_text(root, ostream)
@@ -47,7 +47,7 @@ def test_serialize_fat(strings_in_names, currespath, rpath, outpath, iostream):
     opath_bin.write_bytes(iostream.read())
 
     iostream.seek(0)
-    assert root == compose_fat_data(iostream)
+    assert root == compose_partial_fat(iostream)
 
 
 def test_compose_slim(currespath, outpath):
@@ -61,7 +61,7 @@ def test_compose_slim(currespath, outpath):
         names = Names.parse_stream(istream)
 
     with open(ipath, 'rb') as istream:
-        root = compose_slim_data(names, istream)
+        root = compose_partial_slim(names, istream)
 
     with create_text(opath) as ostream:
         serialize_text(root, ostream)
@@ -78,7 +78,7 @@ def test_serialize_slim(currespath, outpath, iostream):
         names = Names.parse_stream(istream)
 
     with open(ipath, 'rb') as istream:
-        root = compose_slim_data(names, istream)
+        root = compose_partial_slim(names, istream)
 
     inv_names = InvNames(names)
     len_before = len(inv_names)
@@ -88,5 +88,5 @@ def test_serialize_slim(currespath, outpath, iostream):
     opath.write_bytes(iostream.read())
 
     iostream.seek(0)
-    assert root == compose_slim_data(names, iostream)
+    assert root == compose_partial_slim(names, iostream)
     assert len_before == len(inv_names)

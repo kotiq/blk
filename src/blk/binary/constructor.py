@@ -14,9 +14,9 @@ __all__ = [
     'Fat',
     'InvNames',
     'compose_fat',
-    'compose_fat_data',
+    'compose_partial_fat',
     'compose_names_data',
-    'compose_slim_data',
+    'compose_partial_slim',
     'serialize_fat',
     'serialize_fat_data',
     'serialize_names_data',
@@ -350,9 +350,10 @@ Slim = ct.FocusedSeq(
 )
 
 
-def compose_fat_data(istream: BinaryIO) -> DictSection:
+def compose_partial_fat(istream: BinaryIO) -> DictSection:
     """
     Сборка секции из потока со встроенными именами.
+    Входной поток не содержит первого байта 0x01.
 
     :param istream: входной поток
     :return: секция
@@ -371,7 +372,7 @@ def compose_fat(istream: BinaryIO) -> DictSection:
     except ct.ConstructError as e:
         raise ComposeError(str(e))
 
-    return compose_fat_data(istream)
+    return compose_partial_fat(istream)
 
 
 def serialize_fat_data(section: DictSection, ostream: BinaryIO, strings_in_names: bool = False) -> None:
@@ -400,9 +401,10 @@ def serialize_fat(section: DictSection, ostream: BinaryIO, strings_in_names: boo
     serialize_fat_data(section, ostream, strings_in_names)
 
 
-def compose_slim_data(names: NamesSeq, istream: BinaryIO) -> DictSection:
+def compose_partial_slim(names: NamesSeq, istream: BinaryIO) -> DictSection:
     """
     Сборка секции из потока. Имена в списке.
+    Входной поток не содержит первого байта 0x03.
 
     :param names: общие имена или строки
     :param istream: входной поток

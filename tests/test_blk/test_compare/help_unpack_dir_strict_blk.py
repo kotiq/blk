@@ -88,7 +88,7 @@ def test_unpack_fat_dir(tmprespath: Path, dir_rpath: str, request):
         out_path = path.with_suffix('.blkx')
         try:
             with open(path, 'rb') as istream:
-                root = bin.compose_fat_data(istream)
+                root = bin.compose_partial_fat(istream)
             with create_text(out_path) as ostream:
                 txt.serialize(root, ostream, dialect=txt.StrictDialect)
             print(f'[ OK ] {path.relative_to(tmprespath)}', file=log)
@@ -120,7 +120,7 @@ def test_unpack_slim_dir(tmprespath: Path, dir_rpath: str, request):
         out_path = path.with_suffix('.blkx')
         try:
             with open(path, 'rb') as istream:
-                root = bin.compose_slim_data(names, istream)
+                root = bin.compose_partial_slim(names, istream)
             with create_text(out_path) as ostream:
                 txt.serialize(root, ostream, txt.StrictDialect)
             print(f'[ OK ] {path.relative_to(tmprespath)}', file=log)
@@ -145,7 +145,7 @@ def process_file_mp(path: Path, names: t.Sequence[Name], log, tmprespath: Path):
     out_path = path.with_suffix('.blkx')
     try:
         with open(path, 'rb') as istream:
-            root = bin.compose_slim_data(names, istream)
+            root = bin.compose_partial_slim(names, istream)
         with create_text(out_path) as ostream:
             txt.serialize(root, ostream, dialect=txt.StrictDialect)
         ok_msg = f'[ OK ] {path.relative_to(tmprespath)}\n'

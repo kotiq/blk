@@ -48,7 +48,7 @@ def new_json_path(new_blk_path: Path, new_nm_path: Path, outpath: Path) -> Path:
     assert hashlib.md5(new_blk_path.read_bytes()).hexdigest() == 'c0d15459bb716798d2cdb2e2efb85390'
 
     with open(new_blk_path, 'rb') as istream:
-        root = bin.compose_slim_data(names, istream)
+        root = bin.compose_partial_slim(names, istream)
 
     new_json_path_ = outpath / f'new_{new_blk_path.name}.json'
     with create_text(new_json_path_) as ostream:

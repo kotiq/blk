@@ -24,6 +24,6 @@ def test_pack_slim(outpath, all_params_dict_section):
         names = bin.compose_names_data(istream)
 
     with open(bin_path, 'rb') as istream:
-        root = bin.compose_slim_data(names, istream)
+        root = bin.compose_partial_slim(names, istream)
 
     assert root == all_params_dict_section

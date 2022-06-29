@@ -1,7 +1,7 @@
 import pytest
 from pytest import param as _
 from pytest_lazyfixture import lazy_fixture
-from blk.binary.constructor import Slim, compose_slim_data, serialize_slim_data
+from blk.binary.constructor import Slim, compose_partial_slim, serialize_slim_data
 
 all_params_dict_section = lazy_fixture('all_params_dict_section')
 all_params_dict_section_slim_data_bs = lazy_fixture('all_params_dict_section_slim_data_bs')
@@ -17,7 +17,7 @@ all_params_dict_section_slim_istream = lazy_fixture('all_params_dict_section_sli
       all_params_dict_section_slim_data_bs, all_params_dict_section, id='all_params_dict_section'),
 ])
 def test_slim_data_parse(slim_data_istream, names, slim_data_bs, dict_section):
-    parsed = compose_slim_data(names, slim_data_istream)
+    parsed = compose_partial_slim(names, slim_data_istream)
     assert slim_data_istream.tell() == len(slim_data_bs)
     assert parsed == dict_section
 
