@@ -1,14 +1,16 @@
 from io import BytesIO
+from hashlib import sha1
+from zstandard import ZstdCompressor, ZstdDecompressor, compress
 import pytest
 from blk.types import Name
-from blk.binary.constructor import InvNames
+from blk.binary.constructor import NamesFile, InvNames
 
 
 @pytest.fixture(scope='module')
 def names_bs():
     return bytes.fromhex(
-        '2BA10'
-        '6656E7469747900' '5F74656D706C61746500'
+        '2BA106'
+        '656E7469747900' '5F74656D706C61746500'
         '6C6576656C2E62696E00' '6C6576656C2E7765617468657200'
         '6C6576656C2E656E7669726F6E6D656E7400' '7761795F706F696E742E7472616E73666F726D00'
         '7761795F706F696E742E6E616D6500' '7761795F706F696E742E6D6F76655479706500'
@@ -65,6 +67,45 @@ def inv_names(names):
     return InvNames(names)
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
+def dict_digest():
+    return bytes.fromhex('00112233445566778899aabbccddeeff'*2)
+
+
+@pytest.fixture(scope='module')
+def table_digest(names_bs):
+    return sha1(names_bs).digest()[:8]
+
+
+@pytest.fixture(scope='module')
+def names_file_bs(table_digest, dict_digest, names_bs):
+    return table_digest + dict_digest + compress(names_bs)
+
+
+@pytest.fixture(scope='module')
+def names_file(table_digest, dict_digest, names):
+    return NamesFile(
+        table_digest=table_digest,
+        dict_digest=dict_digest,
+        names=names,
+    )
+
+
+@pytest.fixture()
+def no_dict_decompressor():
+    return ZstdDecompressor()
+
+
+@pytest.fixture()
+def no_dict_compressor():
+    return ZstdCompressor()
+
+
+@pytest.fixture()
 def names_istream(names_bs):
     return BytesIO(names_bs)
+
+
+@pytest.fixture()
+def names_file_istream(names_file_bs):
+    return BytesIO(names_file_bs)

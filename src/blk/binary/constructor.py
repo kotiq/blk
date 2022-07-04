@@ -1,26 +1,40 @@
 from io import BytesIO
+from hashlib import sha1, sha256
 from collections import OrderedDict
 from typing import (Any, BinaryIO, Callable, Container, Iterable, Mapping, MutableSequence, NamedTuple, Optional,
                     OrderedDict as ODict, Sequence, Tuple, Type, TypeVar, Union)
 import construct as ct
 from construct import len_, this
+from zstandard import FLUSH_FRAME, ZstdCompressor, ZstdDecompressor, ZstdError
 from blk.types import (Bool, Color, DictSection, Float, Float2, Float3, Float4, Float12, Int, Int2, Int3, Long, Name,
                        Parameter, Section, Str, UByte, Var, Value, false, true)
-from .constants import codes_types_map, types_codes_map
+from .constants import BlkType, codes_types_map, types_codes_map
 from .error import ComposeError, SerializeError
 from .typed_named_tuple import TypedNamedTuple
 
 __all__ = [
     'Fat',
     'InvNames',
+    'NamesFile',
     'compose_fat',
+    'compose_names',
     'compose_partial_fat',
-    'compose_names_data',
+    'compose_partial_fat_zst',
+    'compose_partial_names',
     'compose_partial_slim',
+    'compose_partial_slim_zst',
+    'compose_slim',
+    'compose_slim_zst',
+    'compose_slim_zst_dict',
     'serialize_fat',
-    'serialize_fat_data',
-    'serialize_names_data',
-    'serialize_slim_data'
+    'serialize_fat_zst',
+    'serialize_partial_fat',
+    'serialize_slim',
+    'serialize_names',
+    'serialize_partial_names',
+    'serialize_partial_slim',
+    'serialize_slim_zst',
+    'serialize_slim_zst_dict',
 ]
 
 RawCString = ct.NullTerminated(ct.GreedyBytes).compile()
@@ -337,14 +351,14 @@ class BlockAdapter(ct.Adapter):
 
 Fat = ct.FocusedSeq(
     'block',
-    'header' / ct.Const(1, ct.Byte),
+    'header' / ct.Const(BlkType.FAT, ct.Byte),
     'names' / ct.Rebuild(Names, lambda ctx: InvNames.of(ctx.block, ctx._params.strings_in_names)),
     'block' / BlockAdapter(BlockCon, this.names, lambda ctx: ctx._params.strings_in_names),
 )
 
 Slim = ct.FocusedSeq(
     'block',
-    'header' / ct.Const(3, ct.Byte),
+    'header' / ct.Const(BlkType.SLIM, ct.Byte),
     'names' / ct.Rebuild(Names, {}),
     'block' / BlockAdapter(BlockCon, lambda ctx: ctx._params.names_or_inv_names, True, True),
 )
@@ -357,6 +371,7 @@ def compose_partial_fat(istream: BinaryIO) -> DictSection:
 
     :param istream: входной поток
     :return: секция
+    :raises ComposeError: ошибка при распаковке
     """
 
     try:
@@ -366,16 +381,36 @@ def compose_partial_fat(istream: BinaryIO) -> DictSection:
         raise ComposeError(str(e))
 
 
+def compose_partial_fat_zst(istream: BinaryIO, dctx: ZstdDecompressor) -> DictSection:
+    """
+    Сборка секции из потока со встроенными именами.
+    Входной поток не содержит первого байта 0x02.
+
+    :param istream: входной поток
+    :param dctx: декомпрессор
+    :return: секция
+    :raises ComposeError: ошибка при распаковке
+    """
+
+    try:
+        size = ct.Int24ul.parse_stream(istream)
+        zstd_istream = dctx.stream_reader(istream)
+        return compose_fat(zstd_istream)
+    except (ct.ConstructError, ZstdError) as e:
+        raise ComposeError(str(e))
+
+
 def compose_fat(istream: BinaryIO) -> DictSection:
     try:
-        ct.Const(b'\x01').parse_stream(istream)
+        ct.Const(BlkType.FAT, ct.Byte).parse_stream(istream)
     except ct.ConstructError as e:
         raise ComposeError(str(e))
 
     return compose_partial_fat(istream)
 
 
-def serialize_fat_data(section: DictSection, ostream: BinaryIO, strings_in_names: bool = False) -> None:
+# todo: remove
+def serialize_partial_fat(section: DictSection, ostream: BinaryIO, strings_in_names: bool = False) -> None:
     """Дамп секции со встроенными именами в поток.
 
     :param section: секция
@@ -392,13 +427,25 @@ def serialize_fat_data(section: DictSection, ostream: BinaryIO, strings_in_names
         raise SerializeError(str(e))
 
 
-def serialize_fat(section: DictSection, ostream: BinaryIO, strings_in_names: bool = False):
+def serialize_fat(section: DictSection, ostream: BinaryIO, strings_in_names: bool = False) -> None:
     try:
-        ct.Const(b'\x01').build_stream(None, ostream)
+        ct.Byte.build_stream(BlkType.FAT, ostream)
     except ct.ConstructError as e:
         raise SerializeError(str(e))
 
-    serialize_fat_data(section, ostream, strings_in_names)
+    serialize_partial_fat(section, ostream, strings_in_names)
+
+
+def serialize_fat_zst(section: DictSection, cctx: ZstdCompressor, ostream: BinaryIO, strings_in_names: bool = False) -> None:
+    try:
+        ct.Byte.build_stream(BlkType.FAT_ZST, ostream)
+        fat_stream = BytesIO()
+        serialize_fat(section, fat_stream, strings_in_names)
+        zstd_data = cctx.compress(fat_stream.getvalue())
+        ct.Prefixed(ct.Int24ul, ct.GreedyBytes).build_stream(zstd_data, ostream)
+
+    except (ct.ConstructError, ZstdError) as e:
+        raise SerializeError(str(e))
 
 
 def compose_partial_slim(names: NamesSeq, istream: BinaryIO) -> DictSection:
@@ -418,12 +465,49 @@ def compose_partial_slim(names: NamesSeq, istream: BinaryIO) -> DictSection:
         raise ComposeError(str(e))
 
 
-def compose_names_data(istream: BinaryIO) -> NamesSeq:
+def compose_slim(names: NamesSeq, istream: BinaryIO) -> DictSection:
+    try:
+        ct.Const(BlkType.SLIM, ct.Byte).parse_stream(istream)
+    except ct.ConstructError as e:
+        raise ComposeError(str(e))
+
+    return compose_partial_slim(names, istream)
+
+
+def compose_partial_slim_zst(names: NamesSeq, istream: BinaryIO, dctx: ZstdDecompressor) -> DictSection:
+    try:
+        zstd_stream = dctx.stream_reader(istream)
+        return compose_partial_slim(names, zstd_stream)
+    except ZstdError as e:
+        raise ComposeError(str(e))
+
+
+def compose_slim_zst(names: NamesSeq, istream: BinaryIO, dctx: ZstdDecompressor) -> DictSection:
+    try:
+        ct.Const(BlkType.SLIM_ZST, ct.Byte).parse_stream(istream)
+    except ct.ConstructError as e:
+        raise ComposeError(str(e))
+
+    return compose_partial_slim_zst(names, istream, dctx)
+
+
+def compose_slim_zst_dict(names: NamesSeq, istream: BinaryIO, dctx: ZstdDecompressor) -> DictSection:
+    try:
+        ct.Const(BlkType.SLIM_ZST_DICT, ct.Byte).parse_stream(istream)
+    except ct.ConstructError as e:
+        raise ComposeError(str(e))
+
+    return compose_partial_slim_zst(names, istream, dctx)
+
+
+def compose_partial_names(istream: BinaryIO) -> NamesSeq:
     """
     Сборка списка имен из потока.
+    Входной поток не содержит идентификаторов карты и словаря (первые 40 байт).
 
     :param istream: входной поток
     :return: имена или строки
+    :raises ComposeError: Ошибка при построении карты имен
     """
 
     try:
@@ -432,8 +516,36 @@ def compose_names_data(istream: BinaryIO) -> NamesSeq:
         raise ComposeError(str(e))
 
 
-def serialize_slim_data(section: DictSection, inv_names: InvNames, ostream: BinaryIO) -> None:
-    """Сборка секции c именами из отображения в поток.
+class NamesFile(NamedTuple):
+    table_digest: bytes
+    dict_digest: bytes
+    names: NamesSeq
+
+
+# todo: NamesFileCon
+def compose_names(istream: BinaryIO, dctx: ZstdDecompressor) -> NamesFile:
+    """
+    Сборка карты имен из входного потока.
+
+    :param istream: входной поток
+    :param dctx: декомпрессор
+    :return: пространство имен для файла имен
+    :raises ComposeError: ошибка при построении карты имен
+    """
+
+    try:
+        table_digest = ct.stream_read(istream, 8)
+        dict_digest = ct.stream_read(istream, 32)
+        zstd_istream = dctx.stream_reader(istream)
+        names = compose_partial_names(zstd_istream)
+        return NamesFile(table_digest, dict_digest, names)
+    except (ct.ConstructError, ZstdError) as e:
+        raise ComposeError(str(e))
+
+
+# todo: remove
+def serialize_partial_slim(section: DictSection, inv_names: InvNames, ostream: BinaryIO) -> None:
+    """Сборка секции с именами из отображения в поток.
     Отображение имен может расширяться.
     Все строковые параметры находятся в блоке имен.
 
@@ -450,10 +562,65 @@ def serialize_slim_data(section: DictSection, inv_names: InvNames, ostream: Bina
         raise SerializeError(str(e))
 
 
-def serialize_names_data(inv_names: NamesMap, ostream) -> None:
+def serialize_slim(section: DictSection, inv_names: InvNames, ostream: BinaryIO) -> None:
+    try:
+        ct.Byte.build_stream(BlkType.SLIM, ostream)
+    except ct.ConstructError as e:
+        raise SerializeError(str(e))
+
+    serialize_partial_slim(section, inv_names, ostream)
+
+
+def serialize_slim_zst(section: DictSection, inv_names: InvNames, cctx: ZstdCompressor, ostream: BinaryIO) -> None:
+    try:
+        ct.Byte.build_stream(BlkType.SLIM_ZST, ostream)
+        zstd_ostream = cctx.stream_writer(ostream)
+        serialize_partial_slim(section, inv_names, zstd_ostream)
+        zstd_ostream.flush(FLUSH_FRAME)
+    except ZstdError as e:
+        raise SerializeError(str(e))
+
+
+def serialize_slim_zst_dict(section: DictSection, inv_names: InvNames, cctx: ZstdCompressor, ostream: BinaryIO) -> None:
+    try:
+        ct.Byte.build_stream(BlkType.SLIM_ZST_DICT, ostream)
+        zstd_ostream = cctx.stream_writer(ostream)
+        serialize_partial_slim(section, inv_names, zstd_ostream)
+        zstd_ostream.flush(FLUSH_FRAME)
+    except ZstdError as e:
+        raise SerializeError(str(e))
+
+
+# todo: remove
+def serialize_partial_names(inv_names: NamesMap, ostream) -> None:
     """Сборка имен в поток."""
 
     try:
         Names.build_stream(inv_names, ostream)
     except (TypeError, ValueError, ct.ConstructError) as e:
+        raise SerializeError(str(e))
+
+
+def serialize_names(inv_names: NamesMap, dict_digest: bytes, cctx: ZstdCompressor, ostream: BinaryIO) -> None:
+    """Сборка карты имен в поток.
+
+    :param inv_names: таблица имен (name => index)
+    :param dict_digest: идентификатор словаря
+    :param cctx: компрессор
+    :param ostream: выходной поток
+    :raises SerializeError: ошибка при построении файла карты имен.
+    """
+
+    try:
+        tmp = BytesIO()
+        Names.build_stream(inv_names, tmp)
+        # Алгоритм получения table_id я не знаю. Пусть будет 16 первых символов от sha1 дайджеста.
+        buf = tmp.getbuffer()
+        table_digest = sha1(buf).digest()[:8]
+        ct.stream_write(ostream, table_digest, 8)
+        ct.stream_write(ostream, dict_digest, 32)
+        zstd_ostream = cctx.stream_writer(ostream)
+        ct.stream_write(zstd_ostream, bytes(buf), len(buf))
+        zstd_ostream.flush(FLUSH_FRAME)
+    except (TypeError, ValueError, ct.ConstructError, ZstdError) as e:
         raise SerializeError(str(e))

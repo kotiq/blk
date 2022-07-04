@@ -14,14 +14,14 @@ def test_pack_slim(outpath, all_params_dict_section):
 
     bin_path = outpath / 'simple.bin'
     with open(bin_path, 'wb') as ostream:
-        bin.serialize_slim_data(all_params_dict_section, inv_names, ostream)
+        bin.serialize_partial_slim(all_params_dict_section, inv_names, ostream)
 
     nm_path = outpath / 'simple_nm.bin'
     with open(nm_path, 'wb') as ostream:
-        bin.serialize_names_data(inv_names, ostream)
+        bin.serialize_partial_names(inv_names, ostream)
 
     with open(nm_path, 'rb') as istream:
-        names = bin.compose_names_data(istream)
+        names = bin.compose_partial_names(istream)
 
     with open(bin_path, 'rb') as istream:
         root = bin.compose_partial_slim(names, istream)

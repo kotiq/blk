@@ -114,7 +114,7 @@ def test_unpack_slim_dir(tmprespath: Path, dir_rpath: str, request):
     dir_path = tmprespath / dir_rpath
     names_path = dir_path / 'nm'
     with open(names_path, 'rb') as istream:
-        names = bin.compose_names_data(istream)
+        names = bin.compose_partial_names(istream)
 
     def process_file(path: Path, log):
         out_path = path.with_suffix('.blkx')
@@ -189,7 +189,7 @@ def test_unpack_slim_dir_mp(tmprespath: Path, slim_dir_rpath: str, request, proc
     slim_dir_path = tmprespath / slim_dir_rpath
     names_path = slim_dir_path / 'nm'
     with open(names_path, 'rb') as istream:
-        names = bin.compose_names_data(istream)
+        names = bin.compose_partial_names(istream)
 
     utc = datetime.utcnow()
     log_name = '_'.join([utc.strftime(time_fmt), request.node.name, 'unpack.log'])

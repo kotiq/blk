@@ -144,3 +144,6 @@ cython_debug/
 
 # setuptools_scm version
 src/blk/_version.py
+
+# drawio backup
+docs/**/*.drawio.bkp

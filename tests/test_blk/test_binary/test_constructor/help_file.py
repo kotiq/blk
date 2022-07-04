@@ -3,8 +3,8 @@ from functools import partial
 import pytest
 from pytest import param as _
 from helpers import create_text, make_outpath
-from blk.binary.constructor import (InvNames, Names, compose_partial_fat, compose_partial_slim, serialize_fat_data,
-                                    serialize_slim_data)
+from blk.binary.constructor import (InvNames, Names, compose_partial_fat, compose_partial_slim, serialize_partial_fat,
+                                    serialize_partial_slim)
 import blk.text as txt
 
 serialize_text = partial(txt.serialize, dialect=txt.StrictDialect)
@@ -40,7 +40,7 @@ def test_serialize_fat(strings_in_names, currespath, rpath, outpath, iostream):
     with create_text(opath_text) as ostream:
         serialize_text(root, ostream)
 
-    serialize_fat_data(root, iostream, strings_in_names)
+    serialize_partial_fat(root, iostream, strings_in_names)
 
     opath_bin = outpath / Path(rpath).with_suffix('.bin').name
     iostream.seek(0)
@@ -82,7 +82,7 @@ def test_serialize_slim(currespath, outpath, iostream):
 
     inv_names = InvNames(names)
     len_before = len(inv_names)
-    serialize_slim_data(root, inv_names, iostream)
+    serialize_partial_slim(root, inv_names, iostream)
 
     iostream.seek(0)
     opath.write_bytes(iostream.read())

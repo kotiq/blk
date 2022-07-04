@@ -2,7 +2,7 @@ from itertools import chain, product
 import pytest
 from pytest import param as _
 from pytest_lazyfixture import lazy_fixture
-from blk.binary.constructor import Fat, compose_partial_fat, serialize_fat_data
+from blk.binary.constructor import Fat, compose_partial_fat, serialize_partial_fat
 
 get = globals().__getitem__
 
@@ -37,7 +37,7 @@ test_fat_data_build_params =\
 
 @pytest.mark.parametrize(['dict_section', 'fat_data_bs', 'strings_in_names'], test_fat_data_build_params)
 def test_fat_data_build(dict_section, fat_data_bs, strings_in_names, ostream):
-    serialize_fat_data(dict_section, ostream, strings_in_names)
+    serialize_partial_fat(dict_section, ostream, strings_in_names)
     ostream.seek(0)
     built = ostream.read()
     assert built == fat_data_bs

@@ -43,7 +43,7 @@ def new_nm_path(currespath: Path):
 @pytest.fixture(scope='module')
 def new_json_path(new_blk_path: Path, new_nm_path: Path, outpath: Path) -> Path:
     with open(new_nm_path, 'rb') as istream:
-        names = bin.compose_names_data(istream)
+        names = bin.compose_partial_names(istream)
 
     assert hashlib.md5(new_blk_path.read_bytes()).hexdigest() == 'c0d15459bb716798d2cdb2e2efb85390'
 
