@@ -8,13 +8,19 @@ Linux, Рython 3.7 для совместимости с PyPy3.
 
 ```pip install .```
 
+## Сборка документации
+
+Диаграммы построены с использованием [drawio](https://github.com/jgraph/drawio-desktop/)
+
+```
+pip install -r requirements-docs.txt
+python setup.py build_sphinx
+```
+
 ## Режим распаковки текстов
 
 Демонстрационные скрипты находятся в проекте `wt-tools`. Они основаны на `blk_unpacker.py` проекта `wt-tools` и реализуют
 подобный интерфейс командной строки с форматами `strict_blk`, `json`, `json_2`, `json_3`.
-
-Оценка времени распаковки aces.vromfs.bin_u новой и старой версии из директории в памяти для CPython и PyPy на
-Core i5-4670.
 
 `blk_unpack_ng.py` с одним процессом.\
 `blk_unpack_ng_mp.py` с числом процессов по количеству ядер.

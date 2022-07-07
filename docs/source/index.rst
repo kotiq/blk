@@ -10,7 +10,7 @@ Welcome to BLK Notes's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   binary_blk_files
+   binary
 
 
 

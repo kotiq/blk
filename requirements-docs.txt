@@ -1,0 +1,2 @@
+sphinx==4.1.2
+sphinxcontrib-drawio==0.0.16
