@@ -2,6 +2,29 @@
 Двоичные файлы BLK
 ==================
 
+В качестве примеров закодирована секция:
+
+.. code-block:: javascript
+
+    "vec4f":p4 = 1.25, 2.5, 5, 10
+        "int":i = 42
+        "long":i64 = 0x40
+        "alpha" {
+          "str":t = "hello"
+          "bool":b = true
+          "color":c = 0x1, 0x2, 0x3, 0x4
+          "gamma" {
+            "vec2i":ip2 = 3, 4
+            "vec2f":p2 = 1.25, 2.5
+            "transform":m = [[1, 0, 0] [0, 1, 0] [0, 0, 1] [1.25, 2.5, 5]]
+          }
+        }
+        "beta" {
+          "float":r = 1.25
+          "vec2i":ip2 = 1, 2
+          "vec3f":p3 = 1.25, 2.5, 5
+        }
+
 ---------------
 Общие структуры
 ---------------
@@ -166,37 +189,37 @@ First block index
 .. drawio-image:: diagrams/fat.drawio
 
 File type
-    Int8ul, тип файла FileType.FAT
+    Int8ul, тип файла FileType.FAT.
 
 Names count
     VarInt, количество имен.
 
 Names data size
-    VarInt, размер массива имен в октетах
+    VarInt, размер массива имен в октетах, если names count > 0.
 
 Names[Names count]
-    | Массив CString имен.
+    | Массив CString имен, если names count > 0.
     | Идентификаторы имен по порядку чтения массива.
 
 Blocks count
     VarInt, количество блоков в файле, включая корневой блок.
 
 Parameters count
-    VarInt, количество параметров в файле
+    VarInt, количество параметров в файле.
 
 Parameters data size
-    VarInt, размер массива длинных параметров в октетах.
+    VarInt, размер массива длинных параметров в октетах, если есть длинные параметры.
 
 Parameters data
-    | Регион длинных параметров.
-    | Смещение в структуре ParamInfo от начала региона.
+    | Регион длинных параметров, если есть длинные параметры.
+    | Смещение в структуре ParameterInfo от начала региона.
 
 ParameterInfo[Parameters count]
-    | Массив структур ParamInfo.
+    | Массив структур ParameterInfo, если parameters count > 0.
     | Идентификаторы параметров по порядку чтения массива.
 
 BlockInfo[Block count]
-    | Массив структур BlockInfo, включая корневой блок.
+    | Массив структур BlockInfo, включая корневой блок, если blocks count > 0.
     | Идентификаторы блоков по порядку чтения массива.
     | Блоки перечислены при обходе дерева блоков в ширину.
 
@@ -211,43 +234,43 @@ BlockInfo[Block count]
 Карта имен
 ----------
 
-.. list-table:: Карта имен
+.. list-table:: Карта имен и строк
     :header-rows: 1
     :align: left
 
     * - Индекс
       - Имя
     * - 0x00
-      - vec4f
+      - \'vec4f\'
     * - 0x01
-      - int
+      - \'int\'
     * - 0x02
-      - long
+      - \'long\'
     * - 0x03
-      - alpha
+      - \'alpha\'
     * - 0x04
-      - str
+      - \'str\'
     * - 0x05
-      - bool
+      - \'bool\'
     * - 0x06
-      - color
+      - \'color\'
     * - 0x07
-      - gamma
+      - \'gamma\'
     * - 0x08
-      - vec2i
+      - \'vec2i\'
     * - 0x09
-      - vec2f
+      - \'vec2f\'
     * - 0x0a
-      - transform
+      - \'transform\'
     * - 0x0b
-      - beta
+      - \'beta\'
     * - 0x0c
-      - float
+      - \'float\'
     * - 0x0d
-      - vec3f
+      - \'vec3f\'
 
-Массив структур ParamInfo и регион Parameters data
---------------------------------------------------
+Массив структур ParameterInfo и регион Parameters data
+------------------------------------------------------
 
 .. drawio-image:: diagrams/section_fat_param_info_array_and_params_data_dump.drawio
 
@@ -332,30 +355,268 @@ BlockInfo[Block count]
 
 .. drawio-image:: diagrams/section_fat_blocks_tree.drawio
 
+-----------------
+Файл типа FAT_ZST
+-----------------
 
-Содержимое корневого блока
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Сжатый автономный файл, сжатый по алгоритму zstandard.
 
-.. code-block:: javascript
+Примеры:
 
-    "vec4f":p4 = 1.25, 2.5, 5, 10
-    "int":i = 42
-    "long":i64 = 0x40
-    "alpha" {
-      "str":t = "hello"
-      "bool":b = true
-      "color":c = 0x1, 0x2, 0x3, 0x4
-      "gamma" {
-        "vec2i":ip2 = 3, 4
-        "vec2f":p2 = 1.25, 2.5
-        "transform":m = [[1, 0, 0] [0, 1, 0] [0, 0, 1] [1.25, 2.5, 5]]
-      }
-    }
-    "beta" {
-      "float":r = 1.25
-      "vec2i":ip2 = 1, 2
-      "vec3f":p3 = 1.25, 2.5, 5
-    }
+* ``WarThunder/cache/binary.2.17.0/regional.vromfs.bin/dldata/downloadable_decals.blk``
+* ``tests/samples/section_fat_zst.blk``
 
+.. drawio-image:: diagrams/fat_zst.drawio
 
+File type
+    Int8ul, тип файла FileType.FAT_ZST.
 
+Zstd stream size
+    Int24ul, размер zstd потока октетах.
+
+Zstd stream
+    Сжатый по алгоритму zstandard файл типа FAT.
+
+Пример разбора
+==============
+
+Файл tests/samples/section_fat_zst.blk
+--------------------------------------
+
+.. drawio-image:: diagrams/section_fat_zst_dump.drawio
+
+-------
+Файл NM
+-------
+
+Разделяемый файл имен.
+
+Примеры:
+
+* ``WarThunder/aces.vromfs.bin/nm``
+* ``tests/samples/nm``
+
+.. drawio-image:: diagrams/nm.drawio
+
+Names digest
+    | Bit(64), дайджест карты имен.
+    | Алгоритм построения неизвестен.
+
+Dict digest
+    | Bit(256), дайджест словаря.
+    | Текст дайджеста совпадает с именем словаря, который используется для распаковки файлов типа SLIM_ZST_DICT.
+    | Специальное значение 0 в случае отсутствия словаря.
+    | Алгоритм построения неизвестен.
+
+Zstd stream
+    Сжатая по алгоритму zstandard карта имен.
+
+Пример разбора
+==============
+
+Файл tests/samples/nm
+---------------------
+
+.. drawio-image:: diagrams/nm_dump.drawio
+
+Дайджесты
+---------
+
+.. list-table:: Дайджесты
+    :header-rows: 1
+    :align: left
+    :widths: 20 80
+
+    * - Имя
+      - Дайджест, BE
+
+    * - Names digest
+      - C2FA9EF840FA12F9
+
+    * - Dict digest
+      - BFB732560AD45234690ACAD246D7B14C2F25AD418A146E5E7EF68BA3386A315C
+
+----------
+Карта имен
+----------
+
+Содержит имена и строки, общие для группы файлов типа SLIM, SLIM_ZST, SLIM_ZST_DICT.
+
+Пример:
+
+* ``tests/samples/names``
+
+.. drawio-image:: diagrams/names.drawio
+
+Names count
+    VarInt, количество имен.
+
+Names data size
+    VarInt, размер массива имен в октетах, если names count > 0.
+
+Names[Names count]
+    | Массив CString имен, если names count > 0.
+    | Идентификаторы имен по порядку чтения массива.
+
+Пример разбора
+==============
+
+Файл tests/samples/names
+------------------------
+
+.. drawio-image:: diagrams/names_dump.drawio
+
+Карта имен
+----------
+
+.. list-table:: Карта имен и строк
+    :header-rows: 1
+    :align: left
+
+    * - Индекс
+      - Имя
+    * - 0x00
+      - \'vec4f\'
+    * - 0x01
+      - \'int\'
+    * - 0x02
+      - \'long\'
+    * - 0x03
+      - \'alpha\'
+    * - 0x04
+      - \'str\'
+    * - 0x05
+      - \'bool\'
+    * - 0x06
+      - \'color\'
+    * - 0x07
+      - \'gamma\'
+    * - 0x08
+      - \'vec2i\'
+    * - 0x09
+      - \'vec2f\'
+    * - 0x0a
+      - \'transform\'
+    * - 0x0b
+      - \'beta\'
+    * - 0x0c
+      - \'float\'
+    * - 0x0d
+      - \'vec3f\'
+    * - 0x0e
+      - \'hello\'
+
+--------------
+Файл типа SLIM
+--------------
+
+Неавтономный файл. Имена и строки файла находятся в разделяемом файле имен.
+
+Примеры:
+
+* ``WarThunder/aces.vromfs.bin/config/es_order.blk``
+* ``tests/samples/section_slim.blk``
+
+.. drawio-image:: diagrams/slim.drawio
+
+File type
+    Int8ul, тип файла FileType.SLIM.
+
+Names count
+    | VarInt, количество имен
+    | Файл не содержит встроенной карты имен, names count = 0
+
+Blocks count
+    VarInt, количество блоков в файле, включая корневой блок.
+
+Parameters count
+    VarInt, количество параметров в файле.
+
+Parameters data size
+    VarInt, размер массива длинных параметров в октетах, если есть длинные параметры.
+
+Parameters data
+    | Регион длинных параметров, если есть длинные параметры.
+    | Смещение в структуре ParameterInfo от начала региона.
+
+ParameterInfo[Parameters count]
+    | Массив структур ParameterInfo, если parameters count > 0.
+    | Идентификаторы параметров по порядку чтения массива.
+
+BlockInfo[Block count]
+    | Массив структур BlockInfo, включая корневой блок, если blocks count > 0.
+    | Идентификаторы блоков по порядку чтения массива.
+    | Блоки перечислены при обходе дерева блоков в ширину.
+
+Пример разбора
+==============
+
+Файл tests/samples/section_slim.blk
+-----------------------------------
+
+.. drawio-image:: diagrams/section_slim_dump.drawio
+
+Карта имен
+----------
+
+Использована карта имен ``tests/samples/nm``.
+
+Карта имен, массив структур ParameterInfo и регион Parameters data
+------------------------------------------------------------------
+
+.. drawio-image:: diagrams/section_slim_param_info_array_and_params_data_dump.drawio
+
+------------------
+Файл типа SLIM_ZST
+------------------
+
+Неавтономный файл, сжатый по алгоритму zstandard. Имена и строки файла находятся в разделяемом файле имен.
+
+Примеры:
+
+* ``WarThunder/char.vromfs.bin/config/attachable.blk``
+* ``tests/samples/section_slim_zst.blk``
+
+.. drawio-image:: diagrams/slim_zst.drawio
+
+File type
+    Int8ul, тип файла FileType.SLIM_ZST
+
+Zstd stream
+    Сжатый по алгоритму zstandard файл типа SLIM без первого октета.
+
+Пример разбора
+==============
+
+Файл tests/samples/section_slim_zst.blk
+---------------------------------------
+
+.. drawio-image:: diagrams/section_slim_zst_dump.drawio
+
+-----------------------
+Файл типа SLIM_ZST_DICT
+-----------------------
+
+Неавтономный файл, сжатый по алгоритму zstandard с использованием словаря. Имя словаря - дайджест словаря из файла nm
+в base16 с расширением ``.dict``.
+
+Примеры:
+
+* ``WarThunder/aces.vromfs.bin/_allowedconfigoverrides.blk``
+* ``tests/samples/section_slim_zst_dict.blk``
+
+.. drawio-image:: diagrams/slim_zst_dict.drawio
+
+File type
+    Int8ul, тип файла FileType.SLIM_ZST_DICT
+
+Zstd stream
+    Сжатый по алгоритму zstandard файл типа SLIM без первого октета.
+
+Пример разбора
+==============
+
+Файл tests/samples/section_slim_zst_dict.blk
+--------------------------------------------
+
+.. drawio-image:: diagrams/section_slim_zst_dict_dump.drawio

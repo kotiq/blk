@@ -148,3 +148,6 @@ src/blk/_version.py
 # drawio
 docs/**/*.drawio.bkp
 docs/**/*.drawio.dtmp
+
+# hex editor tags
+tests/samples/**/*.tags
