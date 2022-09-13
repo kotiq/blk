@@ -19,20 +19,20 @@ def dict_sections_only_dict_section():
     k = DictSection()
     l = DictSection()
 
-    a.append(Name('b'), b)
-    a.append(Name('c'), c)
-    a.append(Name('d'), d)
-    a.append(Name('e'), e)
+    a.append((Name('b'), b))
+    a.append((Name('c'), c))
+    a.append((Name('d'), d))
+    a.append((Name('e'), e))
 
-    c.append(Name('f'), f)
-    c.append(Name('g'), g)
+    c.append((Name('f'), f))
+    c.append((Name('g'), g))
 
-    e.append(Name('h'), h)
-    e.append(Name('i'), i)
-    e.append(Name('j'), j)
+    e.append((Name('h'), h))
+    e.append((Name('i'), i))
+    e.append((Name('j'), j))
 
-    g.append(Name('k'), k)
-    g.append(Name('l'), l)
+    g.append((Name('k'), k))
+    g.append((Name('l'), l))
 
     return a
 

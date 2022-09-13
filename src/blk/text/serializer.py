@@ -2,17 +2,20 @@
 
 import re
 from functools import partial
-from typing import TextIO, Type
+from typing import Iterable, TextIO, Tuple, Type, cast
 from blk.format import dgen_float, dgen_float_element
 from blk.types import (BlockComment, Bool, Color, Float, Float2, Float3, Float4, Float12, Include, Int, Int2, Int3,
-                       Section, Str, LineComment, Long, Pre)
+                       Item, Section, Str, LineComment, Long, Vector)
 from .dialect import DefaultDialect, DGEN, DQN, VQN, DQS, VQS, bool_map, float_map, int_map
 from .constants import types_tags_map
+from .error import SerializeError
 
-__all__ = ['serialize']
+__all__ = [
+    'serialize',
+]
 
 
-def quoted_text(inst, quote):
+def quoted_text(inst: str, quote: str) -> str:
     acc = [quote]
     for c in inst:
         if c in ('~', '"', "'"):
@@ -34,14 +37,14 @@ quoteless_name = re.compile(r"^[\w.\-]+$")
 newline = re.compile(r'\r\n|\r|\n')
 
 
-def dq_str_text(x):
+def dq_str_text(x: str) -> str:
     return quoted_text(x, '"')
 
 
 dq_name_text = dq_str_text
 
 
-def vq_str_text(x):
+def vq_str_text(x: str) -> str:
     dq = '"' in x
     sq = "'" in x
     if dq and sq:
@@ -53,41 +56,41 @@ def vq_str_text(x):
     return quoted_text(x, quote)
 
 
-def vq_name_text(x):
+def vq_name_text(x: str) -> str:
     return x if quoteless_name.match(x) else quoted_text(x, '"')
 
 
-def make_int_text(cls):
+def make_int_text(cls: Type):
     key = cls.__name__.lower()
 
-    def text(self, value):
+    def text(self, value: int):
         return format(value, getattr(self, key))
 
     return text
 
 
-def dgen_float_text(x):
+def dgen_float_text(x: float) -> str:
     return repr(dgen_float(x))
 
 
-def make_ints_text(cls):
+def make_ints_text(cls: Type[Vector]):
     key = cls.type.__name__.lower()
 
-    def text(self, value):
+    def text(self, value: Tuple[int, ...]) -> str:
         fmt = getattr(self, key)
         return ', '.join(map(lambda x: format(x, fmt), value))
 
     return text
 
 
-def dgen_float_element_text(x):
+def dgen_float_element_text(x: float) -> str:
     return repr(dgen_float_element(x))
 
 
-def make_floats_text(cls):
+def make_floats_text(cls: Type[Vector]):
     key = cls.type.__name__.lower()
 
-    def text(self, value):
+    def text(self, value: Tuple[float, ...]) -> str:
         fmt = getattr(self, key)
         if fmt == DGEN:
             format_ = dgen_float_element_text
@@ -100,8 +103,8 @@ def make_floats_text(cls):
     return text
 
 
-def v_text(sep):
-    def text(xs):
+def v_text(sep: str):
+    def text(xs: Iterable) -> str:
         return f"[{sep.join(xs)}]"
 
     return text
@@ -112,7 +115,10 @@ m_text = v_text(' ')
 
 
 class Serializer:
-    def __init__(self, stream: TextIO, dialect: Type[DefaultDialect], check_cycle: bool):
+    def __init__(self, stream: TextIO,
+                 dialect: Type[DefaultDialect],
+                 check_cycle: bool = False,
+                 ) -> None:
         self.stream = stream
         self.scale = dialect.scale
         self.eof_newline = dialect.eof_newline
@@ -146,19 +152,34 @@ class Serializer:
             Float12: self.mat_text,
         }
 
-    def indent(self):
+    def indent(self) -> None:
         self.stream.write(' ' * self.scale * self.level)
 
-    def serialize(self, root: Section):
+    def serialize(self, root: Section, str_commands: bool = False) -> None:
+        """
+        Сериализация корневой секции.
+
+        :param root: корневая секция
+        :param str_commands: представить команды как строки
+        :raises SectionError: ошибка структуры секции
+        :raises SerializeError: ошибка ввода-вывода
+        """
+
         if root:
             if self.check_cycle:
                 root.check_cycle()
             self.fst = True
-            self.serialize_pairs(root.pairs(), self.stream)
+            try:
+                self.serialize_pairs(root.pairs(), self.stream, str_commands)
+            except OSError as e:
+                raise SerializeError(e)
         if self.eof_newline:
-            self.stream.write('\n')
+            try:
+                self.stream.write('\n')
+            except OSError as e:
+                raise SerializeError(e)
 
-    def str_text(self, value):
+    def str_text(self, value: str) -> str:
         fmt = self.str
         if fmt == DQS:
             return dq_str_text(value)
@@ -167,7 +188,7 @@ class Serializer:
         else:
             raise ValueError('Неизвестный формат: {}'.format(fmt))
 
-    def name_text(self, value):
+    def name_text(self, value: str) -> str:
         fmt = self.name
         if fmt == DQN:
             return dq_name_text(value)
@@ -176,17 +197,17 @@ class Serializer:
         else:
             raise ValueError('Неизвестный формат: {}'.format(fmt))
 
-    def bool_text(self, value):
+    def bool_text(self, value: bool) -> str:
         return self.true if value else self.false
 
-    def float_text(self, value):
+    def float_text(self, value: float) -> str:
         fmt = self.float
         if fmt == DGEN:
             return dgen_float_text(value)
         else:
             return format(value, fmt)
 
-    def mat_text(self, value):
+    def mat_text(self, value: Tuple[float, ...]) -> str:
         fmt = self.float
         if fmt == DGEN:
             format_ = dgen_float_element_text
@@ -198,9 +219,8 @@ class Serializer:
 
         return m_text(map(r_text, ts))
 
-    def serialize_pairs(self, pairs, stream):
-        for p in pairs:
-            name, value = p
+    def serialize_pairs(self, pairs: Iterable[Item], stream: TextIO, str_commands: bool) -> None:
+        for name, value in pairs:
             is_section = isinstance(value, Section)
 
             if self.fst:
@@ -213,20 +233,25 @@ class Serializer:
 
             self.indent()
 
-            if isinstance(p, Pre):
-                if isinstance(p, Include):
-                    stream.write(f'include {self.name_text(value)}')
-                elif isinstance(p, LineComment):
+            if isinstance(value, Str) and not str_commands:
+                if name == Include.name:
+                    stream.write(f'include {self.str_text(value)}')
+                elif name == LineComment.name:
                     stream.write(f'// {value}')
-                elif isinstance(p, BlockComment):
+                elif name == BlockComment.name:
                     stream.write('/*')
-                    for i, line in enumerate(newline.split(value)):
+                    for line in newline.split(value):
                         stream.write('\n')
                         self.indent()
                         stream.write(line)
                     stream.write('\n')
                     self.indent()
                     stream.write('*/')
+                else:
+                    stream.write(self.name_text(name))
+                    tag = types_tags_map[Str]
+                    stream.write(f'{self.name_type_sep}{tag}{self.type_value_sep}{self.str_text(value)}')
+            # иначе предупредить об Item со специальным именем
             else:
                 stream.write(self.name_text(name))
                 if is_section:
@@ -234,7 +259,7 @@ class Serializer:
                         stream.write(self.name_opener_sep)
                     stream.write('{')
                     self.level += 1
-                    self.serialize_pairs(value.pairs(), stream)  # @r
+                    self.serialize_pairs(cast(Section, value).pairs(), stream, str_commands)  # @r
                     self.level -= 1
                     stream.write('\n')
                     self.indent()
@@ -247,6 +272,21 @@ class Serializer:
 
 
 def serialize(root: Section, stream: TextIO,
-              dialect: Type[DefaultDialect] = DefaultDialect, check_cycle: bool = False) -> None:
+              dialect: Type[DefaultDialect] = DefaultDialect,
+              check_cycle: bool = False,
+              str_commands: bool = False,
+              ) -> None:
+    """
+    Сериализация корневой секции в текстовый поток.
+
+    :param root: корневая секция
+    :param stream: текстовый поток
+    :param dialect: диалект, определяет детали представления
+    :param check_cycle: проверить секцию на наличие циклов
+    :param str_commands: представить команды как строки
+    :raises SectionError: ошибка обработки секции
+    :raises SerializeError: ошибка ввода-вывода
+    """
+
     s = Serializer(stream, dialect, check_cycle)
-    s.serialize(root)
+    s.serialize(root, str_commands)

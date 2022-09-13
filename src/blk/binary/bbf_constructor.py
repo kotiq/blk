@@ -296,7 +296,7 @@ class Block(ct.Construct):
                     con = types_cons_map[cls]
                     value = cls(con._parsereport(stream, context, path))
             name = names[name_id]
-            root.append(name, value)
+            root.append((name, value))
 
         for _ in range(blocks_count):
             name_id, type_id = PartialValueInfoCon._parsereport(stream, context, path)
@@ -305,7 +305,7 @@ class Block(ct.Construct):
                 raise ValueError('Ожидался код секции: {}'.format(type_id))
             value = Block._parsereport(stream, context, path)  # @r
             name = names[name_id]
-            root.append(name, value)
+            root.append((name, value))
 
         return root
 

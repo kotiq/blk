@@ -11,7 +11,7 @@ Welcome to BLK Notes's documentation!
    :caption: Contents:
 
    binary
-
+   text
 
 
 Indices and tables

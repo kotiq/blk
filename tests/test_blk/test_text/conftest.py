@@ -115,9 +115,9 @@ def text_dict_section_with_same_id_sub_deep_default():
 @pytest.fixture(scope='module')
 def list_section_single_level():
     root = ListSection()
-    root.add(Include('relative/path'))
-    root.add(LineComment('line comment'))
-    root.add(BlockComment('block\ncomment'))
+    root.append(Include('relative/path'))
+    root.append(LineComment('line comment'))
+    root.append(BlockComment('block\ncomment'))
     return root
 
 
@@ -135,12 +135,22 @@ def text_list_section_single_level_default():
 
 
 @pytest.fixture(scope='module')
+def text_list_section_single_level_str_commands_default():
+    text = """\
+    "@include":t = "relative/path"
+    "@commentCPP":t = "line comment"
+    "@commentC":t = "block~ncomment"
+    """
+    return textwrap.dedent(text)
+
+
+@pytest.fixture(scope='module')
 def list_section_multi_level():
     root = ListSection()
     root.add('scalar', Int(42))
     sub = ListSection()
     sub.add('scalar', Int(42))
-    sub.add(Include('relative/path'))
+    sub.append(Include('relative/path'))
     sub.add('scalar', Int(42))
     root.add('sub', sub)
     return root
@@ -153,6 +163,19 @@ def text_list_section_multi_level_default():
     "sub" {
       "scalar":i = 42
       include "relative/path"
+      "scalar":i = 42
+    }
+    """
+    return textwrap.dedent(text)
+
+
+@pytest.fixture(scope='module')
+def text_list_section_multi_level_str_commands_default():
+    text = """\
+    "scalar":i = 42
+    "sub" {
+      "scalar":i = 42
+      "@include":t = "relative/path"
       "scalar":i = 42
     }
     """

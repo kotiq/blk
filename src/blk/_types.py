@@ -1,14 +1,14 @@
 import abc
-from pathlib import Path
-from typing import (Any, Callable, ClassVar, Iterable, NamedTuple, Optional, Sequence, Set, Tuple, Type, TypeVar, Union,
-                    overload)
+from typing import Callable, Iterable, NamedTuple, Optional, Sequence, Set, Tuple, Type, Union, overload
 from ctypes import c_float
 from collections import OrderedDict, deque
 from math import isfinite, isclose
 
+
 __all__ = [
     'BlockComment',
     'Bool',
+    'CloneLast',
     'Color',
     'Command',
     'Comment',
@@ -27,14 +27,15 @@ __all__ = [
     'Int',
     'Int2',
     'Int3',
-    'Item',
     'LineComment',
     'ListSection',
     'Long',
     'Name',
+    'Override',
     'Parameter',
+    'Post',
+    'Pre',
     'Section',
-    'SectionError',
     'Size',
     'Str',
     'UByte',
@@ -47,16 +48,12 @@ __all__ = [
 ]
 
 
-class SectionError(Exception):
-    """Ошибка структуры секции."""
-
-
-class CycleError(SectionError):
+class CycleError(Exception):
     """Секция содержит цикл."""
 
 
 class Var:
-    __slots__ = ('value',)
+    __slots__ = ('value', )
 
     def __init__(self, init) -> None:
         self.value = init
@@ -246,8 +243,6 @@ class Float(float, Scalar):
             return NotImplemented
         return isclose(self, other, rel_tol=Float.rel_tol, abs_tol=Float.abs_tol)
 
-    __hash__ = float.__hash__
-
 
 SafeFloat = Float.of
 
@@ -342,10 +337,10 @@ class Name(EncodedStr):
 
 SafeName = Name.of
 
-Item = Tuple[Name, Value]
+Pair = Tuple[Name, Value]
 ParameterPair = Tuple[Name, Parameter]
 SectionPair = Tuple[Name, 'Section']
-PairsGenOf = Callable[['Section'], Iterable[Item]]
+PairsGenOf = Callable[['Section'], Iterable[Pair]]
 
 
 class Size(NamedTuple):
@@ -353,56 +348,14 @@ class Size(NamedTuple):
     blocks_count: int
 
 
-D = TypeVar('D')
-
-
-def typed_getters(*kls: Type[Value]):
-    def make_typed_getter(type_: Type[Value]):
-        def typed_getter(self, name: str, index: Optional[int] = 0, default: Union[Tuple[()], D] = None
-                         ) -> Union[type_, Sequence[type_], D]:
-            value = self.get(name, index, default)
-            if value is default:
-                return default
-            pred = isinstance(value, type_) if isinstance(value, Value) else (value and isinstance(value[0], type_))
-
-            return value if pred else default
-
-        return typed_getter
-
-    def decorator(cls: 'Section') -> 'Section':
-        for k in kls:
-            name = f'get_{k.__name__.lower()}'
-            typed_getter = make_typed_getter(k)
-            typed_getter.__name__ = name
-            setattr(cls, name, typed_getter)
-
-        cls.get_section = make_typed_getter(cls)
-
-        return cls
-
-    return decorator
-
-
-@typed_getters(Float3)
 class Section(Value, metaclass=abc.ABCMeta):
-    def append(self, item: Item) -> None:
+    def append(self, name: Name, value: Value) -> None:
         raise NotImplementedError
 
     def add(self, name: str, value: Value) -> None:
         raise NotImplementedError
 
-    @overload
-    def get(self, name: str, index: None = None, default: D = ()) -> Union[Sequence[Value], D]:
-        pass
-
-    @overload
-    def get(self, name: str, index: int = 0, default: D = None) -> Union[Value, D]:
-        pass
-    
-    def get(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[Value, Sequence[Value], D]:
-        raise NotImplementedError
-
-    def pairs(self) -> Iterable[Item]:
+    def pairs(self) -> Iterable[Pair]:
         raise NotImplementedError
 
     def check_cycle(self) -> None:
@@ -411,54 +364,32 @@ class Section(Value, metaclass=abc.ABCMeta):
 
 # todo: ограничить уровень вложенности секций до 512
 class DictSection(OrderedDict, Section):
-    def append(self, item: Item) -> None:
+    def append(self, name: Name, value: Value) -> None:
         """Небезопасное добавление пары в секцию."""
 
-        name, value = item
         if name not in self:
             self[name] = []
-
         self[name].append(value)
 
     def add(self, name: str, value: Value) -> None:
-        """Добавление пары в секцию.
-
-        :param name: Имя формируемой пары.
-        :param value: Значение формируемой пары.
-        :raises SectionError: Типы значений в мультизначении различны.
-        """
+        """Добавление пары в секцию."""
 
         if not isinstance(name, EncodedStr):
             name = Name.of(name)
         elif isinstance(name, Str):
             name = Name(name)
 
-        values = super().get(name)
-        if values:
-            fst_type = type(values[0])
-            type_ = type(value)
-            if fst_type is not type_:
-                raise SectionError('Ожидалось {}: {}'.format(fst_type, type_))
+        self.append(name, value)
 
-        self.append((name, value))
+    def get_first(self, name: Name, default=None) -> Optional[Value]:
+        """Первое значение в мультизначении по имени."""
 
-    def get(self, name: str, index: Optional[int] = 0, default: Any = None) -> Union[Value, Sequence[Value], Any]:
-        """Значение или значения в мультизначении по имени и индексу."""
+        try:
+            return self[name][0]
+        except (IndexError, KeyError):
+            return default
 
-        if index is None:
-            try:
-                return self[name]
-            except KeyError:
-                return () if default is None else default
-        elif isinstance(index, int):
-            try:
-                return self[name][index]
-            except (KeyError, IndexError):
-                return default
-        else:
-            raise TypeError('index: ожидалось int | None: {!r}'.format(type(index)))
-
-    def pairs(self) -> Iterable[Item]:
+    def pairs(self) -> Iterable[Pair]:
         """Пары в порядке добавления первого имени."""
 
         for name, values in self.items():
@@ -468,7 +399,7 @@ class DictSection(OrderedDict, Section):
                 for value in values:
                     yield name, value
 
-    def sorted_pairs(self) -> Iterable[Item]:
+    def sorted_pairs(self) -> Iterable[Pair]:
         """Пары в порядке появления в двоичном файле.
         Сначала все параметры на уровне затем все секции на уровне, в порядке добавления первого имени."""
 
@@ -482,7 +413,7 @@ class DictSection(OrderedDict, Section):
 
         yield from sections_pairs
 
-    def bfs_pairs_gen(self, pairs_of: PairsGenOf) -> Iterable[Item]:
+    def bfs_pairs_gen(self, pairs_of: PairsGenOf) -> Iterable[Pair]:
         """
         Генератор пар при обходе секции в ширину с параметром.
 
@@ -501,7 +432,7 @@ class DictSection(OrderedDict, Section):
                 for item in pairs_of(value):
                     queue.append(item)
 
-    def bfs_sorted_pairs(self) -> Iterable[Item]:
+    def bfs_sorted_pairs(self) -> Iterable[Pair]:
         """Генератор пар при обходе секции в ширину."""
 
         yield from self.bfs_pairs_gen(lambda s: s.sorted_pairs())
@@ -574,106 +505,141 @@ class DictSection(OrderedDict, Section):
         return f'{self.__class__.__name__}([{", ".join(map(repr, self.items()))}])'
 
 
-class Command(tuple):
+class Item(NamedTuple):
+    name: Name
+    value: Value
+
+
+class Command(Item):
     prefix = "@"
     sep = ':'
 
 
-class Comment(Command):
+class Pre:
+    pass
+
+
+class Post:
+    pass
+
+
+class Include(Command, Pre):
+    """
+    include text
+    """
+
+    name = Name(Command.prefix + 'include')
+
+    def __new__(cls, value: str) -> 'Include':
+        value = Str(value)
+        return super().__new__(cls, cls.name, value)
+
+    @classmethod
+    def like(cls, name: Name, value: Value) -> bool:
+        return name == cls.name and isinstance(value, Str)
+
+    @property
+    def path(self):
+        return self.value
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}({str.__repr__(self.value)})'
+
+
+class Comment(Command, Pre):
     prefix = Command.prefix + 'comment'
-    name: ClassVar[Name] = ...
 
     def __new__(cls, value: str) -> 'Comment':
         value = Str(value)
-        return super().__new__(cls, (cls.name, value))
+        return super().__new__(cls, cls.name, value)
 
     @property
     def text(self) -> str:
-        return self[1]
-
-    @classmethod
-    def _check(cls, text: str) -> None:
-        raise NotImplementedError
-
-    @classmethod
-    def of(cls, text: str) -> 'Comment':
-        cls._check(text)
-        return cls(text)
+        return self.value
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}({str.__repr__(self[1])})'
+        return f'{self.__class__.__name__}({str.__repr__(self.value)})'
 
 
 class LineComment(Comment):
     """
-    Строчный комментарий C++.
-
     // text
     """
 
     name = Name(Comment.prefix + 'CPP')
 
-    @classmethod
-    def _check(cls, text: str) -> None:
+    @staticmethod
+    def _check(text: str) -> None:
         if '\n' in text or '\r' in text:
-            raise ValueError('Строчный комментарий содержит перенос строки: {!r}'.format(text))
+            raise ValueError('Однострочный комментарий содержит перенос строки: {}'.format(text))
 
+    @classmethod
+    def of(cls, text: str) -> 'LineComment':
+        cls._check(text)
+        return cls(text)
 
-SafeLineComment = LineComment.of
+    @classmethod
+    def like(cls, name: Name, value: Value) -> bool:
+        if name == cls.name and isinstance(value, Str):
+            try:
+                cls._check(value)
+            except ValueError:
+                return False
+            else:
+                return True
+        return False
 
 
 class BlockComment(Comment):
     """
-    Блочный комментарий C.
-
-     /*\n
-     text\n
-     */
+    /*
+    text
+    */
     """
 
     name = Name(Comment.prefix + 'C')
 
     @classmethod
-    def _check(cls, text: str) -> None:
-        if '*/' in text:
-            raise ValueError('Блочный комментарий содержит конец комментария: {!r}'.format(text))
+    def like(cls, name: Name, value: Value) -> bool:
+        return name == cls.name and isinstance(value, Str)
 
 
-SafeBlockComment = BlockComment.of
+# todo: при добавлении в секцию предупреждать в случае отсутствия include и target выше
+class Targeted(Command, Post):
+    def __new__(cls, name: str, value: Value) -> 'Targeted':
+        name = Name(cls.prefix + name)
+        return super().__new__(cls, name, value)
 
-
-class Modifier(Command):
-    ...
-
-
-class Include(Command):
-    """
-    Вставка секции.
-
-    include text
-    """
-
-    name = Name(Command.prefix + 'include')
-    special_prefixes = '#', ':'
-    path_seps = '/', '\\'
-    default_path_sep = '/'
-
-    def __new__(cls, value: str) -> 'Include':
-        if not value:
-            raise ValueError("Пустой путь.")
-        if not isinstance(value, Str):
-            value = Str(value)
-        return super().__new__(cls, (cls.name, value))
+    @classmethod
+    def like(cls, name: Name, value: Value) -> bool:
+        return (
+            name.startswith(cls.prefix)
+            and name[len(cls.prefix):]
+            and isinstance(value, Value)
+        )
 
     @property
-    def path(self) -> Str:
-        return self[1]
+    def target(self) -> Name:
+        return Name(self.name[len(self.prefix):])
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}({str.__repr__(self[1])})'
+        return f'{self.__class__.__name__}({str.__repr__(self.target)}, {self.value!r})'
 
 
-ItemPred = Callable[[Item], bool]
+class Override(Targeted):
+    """
+    Перегрузка первого значения.
+    """
+
+    prefix = Command.prefix + 'override' + Command.sep
+
+
+class CloneLast(Targeted):
+    """
+    Копия последней пары.
+    """
+
+    prefix = Command.prefix + 'clone-last' + Command.sep
 
 
 class ListSection(list, Section):
@@ -685,99 +651,91 @@ class ListSection(list, Section):
     def of(cls, m: DictSection) -> DictSection:
         raise NotImplementedError
 
-    def add(self, name: str, value: Value) -> None:
-        """Добавление пары в секцию.
+    @overload
+    def append(self, name: Name, value: Value) -> None:
+        ...
 
-        :param name: Имя формируемой пары.
-        :param value: Значение формируемой пары.
-        :raises SectionError: Типы значений в мультизначении различны.
+    @overload
+    def append(self, command: Command) -> None:
+        ...
+
+    def append(self, name_or_command: Union[Name, Command], maybe_value: Optional[Value] = None) -> None:
+        if maybe_value is None:
+            item = name_or_command
+        else:
+            item = Item(name_or_command, maybe_value)
+
+        super().append(item)
+
+    @overload
+    def add(self, name: str, value: Value) -> None:
+        ...
+
+    @overload
+    def add(self, command: Command) -> None:
+        ...
+
+    def add(self, name_or_command: Union[str, Command], maybe_value: Optional[Value] = None) -> None:
+        """
+        Добавление пары в секцию.
         """
 
-        if not isinstance(name, EncodedStr):
-            name = Name.of(name)
-        elif isinstance(name, Str):
-            name = Name(name)
+        if isinstance(name_or_command, str) and maybe_value is not None:
+            name = name_or_command
+            if not isinstance(name, EncodedStr):
+                name = Name.of(name)
+            elif isinstance(name, Str):
+                name = Name(name)
+            self.append(name, maybe_value)
+        elif isinstance(name_or_command, Command) and maybe_value is None:
+            command = name_or_command
+            self.append(command)
+        else:
+            raise ValueError('Недопустимая комбинация аргументов: {}, {}'.format(name_or_command, maybe_value))
 
-        for n, v in self:
-            if n == name:
-                fst_type = type(v)
-                type_ = type(value)
-                if fst_type is not type_:
-                    raise SectionError('Ожидалось {}: {}'.format(fst_type, type_))
-                break
-
-        self.append((name, value))
-
-    def add_comment(self, text: str) -> None:
-        ctor = BlockComment if ('\n' in text or '\r' in text) else LineComment
-        comment = ctor(text)
-        self.append(comment)
-
-    def pairs(self) -> Iterable[Item]:
+    def pairs(self) -> Iterable[Pair]:
         return iter(self)
 
-    def get_index(self, p: ItemPred) -> Optional[int]:
-        """Индекс первой пары, для которой выполняется предикат p."""
+    def getindex(self, p: Callable[[Item], bool]) -> int:
+        """
+        Индекс первой пары, для которой выполняется предикат.
+
+        :param p: предикат
+        :return: индекс
+        """
 
         for i, item in enumerate(self):
             if p(item):
                 return i
-        return None
+        raise ValueError('Нет пар, удовлетворяющих предикату: {}'.format(p))
 
-    def get_indices(self, p: ItemPred) -> Sequence[int]:
-        """Индексы пар, удовлетворяющих предикату p."""
-
+    def getindexes(self, p: Callable[[Item], bool]) -> Sequence[int]:
         return tuple(i for i, item in enumerate(self) if p(item))
 
-    def get_item(self, p: ItemPred) -> Optional[Item]:
-        """Первая пара, удовлетворяющая предикату p."""
+    # здесь желателен двусвязный список, чтобы быстро перемещаться назад
+    # def getlastindex(self, p: t.Callable[[Item], bool], index: int):
+    #     j = None
+    #     for i, item in enumerate(self):
+    #         if i == index:
+    #             break
+    #         if p(item):
+    #             j = i
+    #     if j is not None:
+    #         return j
+    #     raise ValueError('Нет пар с индексом до {1}, удовлетворяющих предикату: {0}'.format(p, index))
 
+    def getitem(self, p: Callable[[Item], bool]) -> int:
         for item in self:
             if p(item):
                 return item
-        return None
+        raise ValueError('Нет пар, удовлетворяющих предикату: {}'.format(p))
 
-    def get_items(self, p: ItemPred) -> Sequence[Item]:
-        """Пары, удовлетворяющие предикату p."""
-
+    def getitems(self, p: Callable[[Item], bool]) -> Sequence[Item]:
         return tuple(filter(p, self))
 
-    def set_item(self, p: ItemPred, item: Item):
-        """Замена первой пары, удовлетворяющей предикату p."""
-
-        i = self.get_index(p)
-        if i is not None:
-            super().__setitem__(i, item)
-
-    def get(self, name: str, index: Optional[int] = 0, default: Any = None) -> Union[Value, Sequence[Value], Any]:
-        """Значение или значения в мультизначении по имени и индексу."""
-
-        if index is None:
-            values = tuple(v for n, v in self if n == name)
-            if not values and default is not None:
-                return default
-            return values
-        elif isinstance(index, int):
-            i = 0
-            for n, v in self:
-                if n == name and i == index:
-                    return v
-            return default
-        else:
-            raise TypeError('index: ожидалось int | None: {!r}'.format(type(index)))
-
-    def remove_comments(self) -> None:
-        indices = []
-        for i, (n, v) in enumerate(self.pairs()):
-            if n in (LineComment.name, BlockComment.name):
-                indices.append(i)
-            elif isinstance(v, ListSection):
-                v.remove_comments()  # @r
-        for i in reversed(indices):
-            del self[i]
-
-    def include_files(self, cdk_path: Optional[Path] = None, root_path: Optional[Path] = None) -> None:
-        raise NotImplementedError
+    def setitem(self, p: Callable[[Item], bool], item: Item):
+        i = self.getindex(p)
+        super().__setitem__(i, item)
 
     def __call__(self) -> DictSection:
         """

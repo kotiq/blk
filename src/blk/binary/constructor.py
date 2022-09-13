@@ -259,14 +259,14 @@ class BlockAdapter(ct.Adapter):
             start = param_offset
             end = start + params_count
             for name, value in params[start:end]:
-                section.append(name, value)
+                section.append((name, value))
             param_offset = end
 
             if blocks_count:
                 start = block_offset
                 end = start + blocks_count
                 for name, value in blocks[start:end]:
-                    section.append(name, value)
+                    section.append((name, value))
 
         return blocks[0][1]
 
