@@ -12,7 +12,6 @@ class Format(IntEnum):
 
     RAW = -1
     JSON = 0
-    JSON_MIN = 1
     STRICT_BLK = 2
     JSON_2 = 3
     JSON_3 = 4

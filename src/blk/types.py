@@ -343,8 +343,6 @@ class Name(EncodedStr):
 SafeName = Name.of
 
 Item = Tuple[Name, Value]
-ParameterPair = Tuple[Name, Parameter]
-SectionPair = Tuple[Name, 'Section']
 PairsGenOf = Callable[['Section'], Iterable[Item]]
 
 
@@ -385,6 +383,15 @@ def typed_getters(*kls: Type[Value]):
 
 @typed_getters(Float3)
 class Section(Value, metaclass=abc.ABCMeta):
+    @classmethod
+    def of(cls, section: 'Section') -> 'Section':
+        root = cls()
+        for name, value in section.pairs():
+            if isinstance(value, Section):
+                value = cls.of(value)  # @r
+            root.append((name, value))
+        return root
+
     def append(self, item: Item) -> None:
         raise NotImplementedError
 
@@ -680,10 +687,6 @@ class ListSection(list, Section):
     """
     Представление текста без учета разделителей пар. Пары с сохранением порядка.
     """
-
-    @classmethod
-    def of(cls, m: DictSection) -> DictSection:
-        raise NotImplementedError
 
     def add(self, name: str, value: Value) -> None:
         """Добавление пары в секцию.

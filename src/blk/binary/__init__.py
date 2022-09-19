@@ -12,6 +12,7 @@ __all__ = [
     'SerializeError',
     'compose_bbf',
     'compose_bbf_zlib',
+    'compose_names',
     'compose_partial_bbf',
     'compose_partial_bbf_zlib',
     'compose_partial_fat',

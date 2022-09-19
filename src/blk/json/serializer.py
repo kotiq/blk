@@ -139,15 +139,10 @@ class JSON3Mapper(Mapper):
             return {n: (list(map(cls._map_value, vs)) if len(vs) > 1 else cls._map_value(vs[0])) for n, vs in items}
 
 
-class JSONMinMapper(Mapper):
-    pass
-
-
 def serialize(root: Section, ostream: TextIO, out_format: Format,
-              is_sorted: bool = False, check_cycle: bool = False) -> None:
+              is_sorted: bool = False, is_minified=False, check_cycle: bool = False) -> None:
     mapper = {
         Format.JSON: JSONMapper,
-        Format.JSON_MIN: JSONMinMapper,
         Format.JSON_2: JSON2Mapper,
         Format.JSON_3: JSON3Mapper,
     }[out_format]
@@ -155,7 +150,13 @@ def serialize(root: Section, ostream: TextIO, out_format: Format,
         if check_cycle:
             root.check_cycle()
         if isinstance(root, DictSection):
-            json.dump(mapper.map(root), ostream, cls=NoIndentEncoder, ensure_ascii=False, indent=2, separators=(',', ': '),
-                      sort_keys=is_sorted)
+            if is_minified:
+                indent = None
+                separators = (',', ':')
+            else:
+                indent = 2
+                separators = (', ', ': ')
+            json.dump(mapper.map(root), ostream, cls=NoIndentEncoder, ensure_ascii=False, indent=indent,
+                      separators=separators, sort_keys=is_sorted)
         elif isinstance(root, ListSection):
             raise NotImplementedError

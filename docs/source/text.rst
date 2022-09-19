@@ -93,13 +93,13 @@
 .. code-block:: javascript
 
     "double quoted 'name'":i = 1
-    ^^^^^^^^^^^^
+    ^^^^^^^^^^^^^^^^^^^^^^
 
     'single quoted "name"':i = 2
-    ^^^^^^^^^^^^
+    ^^^^^^^^^^^^^^^^^^^^^^
 
     unquoted_name:i = 3
-    ^^^^^^
+    ^^^^^^^^^^^^^
 
 
 .. code-block:: text
@@ -295,7 +295,7 @@
 .. code-block:: javascript
 
     "point2d":ip2 = 1, 2
-                  ^^^^
+                    ^^^^
 
 .. code-block:: text
 
@@ -309,7 +309,7 @@
 .. code-block:: javascript
 
     "point3d":ip3 = 1, 2, 3
-                  ^^^^^^^
+                    ^^^^^^^
 
 .. code-block:: text
 
