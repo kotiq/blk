@@ -125,13 +125,14 @@ def main() -> int:
         logger.info('Начало распаковки.')
         for result in directory.unpack_iter(rel_paths, target_root, args.is_flat,
                                             args.out_format, args.is_sorted, args.is_minified):
+            source = source_root / result.path
             if result.error is not None:
                 failed += 1
-                logger.info('[FAIL] {}: {}'.format(source_root / result.path, result.error))
+                logger.info('[FAIL] {!r}: {}'.format(str(source), result.error))
                 if args.exit_first:
                     break
             else:
-                logger.info('[ OK ] {}'.format(source_root / result.path))
+                logger.info('[ OK ] {!r}'.format(str(source)))
                 successful += 1
 
         logger.info('Успешно распаковано: {}/{}'.format(successful, successful+failed))

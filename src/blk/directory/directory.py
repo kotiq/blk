@@ -72,6 +72,7 @@ class Directory:
                 logger.debug('Разделяемая карта имен {}'.format(ns.table_digest.hex()))
                 if ns.dict_digest != NO_DICT_EXPECTED:
                     logger.debug('Ожидаемое имя словаря: {}.dict'.format(ns.dict_digest.hex()))
+                logger.debug('Загружена разделяемая карта имен: {!r}'.format(str(nm_path)))
         except FileNotFoundError:
             pass
         except ComposeError as e:
@@ -165,7 +166,7 @@ class Directory:
                      out_format: Format, is_sorted: bool, is_minified: bool) -> Path:
         target_rel_path = rel_path.name if is_flat else rel_path
         target = target_root / target_rel_path
-        if target.exists():
+        if target_root == self.source_root:
             target = target.with_suffix(target.suffix + 'x')
 
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -182,7 +183,7 @@ class Directory:
                     is_flat: bool = False, out_format: Format = Format.JSON, is_sorted: bool = False,
                     is_minified: bool = False) -> Iterator[ExtractResult]:
         if rel_paths is None:
-            rel_paths = map(lambda p: p.relative_to(self.source_root), tuple(self.source_root.rglob('*.blk')))
+            rel_paths = map(lambda p: p.relative_to(self.source_root), sorted(self.source_root.rglob('*.blk')))
 
         if target_root is None:
             target_root = Path.cwd()

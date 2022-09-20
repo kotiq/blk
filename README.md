@@ -67,9 +67,9 @@ blk_unpacker --format=json_3 --minify -o /tmp/out/ \
 /home/kotiq/games/linux/WarThunder/cache/content/downloadable_skins.3wus7y73vkqoyfr2g2rdk2e2o5ehkt5w-hv4c.blk
 ```
 ```text
-1663599383.09862 INFO Начало распаковки.
-1663599384.2189617 DEBUG '/home/kotiq/games/linux/WarThunder/cache/content/downloadable_skins.3wus7y73vkqoyfr2g2rdk2e2o5ehkt5w-hv4c.blk': FAT_ZST => JSON_3
-1663599384.2219203 INFO Успешно распаковано: 1/1
+1663700386.407359 INFO Начало распаковки.
+1663700387.204878 INFO [ OK ] '/home/kotiq/games/linux/WarThunder/cache/content/downloadable_skins.3wus7y73vkqoyfr2g2rdk2e2o5ehkt5w-hv4c.blk'
+1663700387.205049 INFO Успешно распаковано: 1/1
 ```
 
 Распаковка всех автономных файлов из директории в директорию `/tmp/out`. Формат `strict_blk`. 
@@ -77,12 +77,12 @@ blk_unpacker --format=json_3 --minify -o /tmp/out/ \
 blk_unpacker --format=strict_blk -o /tmp/out/ /home/kotiq/games/linux/WarThunder/cache/content/
 ```
 ```text
-1663599469.160413 INFO Начало распаковки.
-1663599470.1330087 DEBUG '/home/kotiq/games/linux/WarThunder/cache/content/downloadable_decals.n6644yww4hqvhx6ia4vput3k3khwsrep-fcr2.blk': FAT_ZST => STRICT_BLK
-1663599471.0740328 DEBUG '/home/kotiq/games/linux/WarThunder/cache/content/downloadable_decals.hzk3bnebxl524ig2zpxj6sv42ovubhaf-fcrh.blk': FAT_ZST => STRICT_BLK
-1663599472.0435433 DEBUG '/home/kotiq/games/linux/WarThunder/cache/content/downloadable_decals.5c2pd54ox47uhvvnnjc4uli36mel5s4e-fcx4.blk': FAT_ZST => STRICT_BLK
+1663700582.369201 INFO Начало распаковки.
+1663700583.161752 INFO [ OK ] '/home/kotiq/games/linux/WarThunder/cache/content/downloadable_decals.33kwkbttk2gxwrucjozb673ciomypto7-fc3t.blk'
+1663700583.374097 INFO [ OK ] '/home/kotiq/games/linux/WarThunder/cache/content/downloadable_decals.3aygzwaes2nvjlozzns5loodzlkbesni-fcuv.blk'
+1663700583.543511 INFO [ OK ] '/home/kotiq/games/linux/WarThunder/cache/content/downloadable_decals.56qvig2inuenyv6zmq6kuby6n4wazk3v-fdcr.blk'
 ...
-1663599531.63824 INFO Успешно распаковано: 58/58
+1663700595.589822 INFO Успешно распаковано: 58/58
 ```
 
 ##### Для разработчика
@@ -92,13 +92,12 @@ blk_unpacker --format=strict_blk -o /tmp/out/ /home/kotiq/games/linux/WarThunder
 blk_unpacker --format=strict_blk -o /tmp/out/char /home/kotiq/games/resources/all/WarThunder-RAW/char.vromfs.bin
 ```
 ```text
-1663600090.7580874 INFO Начало распаковки.
-1663600090.829308 DEBUG Разделяемая карта имен 17fa000ef47a148b
-1663600094.244224 DEBUG '/home/kotiq/games/resources/all/WarThunder-RAW/char.vromfs.bin/config/wpcost.blk': SLIM_ZST => STRICT_BLK
-1663600094.259905 DEBUG '/home/kotiq/games/resources/all/WarThunder-RAW/char.vromfs.bin/config/warpoints.blk': SLIM_ZST => STRICT_BLK
-1663600094.834506 DEBUG '/home/kotiq/games/resources/all/WarThunder-RAW/char.vromfs.bin/config/unlocks.blk': SLIM_ZST => STRICT_BLK
+1663700651.693143 INFO Начало распаковки.
+1663700652.073959 INFO [ OK ] '/home/kotiq/games/resources/all/WarThunder-RAW/char.vromfs.bin/config/attachable.blk'
+1663700652.245846 INFO [ OK ] '/home/kotiq/games/resources/all/WarThunder-RAW/char.vromfs.bin/config/bots.blk'
+1663700652.255263 INFO [ OK ] '/home/kotiq/games/resources/all/WarThunder-RAW/char.vromfs.bin/config/clan_rewards.blk'
 ...
-1663600096.0535452 INFO Успешно распаковано: 21/21
+1663700658.436714 INFO Успешно распаковано: 21/21
 ```
 
 ##### Для разработчика
@@ -111,12 +110,9 @@ blk_unpacker --format=strict_blk -o /tmp/out/ \
 /home/kotiq/games/resources/all/WarThunder-RAW/aces.vromfs.bin/config/camera.blk
 ```
 ```text
-1663602355.3463955 DEBUG Загружен словарь: '/home/kotiq/games/resources/all/WarThunder-RAW/aces.vromfs.bin/3d2907d0e7420dc093d67430955a607a2f467f1b79e0bea4aec49f6a9c2e4c71.dict'
-1663602355.6206803 DEBUG Разделяемая карта имен 29213f4758054e3e
-1663602355.6208432 DEBUG Ожидаемое имя словаря: 3d2907d0e7420dc093d67430955a607a2f467f1b79e0bea4aec49f6a9c2e4c71.dict
-1663602355.6209748 INFO Начало распаковки.
-1663602355.850776 DEBUG '/home/kotiq/games/resources/all/WarThunder-RAW/aces.vromfs.bin/config/camera.blk': SLIM_ZST_DICT => STRICT_BLK
-1663602355.8511212 INFO Успешно распаковано: 1/1
+1663700705.570419 INFO Начало распаковки.
+1663700705.840371 INFO [ OK ] '/home/kotiq/games/resources/all/WarThunder-RAW/aces.vromfs.bin/config/camera.blk'
+1663700705.840537 INFO Успешно распаковано: 1/1
 ```
 
 ### Выходные форматы
