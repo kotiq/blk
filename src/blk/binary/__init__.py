@@ -9,6 +9,7 @@ __all__ = [
     'ConstructError',
     'Fat',
     'InvNames',
+    'NO_DICT_EXPECTED',
     'SerializeError',
     'compose_bbf',
     'compose_bbf_zlib',

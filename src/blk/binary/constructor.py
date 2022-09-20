@@ -16,6 +16,7 @@ __all__ = [
     'Fat',
     'InvNames',
     'NamesFile',
+    'NO_DICT_EXPECTED',
     'compose_fat',
     'compose_names',
     'compose_partial_fat',
@@ -36,6 +37,8 @@ __all__ = [
     'serialize_slim_zst',
     'serialize_slim_zst_dict',
 ]
+
+NO_DICT_EXPECTED = b'\x00'*32
 
 RawCString = ct.NullTerminated(ct.GreedyBytes).compile()
 

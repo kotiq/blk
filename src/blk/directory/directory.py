@@ -7,8 +7,9 @@ from zstandard import ZstdCompressionDict, ZstdDecompressor
 import blk.text as txt
 import blk.json as jsn
 from blk import Format, Section
-from blk.binary import (BlkType, ComposeError, compose_names, compose_partial_fat_zst, compose_partial_bbf,
-                        compose_partial_bbf_zlib, compose_partial_fat, compose_partial_slim, compose_partial_slim_zst)
+from blk.binary import (BlkType, ComposeError, NO_DICT_EXPECTED, compose_names, compose_partial_fat_zst,
+                        compose_partial_bbf, compose_partial_bbf_zlib, compose_partial_fat, compose_partial_slim,
+                        compose_partial_slim_zst)
 from .error import NameUnpackError, DictUnpackError
 
 __all__ = [
@@ -69,7 +70,8 @@ class Directory:
                 ns = compose_names(istream, self.decompressor)
                 self._names = ns.names
                 logger.debug('Разделяемая карта имен {}'.format(ns.table_digest.hex()))
-                logger.debug('Ожидаемое имя словаря: {}.dict'.format(ns.dict_digest.hex()))
+                if ns.dict_digest != NO_DICT_EXPECTED:
+                    logger.debug('Ожидаемое имя словаря: {}.dict'.format(ns.dict_digest.hex()))
         except FileNotFoundError:
             pass
         except ComposeError as e:
@@ -106,20 +108,22 @@ class Directory:
     def _unpack_file_into_blk(self, rel_path: Path, ostream: TextIO,
                               out_format: Format, is_sorted: bool, is_minified: bool) -> None:
         source = self.source_root / rel_path
-        try:
-            with open(source, 'rb') as istream:
-                fst = istream.read(1)
-                if not fst:
-                    logger.debug('{!r}: EMPTY'.format(str(source)))
-                    return
+        with open(source, 'rb') as istream:
+            fst = istream.read(1)
+            if not fst:
+                logger.debug('{!r}: EMPTY'.format(str(source)))
+                return
 
-                blk_type = BlkType.from_byte(fst)
+            blk_type = BlkType.from_byte(fst)
+            try:
                 head = b''
 
-                if blk_type in (BlkType.SLIM, BlkType.SLIM_ZST) and self.names is None:
-                    raise NameUnpackError('Не указана карта имен.')
-                elif blk_type is BlkType.SLIM_ZST_DICT and not self._dict_is_set:
-                    raise DictUnpackError('Не указан словарь.')
+                if blk_type in (BlkType.SLIM, BlkType.SLIM_ZST, BlkType.SLIM_ZST_DICT):
+                    if self.names is None:
+                        raise NameUnpackError('Не указана карта имен.')
+                if blk_type is BlkType.SLIM_ZST_DICT:
+                    if self.decompressor is not None and not self._dict_is_set:
+                        raise DictUnpackError('Не указан словарь.')
 
                 if blk_type is BlkType.FAT:
                     section = compose_partial_fat(istream)
@@ -153,9 +157,9 @@ class Directory:
                     serialize_text(section, ostream, out_format, is_sorted, is_minified)
                     out_format_name = out_format.name
                 logger.debug('{!r}: {} => {}'.format(str(source), blk_type.name, out_format_name))
-
-        except (TypeError, EnvironmentError, ComposeError) as e:
-            logger.error('{!r}: {}'.format(str(source), e))
+            except Exception:
+                logger.debug('{!r}: {}'.format(str(source), blk_type.name))
+                raise
 
     def _unpack_file(self, rel_path: Path, target_root: Path, is_flat: bool,
                      out_format: Format, is_sorted: bool, is_minified: bool) -> Path:
@@ -168,12 +172,9 @@ class Directory:
         tmp = target.with_name(target.name + '~')
 
         with create_text(tmp) as ostream:
-            try:
-                self._unpack_file_into_blk(self.source_root / rel_path, ostream, out_format, is_sorted, is_minified)
-                ostream.close()
-                tmp.replace(target)
-            except Exception:
-                raise
+            self._unpack_file_into_blk(self.source_root / rel_path, ostream, out_format, is_sorted, is_minified)
+            ostream.close()
+            tmp.replace(target)
 
         return target
 
@@ -181,7 +182,7 @@ class Directory:
                     is_flat: bool = False, out_format: Format = Format.JSON, is_sorted: bool = False,
                     is_minified: bool = False) -> Iterator[ExtractResult]:
         if rel_paths is None:
-            rel_paths = map(lambda p: p.relative_to(self.source_root), self.source_root.rglob('*.blk'))
+            rel_paths = map(lambda p: p.relative_to(self.source_root), tuple(self.source_root.rglob('*.blk')))
 
         if target_root is None:
             target_root = Path.cwd()

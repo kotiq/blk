@@ -41,6 +41,7 @@ blk_unpacker [--nm NM_PATH]
              [-x]
              [-o OUT_PATH] 
              [--flat]
+             [--loglevel {critical,error,warning,info,debug}]
              in_path
 ```
 
@@ -55,6 +56,7 @@ blk_unpacker [--nm NM_PATH]
 - `-o, --output` Выходная директория для распаковки. Если output не указан, выходная директория для распаковки совпадает
 со входной, к расширению файлов добавляется 'x'.
 - `--flat` Плоская выходная структура.
+- `--loglevel` Уровень сообщений из `critical`, `error`, `warning`, `info`, `debug`. По умолчанию `info`.
 - `in_path` Путь, содержащий упакованные файлы.
 
 #### Примеры

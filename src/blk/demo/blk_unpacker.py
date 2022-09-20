@@ -20,6 +20,7 @@ class Args(NamedTuple):
     exit_first: bool
     out_path: Optional[Path]
     is_flat: bool
+    loglevel: str
     in_path: Path
 
 
@@ -32,7 +33,7 @@ def format_(s: str) -> Format:
 
 
 def get_logger(name: str) -> logging.Logger:
-    formatter = logging.Formatter('%(created)s %(levelname)s %(message)s')
+    formatter = logging.Formatter('%(created)f %(levelname)s %(message)s')
     logger_ = logging.getLogger(name)
     logger_.level = logging.DEBUG
     console_handler = logging.StreamHandler()
@@ -46,10 +47,15 @@ logger = get_logger('blk')
 
 
 class CreateFormat(Action):
-    def __call__(self, parser: ArgumentParser, namespace: Namespace,
-                 values: str, option_string=None) -> None:
+    def __call__(self, parser: ArgumentParser, namespace: Namespace, values: str, option_string=None) -> None:
         f = format_(values)
         setattr(namespace, self.dest, f)
+
+
+class CreateLogLevel(Action):
+    def __call__(self, parser: ArgumentParser, namespace: Namespace, values: str, option_string=None) -> None:
+        level = values.upper()
+        setattr(namespace, self.dest, level)
 
 
 def file_path(value: str) -> Path:
@@ -76,8 +82,8 @@ def get_args() -> Args:
     parser.add_argument('--dict', dest='dict_path', type=file_path, default=None,
                         help='Путь словаря.')
     parser.add_argument('--format', dest='out_format', choices=sorted(map(iname, Format)),
-                        action=CreateFormat, default=iname(Format.JSON),
-                        help='Формат блоков. По умолчанию %(default)s.')
+                        action=CreateFormat, default=Format.JSON,
+                        help='Формат блоков. По умолчанию {}.'.format(iname(Format.JSON)))
     parser.add_argument('--sort', dest='is_sorted', action='store_true', default=False,
                         help='Сортировать ключи для JSON*.')
     parser.add_argument('--minify', dest='is_minified', action='store_true', default=False,
@@ -89,6 +95,9 @@ def get_args() -> Args:
                               "распаковки совпадает со входной, к расширению файлов добавляется 'x'."))
     parser.add_argument('--flat', dest='is_flat', action='store_true', default=False,
                         help='Плоская выходная структура.')
+    parser.add_argument('--loglevel', action=CreateLogLevel, choices=('critical', 'error', 'warning', 'info', 'debug'),
+                        default='INFO',
+                        help='Уровень сообщений. По умолчанию info.')
     parser.add_argument(dest='in_path', type=file_dir_path,
                         help='Путь, содержащий упакованные файлы.')
 
@@ -98,12 +107,13 @@ def get_args() -> Args:
 
 def main() -> int:
     args = get_args()
+    logger.setLevel(args.loglevel)
 
     if args.in_path.is_file():
-        source_root = args.in_path.parent
+        source_root = args.in_path.absolute().parent
         rel_paths = [Path(args.in_path.name)]
     elif args.in_path.is_dir():
-        source_root = args.in_path
+        source_root = args.in_path.absolute()
         rel_paths = None
     # иначе отсекается парсером командной строки
 
@@ -117,15 +127,16 @@ def main() -> int:
                                             args.out_format, args.is_sorted, args.is_minified):
             if result.error is not None:
                 failed += 1
-                logger.error('[FAIL] {}::{}: {}'.format(source_root / result.path, target_root, result.error))
+                logger.info('[FAIL] {}: {}'.format(source_root / result.path, result.error))
                 if args.exit_first:
                     break
             else:
+                logger.info('[ OK ] {}'.format(source_root / result.path))
                 successful += 1
 
         logger.info('Успешно распаковано: {}/{}'.format(successful, successful+failed))
         if failed:
-            logger.error('Ошибка при распаковке файлов.')
+            logger.info('Ошибка при распаковке файлов.')
             return 1
 
     except Exception as e:
