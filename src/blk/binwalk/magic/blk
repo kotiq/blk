@@ -1,0 +1,19 @@
+0x00        string      \x00BBF         Dagor Engine Data Block,
+>0x04       uleshort    !3              {invalid}
+>0x04       uleshort    3               version: 3
+>0x06       uleshort    x               \b.%d
+>0x08       ulelong     x               \b, container size: %d
+
+# 0x00        byte        0x01          Dagor Engine Data Block, autonomous
+
+0x00        byte        0x02            Dagor Engine Data Block, compressed, autonomous
+>0x00       ulelong>>8  x               \b, container size: %d
+>0x04       ubelong     !0x28b52ffd     {invalid} # Zstd magic
+
+# 0x00        byte        0x03          Dagor Engine Data Block: shared names
+
+0x00        byte        0x04            Dagor Engine Data Block, compressed, shared names
+>0x1        ubelong     !0x28b52ffd     {invalid} # Zstd magic
+
+0x00        byte        0x05            Dagor Engine Data Block, compressed, shared names, dictionary
+>0x1        ubelong     !0x28b52ffd     {invalid} # Zstd magic
