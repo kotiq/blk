@@ -3,7 +3,7 @@ import pytest
 from pytest import mark, param as _, skip
 from pytest_lazyfixture import lazy_fixture
 from blk.text.error import ComposeError
-from blk.text.composer import Composer
+from blk.text.composer import compose
 
 expect_fail = {
     Path('develop/assets/splines_n_lands/roads/peleliu_roads.spline.blk'): 'Вложенный блочный комментарий',
@@ -30,7 +30,7 @@ def test_compose_no_actions(path: Path):
                 for e in encodings:
                     try:
                         with open(p, encoding=e) as istream:
-                            section = Composer(istream).compose(remove_comments=False, include_files=False)
+                            section = compose(istream, remove_comments=False, include_files=False)
                             break
                     except UnicodeDecodeError:
                         section = None

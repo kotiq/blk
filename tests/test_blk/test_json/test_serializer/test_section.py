@@ -1,7 +1,7 @@
 import pytest
 from pytest import param as _
 from pytest_lazyfixture import lazy_fixture
-from blk.format import Format
+from blk.format_ import Format
 from blk.json.serializer import serialize
 
 get = globals().__getitem__

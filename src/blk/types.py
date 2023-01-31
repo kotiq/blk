@@ -1,7 +1,7 @@
 import abc
 from pathlib import Path
 from typing import (Any, Callable, ClassVar, Iterable, NamedTuple, Optional, Sequence, Set, Tuple, Type, TypeVar, Union,
-                    overload)
+                    cast, overload)
 from ctypes import c_float
 from collections import OrderedDict, deque
 from math import isfinite, isclose
@@ -18,20 +18,22 @@ __all__ = [
     'Float',
     'Float12',
     'Float2',
-    'Float2',
     'Float3',
-    'Float3',
-    'Float4',
     'Float4',
     'Include',
+    'IncludeError',
     'Int',
     'Int2',
     'Int3',
     'Item',
     'LineComment',
     'ListSection',
+    'LoadFileError',
     'Long',
+    'MultiValueError',
     'Name',
+    'NoCDKPathError',
+    'NoRootPathError',
     'Parameter',
     'Section',
     'SectionError',
@@ -48,11 +50,46 @@ __all__ = [
 
 
 class SectionError(Exception):
-    """Ошибка структуры секции."""
+    """Ошибка секции."""
 
 
 class CycleError(SectionError):
     """Секция содержит цикл."""
+
+
+class MultiValueError(SectionError):
+    """Ошибка структуры секции."""
+
+    def __init__(self, fst_type: Type, type_: Type) -> None:
+        self.fst_type = fst_type
+        self.type = type_
+        super().__init__('Ожидалось {fst_type}: {type}'.format(fst_type=fst_type, type=type_))
+
+
+class IncludeError(SectionError):
+    """Ошибка при вставке содержимого секции."""
+
+
+class NoCDKPathError(IncludeError):
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        super().__init__('Не задан путь CDK для {path}'.format(path=path))
+
+
+class NoRootPathError(IncludeError):
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        super().__init__('Не задан путь директории ресурсов для {path}'.format(path=path))
+
+
+class LoadFileError(IncludeError):
+    def __init__(self, path, working_path: Path, cdk_path: Optional[Path], root_path: Optional[Path]) -> None:
+        self.path = path
+        self.working_path = working_path
+        self.cdk_path = cdk_path
+        self.root_path = root_path
+        super().__init__(f'Ошибка при загрузке секции для {path}, w={working_path}, c={cdk_path}, r={root_path}'
+                         .format(**vars(self)))
 
 
 class Var:
@@ -354,37 +391,43 @@ class Size(NamedTuple):
 D = TypeVar('D')
 
 
-def typed_getters(*kls: Type[Value]):
-    def make_typed_getter(type_: Type[Value]):
-        def typed_getter(self, name: str, index: Optional[int] = 0, default: Union[Tuple[()], D] = None
-                         ) -> Union[type_, Sequence[type_], D]:
+def add_getters(*klasses: Type[Value]):
+    def make_getter(type_: Type[Value]):
+        def getter(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[type_, Sequence[type_], D]:
             value = self.get(name, index, default)
+
             if value is default:
                 return default
-            pred = isinstance(value, type_) if isinstance(value, Value) else (value and isinstance(value[0], type_))
+            elif isinstance(value, Value):
+                if isinstance(value, type_):
+                    return value
+                return default
+            elif value:
+                if isinstance(value[0], type_):
+                    return value
+                return default
 
-            return value if pred else default
-
-        return typed_getter
+        return getter
 
     def decorator(cls: 'Section') -> 'Section':
-        for k in kls:
-            name = f'get_{k.__name__.lower()}'
-            typed_getter = make_typed_getter(k)
-            typed_getter.__name__ = name
-            setattr(cls, name, typed_getter)
+        for kls in klasses:
+            name = f'get_{kls.__name__.lower()}'
+            getter = make_getter(kls)
+            getter.__name__ = name
+            setattr(cls, name, getter)
 
-        cls.get_section = make_typed_getter(cls)
+        cls.get_section = make_getter(cls)
 
         return cls
 
     return decorator
 
 
-@typed_getters(Float3)
+@add_getters(Bool, Color, Float, Float12, Float2, Float3, Float4, Int, Int2, Int3, Long, Str)
 class Section(Value, metaclass=abc.ABCMeta):
     @classmethod
     def of(cls, section: 'Section') -> 'Section':
+        """Секция не содержит команд."""
         root = cls()
         for name, value in section.pairs():
             if isinstance(value, Section):
@@ -392,26 +435,182 @@ class Section(Value, metaclass=abc.ABCMeta):
             root.append((name, value))
         return root
 
+    @abc.abstractmethod
     def append(self, item: Item) -> None:
         raise NotImplementedError
 
+    @abc.abstractmethod
     def add(self, name: str, value: Value) -> None:
         raise NotImplementedError
 
     @overload
-    def get(self, name: str, index: None = None, default: D = ()) -> Union[Sequence[Value], D]:
+    def get(self, name: str, index: None = None, default: D = None) -> Union[Sequence[Value], D]:
         pass
 
     @overload
     def get(self, name: str, index: int = 0, default: D = None) -> Union[Value, D]:
         pass
-    
+
+    @abc.abstractmethod
     def get(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[Value, Sequence[Value], D]:
         raise NotImplementedError
 
+    def get_first(self, name: str, default: D = None) -> Union[Value, D]:
+        return self.get(name, 0, default)
+
+    def get_all(self, name: str, default: D = None) -> Union[Sequence[Value], D]:
+        return self.get(name, None, default)
+
+    @overload
+    def get_section(self, name: str, index: None = None, default: D = None) -> Union[Sequence['Section'], D]:
+        pass
+
+    @overload
+    def get_section(self, name: str, index: int = 0, default: D = None) -> Union['Section', D]:
+        pass
+
+    def get_section(self, name: str, index: Optional[int] = 0, default: D = None
+                    ) -> Union['Section', Sequence['Section'], D]:
+        raise NotImplementedError
+
+    @overload
+    def get_bool(self, name: str, index: None = None, default: D = None) -> Union[Sequence[Bool], D]:
+        pass
+
+    @overload
+    def get_bool(self, name: str, index: int = 0, default: D = None) -> Union[Bool, D]:
+        pass
+
+    def get_bool(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[Bool, Sequence[Bool], D]:
+        raise NotImplementedError
+
+    @overload
+    def get_color(self, name: str, index: None = None, default: D = None) -> Union[Sequence[Color], D]:
+        pass
+
+    @overload
+    def get_color(self, name: str, index: int = 0, default: D = None) -> Union[Color, D]:
+        pass
+
+    def get_color(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[Color, Sequence[Color], D]:
+        raise NotImplementedError
+
+    @overload
+    def get_float(self, name: str, index: None = None, default: D = None) -> Union[Sequence[Float], D]:
+        pass
+
+    @overload
+    def get_float(self, name: str, index: int = 0, default: D = None) -> Union[Float, D]:
+        pass
+
+    def get_float(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[Float, Sequence[Float], D]:
+        raise NotImplementedError
+
+    @overload
+    def get_float12(self, name: str, index: None = None, default: D = None) -> Union[Sequence[Float12], D]:
+        pass
+
+    @overload
+    def get_float12(self, name: str, index: int = 0, default: D = None) -> Union[Float12, D]:
+        pass
+
+    def get_float12(self, name: str, index: Optional[int] = 0, default: D = None
+                    ) -> Union[Float12, Sequence[Float12], D]:
+        raise NotImplementedError
+
+    @overload
+    def get_float2(self, name: str, index: None = None, default: D = None) -> Union[Sequence[Float2], D]:
+        pass
+
+    @overload
+    def get_float2(self, name: str, index: int = 0, default: D = None) -> Union[Float2, D]:
+        pass
+
+    def get_float2(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[Float2, Sequence[Float2], D]:
+        raise NotImplementedError
+
+    @overload
+    def get_float3(self, name: str, index: None = None, default: D = None) -> Union[Sequence[Float3], D]:
+        pass
+
+    @overload
+    def get_float3(self, name: str, index: int = 0, default: D = None) -> Union[Float3, D]:
+        pass
+
+    def get_float3(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[Float3, Sequence[Float3], D]:
+        raise NotImplementedError
+
+    @overload
+    def get_float4(self, name: str, index: None = None, default: D = None) -> Union[Sequence[Float4], D]:
+        pass
+
+    @overload
+    def get_float4(self, name: str, index: int = 0, default: D = None) -> Union[Float4, D]:
+        pass
+
+    def get_float4(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[Float4, Sequence[Float4], D]:
+        raise NotImplementedError
+
+    @overload
+    def get_int(self, name: str, index: None = None, default: D = None) -> Union[Sequence[Int], D]:
+        pass
+
+    @overload
+    def get_int(self, name: str, index: int = 0, default: D = None) -> Union[Int, D]:
+        pass
+
+    def get_int(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[Int, Sequence[Int], D]:
+        raise NotImplementedError
+
+    @overload
+    def get_int2(self, name: str, index: None = None, default: D = None) -> Union[Sequence[Int2], D]:
+        pass
+
+    @overload
+    def get_int2(self, name: str, index: int = 0, default: D = None) -> Union[Int2, D]:
+        pass
+
+    def get_int2(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[Int2, Sequence[Int2], D]:
+        raise NotImplementedError
+
+    @overload
+    def get_int3(self, name: str, index: None = None, default: D = None) -> Union[Sequence[Int3], D]:
+        pass
+
+    @overload
+    def get_int3(self, name: str, index: int = 0, default: D = None) -> Union[Int3, D]:
+        pass
+
+    def get_int3(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[Int3, Sequence[Int3], D]:
+        raise NotImplementedError
+
+    @overload
+    def get_long(self, name: str, index: None = None, default: D = None) -> Union[Sequence[Long], D]:
+        pass
+
+    @overload
+    def get_long(self, name: str, index: int = 0, default: D = None) -> Union[Long, D]:
+        pass
+
+    def get_long(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[Long, Sequence[Long], D]:
+        raise NotImplementedError
+
+    @overload
+    def get_str(self, name: str, index: None = None, default: D = None) -> Union[Sequence[Str], D]:
+        pass
+
+    @overload
+    def get_str(self, name: str, index: int = 0, default: D = None) -> Union[Str, D]:
+        pass
+
+    def get_str(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[Str, Sequence[Str], D]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def pairs(self) -> Iterable[Item]:
         raise NotImplementedError
 
+    @abc.abstractmethod
     def check_cycle(self) -> None:
         raise NotImplementedError
 
@@ -432,7 +631,7 @@ class DictSection(OrderedDict, Section):
 
         :param name: Имя формируемой пары.
         :param value: Значение формируемой пары.
-        :raises SectionError: Типы значений в мультизначении различны.
+        :raises MultiValueError: Типы значений в мультизначении различны.
         """
 
         if not isinstance(name, EncodedStr):
@@ -445,18 +644,18 @@ class DictSection(OrderedDict, Section):
             fst_type = type(values[0])
             type_ = type(value)
             if fst_type is not type_:
-                raise SectionError('Ожидалось {}: {}'.format(fst_type, type_))
+                raise MultiValueError(fst_type, type_)
 
         self.append((name, value))
 
-    def get(self, name: str, index: Optional[int] = 0, default: Any = None) -> Union[Value, Sequence[Value], Any]:
+    def get(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[Value, Sequence[Value], D]:
         """Значение или значения в мультизначении по имени и индексу."""
 
         if index is None:
             try:
                 return self[name]
             except KeyError:
-                return () if default is None else default
+                return default
         elif isinstance(index, int):
             try:
                 return self[name][index]
@@ -558,7 +757,7 @@ class DictSection(OrderedDict, Section):
         :raises CycleError: найден цикл
         """
 
-        def g(section: Section, ids: Set[int]) -> None:
+        def g(section: DictSection, ids: Set[int]) -> None:
             """
             :param section: проверяемая секция
             :param ids: id верхних уровней
@@ -566,7 +765,7 @@ class DictSection(OrderedDict, Section):
             """
 
             for name, value in section.pairs():
-                if isinstance(value, Section):
+                if isinstance(value, DictSection):
                     id_ = id(value)
                     if id_ in ids:
                         raise CycleError
@@ -661,9 +860,8 @@ class Include(Command):
     """
 
     name = Name(Command.prefix + 'include')
-    special_prefixes = '#', ':'
-    path_seps = '/', '\\'
-    default_path_sep = '/'
+    cdk_prefix = '#'
+    root_prefix = ':'
 
     def __new__(cls, value: str) -> 'Include':
         if not value:
@@ -673,8 +871,8 @@ class Include(Command):
         return super().__new__(cls, (cls.name, value))
 
     @property
-    def path(self) -> Str:
-        return self[1]
+    def path(self) -> Path:
+        return Path(self[1])
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({str.__repr__(self[1])})'
@@ -683,6 +881,7 @@ class Include(Command):
 ItemPred = Callable[[Item], bool]
 
 
+# todo: использовать связанный список, а не динамический массив
 class ListSection(list, Section):
     """
     Представление текста без учета разделителей пар. Пары с сохранением порядка.
@@ -693,7 +892,7 @@ class ListSection(list, Section):
 
         :param name: Имя формируемой пары.
         :param value: Значение формируемой пары.
-        :raises SectionError: Типы значений в мультизначении различны.
+        :raises MultiValueError: Типы значений в мультизначении различны.
         """
 
         if not isinstance(name, EncodedStr):
@@ -706,7 +905,7 @@ class ListSection(list, Section):
                 fst_type = type(v)
                 type_ = type(value)
                 if fst_type is not type_:
-                    raise SectionError('Ожидалось {}: {}'.format(fst_type, type_))
+                    raise MultiValueError(fst_type, type_)
                 break
 
         self.append((name, value))
@@ -715,6 +914,10 @@ class ListSection(list, Section):
         ctor = BlockComment if ('\n' in text or '\r' in text) else LineComment
         comment = ctor(text)
         self.append(comment)
+
+    def add_include(self, path: str) -> None:
+        include = Include(path)
+        self.append(include)
 
     def pairs(self) -> Iterable[Item]:
         return iter(self)
@@ -752,12 +955,12 @@ class ListSection(list, Section):
         if i is not None:
             super().__setitem__(i, item)
 
-    def get(self, name: str, index: Optional[int] = 0, default: Any = None) -> Union[Value, Sequence[Value], Any]:
+    def get(self, name: str, index: Optional[int] = 0, default: D = None) -> Union[Value, Sequence[Value], D]:
         """Значение или значения в мультизначении по имени и индексу."""
 
         if index is None:
             values = tuple(v for n, v in self if n == name)
-            if not values and default is not None:
+            if not values:
                 return default
             return values
         elif isinstance(index, int):
@@ -776,11 +979,58 @@ class ListSection(list, Section):
                 indices.append(i)
             elif isinstance(v, ListSection):
                 v.remove_comments()  # @r
+
         for i in reversed(indices):
             del self[i]
 
-    def include_files(self, cdk_path: Optional[Path] = None, root_path: Optional[Path] = None) -> None:
-        raise NotImplementedError
+    def include_files(self,
+                      working_path: Path = Path.cwd(),
+                      cdk_path: Optional[Path] = None,
+                      root_path: Optional[Path] = None,
+                      ) -> None:
+        """Вставка содержимого подсекций из файлов.
+
+        :raises IncludeError: cdk_path или root_path требуются, но не заданы
+        :raises IncludeError: ошибка при загрузке секции из файла
+        """
+
+        indices = []
+        for i, (n, v) in enumerate(self.pairs()):
+            if n == Include.name:
+                if not isinstance(v, Str):
+                    raise SectionError('Пара {} не является командой включения: {!r}, {!r}'.format(i, n, v))
+                indices.append(i)
+            elif isinstance(v, ListSection):
+                v.include_files(working_path, cdk_path, root_path)  # @r
+
+        if not indices:
+            return
+
+        for i in reversed(indices):
+            _, v = self[i]
+            path = Path(v)
+            fst_part = path.parts[0]
+
+            if fst_part == Include.cdk_prefix:
+                if cdk_path is None:
+                    raise NoCDKPathError(path)
+                prefix = cdk_path
+            elif fst_part == Include.root_prefix:
+                if root_path is None:
+                    raise NoRootPathError(path)
+                prefix = root_path
+            else:
+                prefix = working_path
+
+            file_path = prefix / path
+            try:
+                section = compose_file(file_path, False, True, cdk_path, root_path)
+            except (OSError, ComposeError) as e:
+                raise LoadFileError(path, working_path, cdk_path, root_path) from e
+            else:
+                del self[i]
+                for j, p in enumerate(section.pairs()):
+                    self.insert(i + j, p)
 
     def __call__(self) -> DictSection:
         """
@@ -797,3 +1047,7 @@ class ListSection(list, Section):
         """
 
         raise NotImplementedError
+
+
+from blk.text.error import ComposeError
+from blk.text.composer import compose_file

@@ -1,7 +1,7 @@
 import json
 import typing as t
 import wt_tools.blk_unpack as bbf3
-from blk.format import Format
+from blk.format_ import Format
 from helpers import create_text, make_outpath
 
 outpath = make_outpath(__name__)

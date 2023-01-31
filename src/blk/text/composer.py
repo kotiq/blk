@@ -3,13 +3,14 @@ from pathlib import Path, PureWindowsPath
 from re import ASCII, DOTALL
 from typing import Callable, Optional, TextIO
 import parsy as ps
-from blk.types import (BlockComment, Bool, Color, Float, Float2, Float3, Float4, Float12, Include,
+from blk.types import (BlockComment, Bool, Color, Float, Float2, Float3, Float4, Float12, Include, SectionError,
                        Int, Int2, Int3, LineComment, ListSection, Long, Name, Parameter, Str, UByte, Value, false, true)
 from .constants import types_tags_map
 from .error import ComposeError
 
 __all__ = [
     'compose',
+    'compose_file',
 ]
 
 quote = ps.char_from('"\'').desc('quote')
@@ -123,8 +124,11 @@ def include() -> Include:
     p = yield ps.regex('include[ \t\n]+') >> string
     if not p:
         return ps.fail('Пустой путь.')
-    if p[0] in Include.special_prefixes and p[1] not in Include.path_seps:
-        p = f'{p[0]}{Include.default_path_sep}{p[1:]}'
+    if (
+            p[0] in (Include.cdk_prefix, Include.root_prefix) and
+            p[1] not in ('\\', '/')
+    ):
+        p = f'{p[0]}/{p[1:]}'
     path = PureWindowsPath(p).as_posix()
     return Include(str(path))
 
@@ -303,42 +307,31 @@ def items() -> ListSection:
 root_section = (item_sep >> items << item_sep).desc('root section')
 
 
-class Composer:
-    def __init__(self, stream: TextIO,
-                 cdk_path: Optional[Path] = None,
-                 root_path: Optional[Path] = None
-                 ) -> None:
-        self.stream = stream
-        self.cdk_path = cdk_path
-        self.root_path = root_path
-
-    def compose(self,
-                remove_comments: bool = True,
-                include_files: bool = True,
-                cdk_path: Optional[Path] = None,
-                root_path: Optional[Path] = None
-                ) -> ListSection:
-
-        cdk_path = cdk_path or self.cdk_path
-        root_path = root_path or self.root_path
-
-        try:
-            content = self.stream.read()
-            sec: ListSection = root_section.parse(content)
-            if include_files:
-                sec.include_files(cdk_path, root_path)
-            if remove_comments:
-                sec.remove_comments()
-            return sec
-        except (OSError, ps.ParseError) as e:
-            raise ComposeError(e)
-
-
 def compose(stream: TextIO,
             remove_comments: bool = True,
             include_files: bool = True,
+            working_path: Path = Path.cwd(),
             cdk_path: Optional[Path] = None,
-            root_path: Optional[Path] = None
+            root_path: Optional[Path] = None,
             ) -> ListSection:
-    c = Composer(stream, cdk_path, root_path)
-    return c.compose(remove_comments, include_files)
+    try:
+        content = stream.read()
+        sec: ListSection = root_section.parse(content)
+        if include_files:
+            sec.include_files(working_path, cdk_path, root_path)
+        if remove_comments:
+            sec.remove_comments()
+        return sec
+    except (OSError, ps.ParseError, SectionError) as e:
+        raise ComposeError(e)
+
+
+def compose_file(path: Path,
+                 remove_comments: bool = True,
+                 include_files: bool = True,
+                 cdk_path: Optional[Path] = None,
+                 root_path: Optional[Path] = None,
+                 ) -> ListSection:
+    working_path = path.parent
+    with open(path) as stream:  # raises OSError
+        return compose(stream, remove_comments, include_files, working_path, cdk_path, root_path)  # raises ComposeError

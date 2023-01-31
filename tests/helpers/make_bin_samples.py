@@ -50,7 +50,7 @@ def make_fat_zst_set_no_dict_compressor():
 
 def make_slim_set_nm_dict_dict_compressor():
     global inv_names
-    inv_names = binary.InvNames.of(section, include_strings=True)
+    inv_names = binary.InvNames.of(section, include_strings=True)git diff
 
     with open(samples_dir / 'section_slim.blk', 'wb') as ostream:
         binary.serialize_slim(section, inv_names, ostream)

@@ -5,7 +5,7 @@ import subprocess
 import pytest
 import wt_tools.blk_unpack as bbf3
 import blk.binary as bin
-from blk.format import Format
+from blk.format_ import Format
 import blk.json as jsn
 from helpers import make_outpath, create_text
 

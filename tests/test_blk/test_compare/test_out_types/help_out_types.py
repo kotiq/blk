@@ -1,6 +1,6 @@
 import pytest
 from pytest import param as _
-from blk.format import Format
+from blk.format_ import Format
 import blk.text as txt
 import blk.json as jsn
 from pytest_lazyfixture import lazy_fixture
