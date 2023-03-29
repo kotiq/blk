@@ -14,7 +14,8 @@ Linux, Рython 3.7 для совместимости с PyPy3.
 
 ```
 pip install -r requirements-docs.txt
-python setup.py build_sphinx
+set SPHINXOPTS=-D language=[language]
+docs\make.bat html
 ```
 
 ## Распаковка файлов

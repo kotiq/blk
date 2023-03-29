@@ -8,228 +8,229 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BLK Notes \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-03-29 12:28+0600\n"
+"POT-Creation-Date: 2023-03-29 10:05+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language: en\n"
-"Language-Team: en <LL@li.org>\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: ru\n"
+"Language-Team: ru <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.10.3\n"
+"Generated-By: Babel 2.12.1\n"
 
 #: ../../source/binary.rst:3
 msgid "Двоичные файлы BLK"
-msgstr "Binary BLKs"
+msgstr ""
 
 #: ../../source/binary.rst:5
 msgid "В качестве примеров закодирована секция:"
-msgstr "The following section is coded as examples:"
+msgstr ""
 
 #: ../../source/binary.rst:30
 msgid "Общие структуры"
-msgstr "General Structures"
+msgstr ""
 
 #: ../../source/binary.rst:32
 msgid "Тип файла по первому байту"
-msgstr "File type by first byte"
+msgstr ""
 
 #: ../../source/binary.rst:36
 msgid "Первый октет"
-msgstr "First octet"
+msgstr ""
 
 #: ../../source/binary.rst:37
 msgid "Тип"
-msgstr "Type"
+msgstr ""
 
 #: ../../source/binary.rst:38 ../../source/binary.rst:243
 #: ../../source/binary.rst:478
 msgid "0x00"
-msgstr "0x00"
+msgstr ""
 
 #: ../../source/binary.rst:39
 msgid "BBF"
-msgstr "BBF"
+msgstr ""
 
 #: ../../source/binary.rst:40 ../../source/binary.rst:61
 #: ../../source/binary.rst:245 ../../source/binary.rst:480
 msgid "0x01"
-msgstr "0x01"
+msgstr ""
 
 #: ../../source/binary.rst:41
 msgid "FAT"
-msgstr "FAT"
+msgstr ""
 
 #: ../../source/binary.rst:42 ../../source/binary.rst:66
 #: ../../source/binary.rst:247 ../../source/binary.rst:482
 msgid "0x02"
-msgstr "0x02"
+msgstr ""
 
 #: ../../source/binary.rst:43
 msgid "FAT_ZST"
-msgstr "FAT_ZST"
+msgstr ""
 
 #: ../../source/binary.rst:44 ../../source/binary.rst:71
 #: ../../source/binary.rst:249 ../../source/binary.rst:484
 msgid "0x03"
-msgstr "0x03"
+msgstr ""
 
 #: ../../source/binary.rst:45
 msgid "SLIM"
-msgstr "SLIM"
+msgstr ""
 
 #: ../../source/binary.rst:46 ../../source/binary.rst:76
 #: ../../source/binary.rst:251 ../../source/binary.rst:486
 msgid "0x04"
-msgstr "0x04"
+msgstr ""
 
 #: ../../source/binary.rst:47
 msgid "SLIM_ZST"
-msgstr "SLIM_ZST"
+msgstr ""
 
 #: ../../source/binary.rst:48 ../../source/binary.rst:81
 #: ../../source/binary.rst:253 ../../source/binary.rst:488
 msgid "0x05"
-msgstr "0x05"
+msgstr ""
 
 #: ../../source/binary.rst:49
 msgid "SLIM_ZST_DICT"
-msgstr "SLIM_ZST_DICT"
+msgstr ""
 
 #: ../../source/binary.rst:51
 msgid "Таблица параметров"
-msgstr "Options table"
+msgstr ""
 
 #: ../../source/binary.rst:55
 msgid "Псевдоним"
-msgstr "Alias"
+msgstr ""
 
 #: ../../source/binary.rst:56
 msgid "Код типа"
-msgstr "Type code"
+msgstr ""
 
 #: ../../source/binary.rst:57
 msgid "Конструктор"
-msgstr "Constructor"
+msgstr ""
 
 #: ../../source/binary.rst:58
 msgid "Длина, октетов"
-msgstr "Length, octets"
+msgstr ""
 
 #: ../../source/binary.rst:59
 msgid "Короткий"
-msgstr "Short"
+msgstr ""
 
 #: ../../source/binary.rst:60
 msgid "Str"
-msgstr "Str"
+msgstr ""
 
 #: ../../source/binary.rst:62
 msgid "CString"
-msgstr "CString"
+msgstr ""
 
 #: ../../source/binary.rst:63
 msgid "Var"
-msgstr "Var"
+msgstr ""
 
 #: ../../source/binary.rst:64 ../../source/binary.rst:79
 #: ../../source/binary.rst:84 ../../source/binary.rst:89
 #: ../../source/binary.rst:94 ../../source/binary.rst:99
 #: ../../source/binary.rst:114 ../../source/binary.rst:119
 msgid "\\"
-msgstr "\\"
+msgstr ""
 
 #: ../../source/binary.rst:65
 msgid "Int"
-msgstr "Int"
+msgstr ""
 
 #: ../../source/binary.rst:67
 msgid "Int32sl"
-msgstr "Int32sl"
+msgstr ""
 
 #: ../../source/binary.rst:68 ../../source/binary.rst:73
 #: ../../source/binary.rst:103 ../../source/binary.rst:108
 #: ../../source/binary.rst:297
 msgid "4"
-msgstr "4"
+msgstr ""
 
 #: ../../source/binary.rst:69 ../../source/binary.rst:74
 #: ../../source/binary.rst:104 ../../source/binary.rst:109
 msgid "🗸"
-msgstr "🗸"
+msgstr ""
 
 #: ../../source/binary.rst:70
 msgid "Float"
-msgstr "Float"
+msgstr ""
 
 #: ../../source/binary.rst:72
 msgid "Float32sl"
-msgstr "Float32sl"
+msgstr ""
 
 #: ../../source/binary.rst:75
 msgid "Float2"
-msgstr "Float2"
+msgstr ""
 
 #: ../../source/binary.rst:77
 msgid "Float32sl[2]"
-msgstr "Float32sl[2]"
+msgstr ""
 
 #: ../../source/binary.rst:78 ../../source/binary.rst:93
 #: ../../source/binary.rst:118 ../../source/binary.rst:309
 msgid "8"
-msgstr "8"
+msgstr ""
 
 #: ../../source/binary.rst:80
 msgid "Float3"
-msgstr "Float3"
+msgstr ""
 
 #: ../../source/binary.rst:82
 msgid "Float32sl[3]"
-msgstr "Float32sl[3]"
+msgstr ""
 
 #: ../../source/binary.rst:83 ../../source/binary.rst:98
 msgid "12"
-msgstr "12"
+msgstr ""
 
 #: ../../source/binary.rst:85
 msgid "Float4"
-msgstr "Float4"
+msgstr ""
 
 #: ../../source/binary.rst:86 ../../source/binary.rst:255
 #: ../../source/binary.rst:490
 msgid "0x06"
-msgstr "0x06"
+msgstr ""
 
 #: ../../source/binary.rst:87
 msgid "Float32sl[4]"
-msgstr "Float32sl[4]"
+msgstr ""
 
 #: ../../source/binary.rst:88
 msgid "16"
-msgstr "16"
+msgstr ""
 
 #: ../../source/binary.rst:90
 msgid "Int2"
-msgstr "Int2"
+msgstr ""
 
 #: ../../source/binary.rst:91 ../../source/binary.rst:257
 #: ../../source/binary.rst:492
 msgid "0x07"
-msgstr "0x07"
+msgstr ""
 
 #: ../../source/binary.rst:92
 msgid "Int32sl[2]"
-msgstr "Int32sl[2]"
+msgstr ""
 
 #: ../../source/binary.rst:95
 msgid "Int3"
-msgstr "Int3"
+msgstr ""
 
 #: ../../source/binary.rst:96 ../../source/binary.rst:259
 #: ../../source/binary.rst:494
 msgid "0x08"
-msgstr "0x08"
+msgstr ""
 
 #: ../../source/binary.rst:97
 msgid "Int32sl[3]"
@@ -237,792 +238,792 @@ msgstr ""
 
 #: ../../source/binary.rst:100
 msgid "Bool"
-msgstr "Bool"
+msgstr ""
 
 #: ../../source/binary.rst:101 ../../source/binary.rst:261
 #: ../../source/binary.rst:496
 msgid "0x09"
-msgstr "0x09"
+msgstr ""
 
 #: ../../source/binary.rst:102
 msgid "Int32ul"
-msgstr "Int32ul"
+msgstr ""
 
 #: ../../source/binary.rst:105
 msgid "Color"
-msgstr "Color"
+msgstr ""
 
 #: ../../source/binary.rst:106 ../../source/binary.rst:263
 #: ../../source/binary.rst:498
 msgid "0x0a"
-msgstr "0x0a"
+msgstr ""
 
 #: ../../source/binary.rst:107
 msgid "Int8ul[4]"
-msgstr "Int8ul[4]"
+msgstr ""
 
 #: ../../source/binary.rst:110
 msgid "Float12"
-msgstr "Float12"
+msgstr ""
 
 #: ../../source/binary.rst:111 ../../source/binary.rst:265
 #: ../../source/binary.rst:500
 msgid "0x0b"
-msgstr "0x0b"
+msgstr ""
 
 #: ../../source/binary.rst:112
 msgid "Float32sl[12]"
-msgstr "Float32sl[12]"
+msgstr ""
 
 #: ../../source/binary.rst:113
 msgid "48"
-msgstr "48"
+msgstr ""
 
 #: ../../source/binary.rst:115
 msgid "Long"
-msgstr "Long"
+msgstr ""
 
 #: ../../source/binary.rst:116 ../../source/binary.rst:267
 #: ../../source/binary.rst:502
 msgid "0x0c"
-msgstr "0x0c"
+msgstr ""
 
 #: ../../source/binary.rst:117
 msgid "Int64sl"
-msgstr "Int64sl"
+msgstr ""
 
 #: ../../source/binary.rst:122
 msgid "Целое переменной длины"
-msgstr "Variable length integer"
+msgstr ""
 
 #: ../../source/binary.rst:124
 msgid "Формат ULEB128 ``vlq_base128_le``"
-msgstr "ULEB128 format ``vlq_base128_le``"
+msgstr ""
 
 #: ../../source/binary.rst:127
 msgid "Тегированный индекс (Tagged index)"
-msgstr "Tagged index"
+msgstr ""
 
 #: ../../source/binary.rst:129
 msgid ""
 "Тегированный индекс кодирует вид контейнера строк и адрес строки в этом "
 "контейнере. Порядок байтов LE."
-msgstr "The tagged index encodes the kind of string container and the address of the string within that container. LE byte order."
+msgstr ""
 
 #: ../../source/binary.rst:134
 msgid "Tag"
-msgstr "Tag"
+msgstr ""
 
 #: ../../source/binary.rst:134
 msgid ""
 "Bit(1), тег. Строка выбирается из карты имен, если тег 1, иначе из блока "
 "данных длинных параметров."
-msgstr "Bit(1), tag. The string is selected from the name map if the tag is 1, otherwise from the long parameter data block."
+msgstr ""
 
 #: ../../source/binary.rst:137
 msgid "Index"
-msgstr "Index"
+msgstr ""
 
 #: ../../source/binary.rst:137
 msgid ""
 "Bit(31), индекс. Индекс в карте имен или смещение в блоке длинных "
 "параметров."
-msgstr "Bit(31), index. An index in a name map, or an offset in a block of long parameters."
+msgstr ""
 
 #: ../../source/binary.rst:140
 msgid "Структура ParameterInfo"
-msgstr "ParameterInfo Structure"
+msgstr ""
 
 #: ../../source/binary.rst:142
 msgid "Структура параметра кодирует именованный параметр."
-msgstr "A parameter structure encodes a named parameter."
+msgstr ""
 
 #: ../../source/binary.rst:147 ../../source/binary.rst:167
 msgid "Name ID"
-msgstr "Name ID"
+msgstr ""
 
 #: ../../source/binary.rst:147
 msgid "Int24ul, индекс имени в карте имен."
-msgstr "Int24ul, the index of the name in the name map."
+msgstr ""
 
 #: ../../source/binary.rst:150
 msgid "Type ID"
-msgstr "Type ID"
+msgstr ""
 
 #: ../../source/binary.rst:150
 msgid "Int8ul, код типа параметра."
-msgstr "Int8ul, parameter type code."
+msgstr ""
 
 #: ../../source/binary.rst:155
 msgid "Parameter data"
-msgstr "Parameter data"
+msgstr ""
 
 #: ../../source/binary.rst
 msgid ""
 "Int32ul, индекс длинного параметра для кодов типа ``Str``, ``Float12``, "
 "``Float4``, ``Float3``, ``Float2``, ``Int3``, ``Int2``, ``Long``."
-msgstr "Int32ul, long parameter index for codes like ``Str``, ``Float12``, ``Float4``, ``Float3``, ``Float2``, ``Int3``, ``Int2``, ``Long``."
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "Тегированный индекс для кода типа ``Str``."
-msgstr "Tagged index for code like ``Str``."
+msgstr ""
 
 #: ../../source/binary.rst
 msgid ""
 "Значение коротких параметров для кодов типа ``Color``, ``Int``, "
 "``Float``, ``Bool``."
-msgstr "Value of short parameters for codes like ``Color``, ``Int``, ``Float``, ``Bool``."
+msgstr ""
 
 #: ../../source/binary.rst:158
 msgid "Структура BlockInfo"
-msgstr "BlockInfo Structure"
+msgstr ""
 
 #: ../../source/binary.rst:160
 msgid "Структура блока кодирует блок, именованный или безымянный."
-msgstr "A block structure encodes a block, whether named or unnamed."
+msgstr ""
 
 #: ../../source/binary.rst:165
 msgid ""
 "VarInt, идентификатор имени блока. | Если значение t больше нуля, "
 "соответствует значению (t - 1) из карты имен. | Специальное значение t = "
 "0 для корневого блока, который не имеет имени."
-msgstr "VarInt, block name identifier. | If t is greater than zero, matches the value (t - 1) from the name map. | The special value t = 0 for a root block that has no name."
+msgstr ""
 
 #: ../../source/binary.rst:170 ../../source/binary.rst:208
 #: ../../source/binary.rst:533
 msgid "Parameters count"
-msgstr "Parameters count"
+msgstr ""
 
 #: ../../source/binary.rst:170
 msgid "VarInt, число параметров, выбираемых из потока параметров."
-msgstr "VarInt, the number of parameters to select from the parameter stream."
+msgstr ""
 
 #: ../../source/binary.rst:173 ../../source/binary.rst:205
 #: ../../source/binary.rst:530
 msgid "Blocks count"
-msgstr "Blocks count"
+msgstr ""
 
 #: ../../source/binary.rst:173
 msgid "VarInt, число подблоков."
-msgstr "VarInt, the number of subblocks."
+msgstr ""
 
 #: ../../source/binary.rst:176
 msgid "First block index"
-msgstr "First block index"
+msgstr ""
 
 #: ../../source/binary.rst:176
 msgid "(VarInt)?, индекс первого подблока, если есть."
-msgstr "(VarInt)?, the index of the first subblock, if any."
+msgstr ""
 
 #: ../../source/binary.rst:180
 msgid "Файл типа FAT"
-msgstr "FAT File type"
+msgstr ""
 
 #: ../../source/binary.rst:182
 msgid "Автономный файл."
-msgstr "Offline file."
+msgstr ""
 
 #: ../../source/binary.rst:184 ../../source/binary.rst:364
 #: ../../source/binary.rst:394 ../../source/binary.rst:515
 #: ../../source/binary.rst:575 ../../source/binary.rst:603
 msgid "Примеры:"
-msgstr "Examples:"
+msgstr ""
 
 #: ../../source/binary.rst:186
 msgid "``WarThunder/game.vromfs.bin/danetlibs/route_prober/templates/route_prober.blk``"
-msgstr "``WarThunder/game.vromfs.bin/danetlibs/route_prober/templates/route_prober.blk``"
+msgstr ""
 
 #: ../../source/binary.rst:187
 msgid "``tests/samples/section_fat.blk``"
-msgstr "``tests/samples/section_fat.blk``"
+msgstr ""
 
 #: ../../source/binary.rst:192 ../../source/binary.rst:372
 #: ../../source/binary.rst:523 ../../source/binary.rst:583
 #: ../../source/binary.rst:611
 msgid "File type"
-msgstr "File type"
+msgstr ""
 
 #: ../../source/binary.rst:192
 msgid "Int8ul, тип файла FileType.FAT."
-msgstr "Int8ul, FileType.FAT file type."
+msgstr ""
 
 #: ../../source/binary.rst:195 ../../source/binary.rst:452
 #: ../../source/binary.rst:527
 msgid "Names count"
-msgstr "Names count"
+msgstr ""
 
 #: ../../source/binary.rst:195 ../../source/binary.rst:452
 msgid "VarInt, количество имен."
-msgstr "VarInt, the number of names."
+msgstr ""
 
 #: ../../source/binary.rst:198 ../../source/binary.rst:455
 msgid "Names data size"
-msgstr "Name data size"
+msgstr ""
 
 #: ../../source/binary.rst:198 ../../source/binary.rst:455
 msgid "VarInt, размер массива имен в октетах, если names count > 0."
-msgstr "VarInt, size of array of names in octets if names count > 0."
+msgstr ""
 
 #: ../../source/binary.rst:202 ../../source/binary.rst:459
 msgid "Names[Names count]"
-msgstr "Names[Names count]"
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "Массив CString имен, если names count > 0."
-msgstr "CString array of names if names count > 0."
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "Идентификаторы имен по порядку чтения массива."
-msgstr "Name identifiers in array reading order."
+msgstr ""
 
 #: ../../source/binary.rst:205 ../../source/binary.rst:530
 msgid "VarInt, количество блоков в файле, включая корневой блок."
-msgstr "VarInt, the number of blocks in the file, including the root block."
+msgstr ""
 
 #: ../../source/binary.rst:208 ../../source/binary.rst:533
 msgid "VarInt, количество параметров в файле."
-msgstr "VarInt, the number of parameters in the file."
+msgstr ""
 
 #: ../../source/binary.rst:211 ../../source/binary.rst:536
 msgid "Parameters data size"
-msgstr "Parameters data size"
+msgstr ""
 
 #: ../../source/binary.rst:211 ../../source/binary.rst:536
 msgid ""
 "VarInt, размер массива длинных параметров в октетах, если есть длинные "
 "параметры."
-msgstr "VarInt, the size of the long parameter array in octets if there are long parameters."
+msgstr ""
 
 #: ../../source/binary.rst:215 ../../source/binary.rst:540
 msgid "Parameters data"
-msgstr "Parameters data"
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "Регион длинных параметров, если есть длинные параметры."
-msgstr "The region of long parameters, if there are long parameters."
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "Смещение в структуре ParameterInfo от начала региона."
-msgstr "The offset in the ParameterInfo structure from the start of the region."
+msgstr ""
 
 #: ../../source/binary.rst:219 ../../source/binary.rst:544
 msgid "ParameterInfo[Parameters count]"
-msgstr "ParameterInfo[Parameters count]"
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "Массив структур ParameterInfo, если parameters count > 0."
-msgstr "An array of ParameterInfo structures if parameters count > 0."
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "Идентификаторы параметров по порядку чтения массива."
-msgstr "Parameter identifiers in array reading order."
+msgstr ""
 
 #: ../../source/binary.rst:224 ../../source/binary.rst:549
 msgid "BlockInfo[Block count]"
-msgstr "BlockInfo[Block count]"
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "Массив структур BlockInfo, включая корневой блок, если blocks count > 0."
-msgstr "An array of BlockInfo structures, including the root block if blocks count > 0."
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "Идентификаторы блоков по порядку чтения массива."
-msgstr "Block IDs in array reading order."
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "Блоки перечислены при обходе дерева блоков в ширину."
-msgstr "The blocks are listed while traversing the block tree in breadth."
+msgstr ""
 
 #: ../../source/binary.rst:227 ../../source/binary.rst:381
 #: ../../source/binary.rst:415 ../../source/binary.rst:462
 #: ../../source/binary.rst:552 ../../source/binary.rst:589
 #: ../../source/binary.rst:617
 msgid "Пример разбора"
-msgstr "Parsing Example"
+msgstr ""
 
 #: ../../source/binary.rst:230
 msgid "Файл tests/samples/section_fat.blk"
-msgstr "File tests/samples/section_fat.blk"
+msgstr ""
 
 #: ../../source/binary.rst:235 ../../source/binary.rst:441
 #: ../../source/binary.rst:470 ../../source/binary.rst:560
 msgid "Карта имен"
-msgstr "Name map"
+msgstr ""
 
 #: ../../source/binary.rst:237 ../../source/binary.rst:472
 msgid "Карта имен и строк"
-msgstr "Map of names and strings"
+msgstr ""
 
 #: ../../source/binary.rst:241 ../../source/binary.rst:282
 #: ../../source/binary.rst:332 ../../source/binary.rst:476
 msgid "Индекс"
-msgstr "Index"
+msgstr ""
 
 #: ../../source/binary.rst:242 ../../source/binary.rst:283
 #: ../../source/binary.rst:333 ../../source/binary.rst:430
 #: ../../source/binary.rst:477
 msgid "Имя"
-msgstr "Name"
+msgstr ""
 
 #: ../../source/binary.rst:244 ../../source/binary.rst:286
 #: ../../source/binary.rst:479
 msgid "\\'vec4f\\'"
-msgstr "\\'vec4f\\'"
+msgstr ""
 
 #: ../../source/binary.rst:246 ../../source/binary.rst:289
 #: ../../source/binary.rst:481
 msgid "\\'int\\'"
-msgstr "\\'int\\'"
+msgstr ""
 
 #: ../../source/binary.rst:248 ../../source/binary.rst:292
 #: ../../source/binary.rst:483
 msgid "\\'long\\'"
-msgstr "\\'long\\'"
+msgstr ""
 
 #: ../../source/binary.rst:250 ../../source/binary.rst:341
 #: ../../source/binary.rst:485
 msgid "\\'alpha\\'"
-msgstr "\\'alpha\\'"
+msgstr ""
 
 #: ../../source/binary.rst:252 ../../source/binary.rst:295
 #: ../../source/binary.rst:487
 msgid "\\'str\\'"
-msgstr "\\'str\\'"
+msgstr ""
 
 #: ../../source/binary.rst:254 ../../source/binary.rst:298
 #: ../../source/binary.rst:489
 msgid "\\'bool\\'"
-msgstr "\\'bool\\'"
+msgstr ""
 
 #: ../../source/binary.rst:256 ../../source/binary.rst:301
 #: ../../source/binary.rst:491
 msgid "\\'color\\'"
-msgstr "\\'color\\'"
+msgstr ""
 
 #: ../../source/binary.rst:258 ../../source/binary.rst:349
 #: ../../source/binary.rst:493
 msgid "\\'gamma\\'"
-msgstr "\\'gamma\\'"
+msgstr ""
 
 #: ../../source/binary.rst:260 ../../source/binary.rst:307
 #: ../../source/binary.rst:313 ../../source/binary.rst:495
 msgid "\\'vec2i\\'"
-msgstr "\\'vec2i\\'"
+msgstr ""
 
 #: ../../source/binary.rst:262 ../../source/binary.rst:316
 #: ../../source/binary.rst:497
 msgid "\\'vec2f\\'"
-msgstr "\\'vec2f\\'"
+msgstr ""
 
 #: ../../source/binary.rst:264 ../../source/binary.rst:319
 #: ../../source/binary.rst:499
 msgid "\\'transform\\'"
-msgstr "\\'transform\\'"
+msgstr ""
 
 #: ../../source/binary.rst:266 ../../source/binary.rst:345
 #: ../../source/binary.rst:501
 msgid "\\'beta\\'"
-msgstr "\\'beta\\'"
+msgstr ""
 
 #: ../../source/binary.rst:268 ../../source/binary.rst:304
 #: ../../source/binary.rst:503
 msgid "\\'float\\'"
-msgstr "\\'float\\'"
+msgstr ""
 
 #: ../../source/binary.rst:269 ../../source/binary.rst:504
 msgid "0x0d"
-msgstr "0x0d"
+msgstr ""
 
 #: ../../source/binary.rst:270 ../../source/binary.rst:310
 #: ../../source/binary.rst:505
 msgid "\\'vec3f\\'"
-msgstr "\\'vec3f\\'"
+msgstr ""
 
 #: ../../source/binary.rst:273
 msgid "Массив структур ParameterInfo и регион Parameters data"
-msgstr "Array of ParameterInfo structures and Parameters data region"
+msgstr ""
 
 #: ../../source/binary.rst:277
 msgid "Карта параметров"
-msgstr "Parameter Map"
+msgstr ""
 
 #: ../../source/binary.rst:284
 msgid "Значение"
-msgstr "Meaning"
+msgstr ""
 
 #: ../../source/binary.rst:285 ../../source/binary.rst:336
 msgid "0"
-msgstr "0"
+msgstr ""
 
 #: ../../source/binary.rst:287
 msgid "Float4(1.25, 2.5, 5.0, 10.0)"
-msgstr "Float4(1.25, 2.5, 5.0, 10.0)"
+msgstr ""
 
 #: ../../source/binary.rst:288 ../../source/binary.rst:340
 msgid "1"
-msgstr "1"
+msgstr ""
 
 #: ../../source/binary.rst:290
 msgid "Int(42)"
-msgstr "Int(42)"
+msgstr ""
 
 #: ../../source/binary.rst:291 ../../source/binary.rst:344
 msgid "2"
-msgstr "2"
+msgstr ""
 
 #: ../../source/binary.rst:293
 msgid "Long(64)"
-msgstr "Long(64)"
+msgstr ""
 
 #: ../../source/binary.rst:294 ../../source/binary.rst:348
 msgid "3"
-msgstr "3"
+msgstr ""
 
 #: ../../source/binary.rst:296
 msgid "Str(\\'hello\\')"
-msgstr "Str(\\'hello\\')"
+msgstr ""
 
 #: ../../source/binary.rst:299
 msgid "true"
-msgstr "true"
+msgstr ""
 
 #: ../../source/binary.rst:300
 msgid "5"
-msgstr "5"
+msgstr ""
 
 #: ../../source/binary.rst:302
 msgid "Color(1, 2, 3, 4)"
-msgstr "Color(1, 2, 3, 4)"
+msgstr ""
 
 #: ../../source/binary.rst:303
 msgid "6"
-msgstr "6"
+msgstr ""
 
 #: ../../source/binary.rst:305
 msgid "Float(1.25)"
-msgstr "Float(1.25)"
+msgstr ""
 
 #: ../../source/binary.rst:306
 msgid "7"
-msgstr "7"
+msgstr ""
 
 #: ../../source/binary.rst:308
 msgid "Int2(1, 2)"
-msgstr "Int2(1, 2)"
+msgstr ""
 
 #: ../../source/binary.rst:311
 msgid "Float3(1.25, 2.5, 5.0)"
-msgstr "Float3(1.25, 2.5, 5.0)"
+msgstr ""
 
 #: ../../source/binary.rst:312
 msgid "9"
-msgstr "9"
+msgstr ""
 
 #: ../../source/binary.rst:314
 msgid "Int2(3, 4)"
-msgstr "Int2(3, 4)"
+msgstr ""
 
 #: ../../source/binary.rst:315
 msgid "10"
-msgstr "10"
+msgstr ""
 
 #: ../../source/binary.rst:317
 msgid "Float2(1.25, 2.5)"
-msgstr "Float2(1.25, 2.5)"
+msgstr ""
 
 #: ../../source/binary.rst:318
 msgid "11"
-msgstr "11"
+msgstr ""
 
 #: ../../source/binary.rst:320
 msgid "Float12(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.25, 2.5, 5.0)"
-msgstr "Float12(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.25, 2.5, 5.0)"
+msgstr ""
 
 #: ../../source/binary.rst:323
 msgid "Массив структур BlockInfo"
-msgstr "Array of BlockInfo structures"
+msgstr ""
 
 #: ../../source/binary.rst:327
 msgid "Карта блоков"
-msgstr "Map of blocks"
+msgstr ""
 
 #: ../../source/binary.rst:334
 msgid "Индексы параметров"
-msgstr "Parameter indexes"
+msgstr ""
 
 #: ../../source/binary.rst:335
 msgid "Индексы подблоков"
-msgstr "Sub-block indexes"
+msgstr ""
 
 #: ../../source/binary.rst:337
 msgid "None"
-msgstr "None"
+msgstr ""
 
 #: ../../source/binary.rst:338
 msgid "(0, 1, 2)"
-msgstr "(0, 1, 2)"
+msgstr ""
 
 #: ../../source/binary.rst:339
 msgid "(1, 2)"
-msgstr "(1, 2)"
+msgstr ""
 
 #: ../../source/binary.rst:342
 msgid "(3, 4, 5)"
-msgstr "(3, 4, 5)"
+msgstr ""
 
 #: ../../source/binary.rst:343
 msgid "(3, )"
-msgstr "(3, )"
+msgstr ""
 
 #: ../../source/binary.rst:346
 msgid "(6, 7, 8)"
-msgstr "(6, 7, 8)"
+msgstr ""
 
 #: ../../source/binary.rst:347 ../../source/binary.rst:351
 msgid "()"
-msgstr "()"
+msgstr ""
 
 #: ../../source/binary.rst:350
 msgid "(9, 10, 11)"
-msgstr "(9, 10, 11)"
+msgstr ""
 
 #: ../../source/binary.rst:354
 msgid "Дерево блоков"
-msgstr "Block tree"
+msgstr ""
 
 #: ../../source/binary.rst:360
 msgid "Файл типа FAT_ZST"
-msgstr "File type FAT_ZST"
+msgstr ""
 
 #: ../../source/binary.rst:362
 msgid "Сжатый автономный файл, сжатый по алгоритму zstandard."
-msgstr "A compressed standalone file compressed with the zstandard algorithm."
+msgstr ""
 
 #: ../../source/binary.rst:366
 msgid "``WarThunder/cache/binary.2.17.0/regional.vromfs.bin/dldata/downloadable_decals.blk``"
-msgstr "``WarThunder/cache/binary.2.17.0/regional.vromfs.bin/dldata/downloadable_decals.blk``"
+msgstr ""
 
 #: ../../source/binary.rst:367
 msgid "``tests/samples/section_fat_zst.blk``"
-msgstr "``tests/samples/section_fat_zst.blk``"
+msgstr ""
 
 #: ../../source/binary.rst:372
 msgid "Int8ul, тип файла FileType.FAT_ZST."
-msgstr "Int8ul, FileType.FAT_ZST file type."
+msgstr ""
 
 #: ../../source/binary.rst:375
 msgid "Zstd stream size"
-msgstr "Zstd stream size"
+msgstr ""
 
 #: ../../source/binary.rst:375
 msgid "Int24ul, размер zstd потока октетах."
-msgstr "Int24ul, size of the zstd stream in octets."
+msgstr ""
 
 #: ../../source/binary.rst:378 ../../source/binary.rst:412
 #: ../../source/binary.rst:586 ../../source/binary.rst:614
 msgid "Zstd stream"
-msgstr "Zstd stream"
+msgstr ""
 
 #: ../../source/binary.rst:378
 msgid "Сжатый по алгоритму zstandard файл типа FAT."
-msgstr "A zstandard-compressed FAT file."
+msgstr ""
 
 #: ../../source/binary.rst:384
 msgid "Файл tests/samples/section_fat_zst.blk"
-msgstr "File tests/samples/section_fat_zst.blk"
+msgstr ""
 
 #: ../../source/binary.rst:390
 msgid "Файл NM"
-msgstr "NM file"
+msgstr ""
 
 #: ../../source/binary.rst:392
 msgid "Разделяемый файл имен."
-msgstr "Shared name file."
+msgstr ""
 
 #: ../../source/binary.rst:396
 msgid "``WarThunder/aces.vromfs.bin/nm``"
-msgstr "``WarThunder/aces.vromfs.bin/nm``"
+msgstr ""
 
 #: ../../source/binary.rst:397
 msgid "``tests/samples/nm``"
-msgstr "``tests/samples/nm``"
+msgstr ""
 
 #: ../../source/binary.rst:403 ../../source/binary.rst:433
 msgid "Names digest"
-msgstr "Names digest"
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "Bit(64), дайджест карты имен."
-msgstr "Bit(64), name map digest."
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "Алгоритм построения неизвестен."
-msgstr "The construction algorithm is unknown."
+msgstr ""
 
 #: ../../source/binary.rst:409 ../../source/binary.rst:436
 msgid "Dict digest"
-msgstr "Dict digest"
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "Bit(256), дайджест словаря."
-msgstr "Bit(256), dictionary digest."
+msgstr ""
 
 #: ../../source/binary.rst
 msgid ""
 "Текст дайджеста совпадает с именем словаря, который используется для "
 "распаковки файлов типа SLIM_ZST_DICT."
-msgstr "The digest text is the same as the name of the dictionary used to unpack files of the SLIM_ZST_DICT type."
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "Специальное значение 0 в случае отсутствия словаря."
-msgstr "The special value 0 if there is no dictionary."
+msgstr ""
 
 #: ../../source/binary.rst:412
 msgid "Сжатая по алгоритму zstandard карта имен."
-msgstr "Zstd stream A zstandard-compressed name map."
+msgstr ""
 
 #: ../../source/binary.rst:418
 msgid "Файл tests/samples/nm"
-msgstr "File tests/samples/nm"
+msgstr ""
 
 #: ../../source/binary.rst:423 ../../source/binary.rst:425
 msgid "Дайджесты"
-msgstr "Digests"
+msgstr ""
 
 #: ../../source/binary.rst:431
 msgid "Дайджест, BE"
-msgstr "Digests, BE"
+msgstr ""
 
 #: ../../source/binary.rst:434
 msgid "C2FA9EF840FA12F9"
-msgstr "C2FA9EF840FA12F9"
+msgstr ""
 
 #: ../../source/binary.rst:437
 msgid "BFB732560AD45234690ACAD246D7B14C2F25AD418A146E5E7EF68BA3386A315C"
-msgstr "BFB732560AD45234690ACAD246D7B14C2F25AD418A146E5E7EF68BA3386A315C"
+msgstr ""
 
 #: ../../source/binary.rst:443
 msgid ""
 "Содержит имена и строки, общие для группы файлов типа SLIM, SLIM_ZST, "
 "SLIM_ZST_DICT."
-msgstr "Contains names and strings common to a group of files of type SLIM, SLIM_ZST, SLIM_ZST_DICT."
+msgstr ""
 
 #: ../../source/binary.rst:445
 msgid "Пример:"
-msgstr "Example:"
+msgstr ""
 
 #: ../../source/binary.rst:447
 msgid "``tests/samples/names``"
-msgstr "``tests/samples/names``"
+msgstr ""
 
 #: ../../source/binary.rst:465
 msgid "Файл tests/samples/names"
-msgstr "File tests/samples/names"
+msgstr ""
 
 #: ../../source/binary.rst:506
 msgid "0x0e"
-msgstr "0x0e"
+msgstr ""
 
 #: ../../source/binary.rst:507
 msgid "\\'hello\\'"
-msgstr "\\'hello\\'"
+msgstr ""
 
 #: ../../source/binary.rst:511
 msgid "Файл типа SLIM"
-msgstr "SLIM File"
+msgstr ""
 
 #: ../../source/binary.rst:513
 msgid ""
 "Неавтономный файл. Имена и строки файла находятся в разделяемом файле "
 "имен."
-msgstr "Offline file. The names and lines of the file are in a shared file of names."
+msgstr ""
 
 #: ../../source/binary.rst:517
 msgid "``WarThunder/aces.vromfs.bin/config/es_order.blk``"
-msgstr "``WarThunder/aces.vromfs.bin/config/es_order.blk``"
+msgstr ""
 
 #: ../../source/binary.rst:518
 msgid "``tests/samples/section_slim.blk``"
-msgstr "``tests/samples/section_slim.blk``"
+msgstr ""
 
 #: ../../source/binary.rst:523
 msgid "Int8ul, тип файла FileType.SLIM."
-msgstr "Int8ul, FileType.SLIM file type."
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "VarInt, количество имен"
-msgstr "VarInt, number of names"
+msgstr ""
 
 #: ../../source/binary.rst
 msgid "Файл не содержит встроенной карты имен, names count = 0"
-msgstr "The file does not contain an embedded name map, names count = 0"
+msgstr ""
 
 #: ../../source/binary.rst:555
 msgid "Файл tests/samples/section_slim.blk"
-msgstr "File tests/samples/section_slim.blk"
+msgstr ""
 
 #: ../../source/binary.rst:562
 msgid "Использована карта имен ``tests/samples/nm``."
-msgstr "The name map used is ``tests/samples/nm``."
+msgstr ""
 
 #: ../../source/binary.rst:565
 msgid "Карта имен, массив структур ParameterInfo и регион Parameters data"
-msgstr "Name map, array of ParameterInfo structures and Parameters data region"
+msgstr ""
 
 #: ../../source/binary.rst:571
 msgid "Файл типа SLIM_ZST"
-msgstr "File type SLIM_ZST"
+msgstr ""
 
 #: ../../source/binary.rst:573
 msgid ""
 "Неавтономный файл, сжатый по алгоритму zstandard. Имена и строки файла "
 "находятся в разделяемом файле имен."
-msgstr "An online file compressed using the zstandard algorithm. The names and lines of the file are in a shared file of names."
+msgstr ""
 
 #: ../../source/binary.rst:577
 msgid "``WarThunder/char.vromfs.bin/config/attachable.blk``"
-msgstr "``WarThunder/char.vromfs.bin/config/attachable.blk``"
+msgstr ""
 
 #: ../../source/binary.rst:578
 msgid "``tests/samples/section_slim_zst.blk``"
-msgstr "``tests/samples/section_slim_zst.blk``"
+msgstr ""
 
 #: ../../source/binary.rst:583
 msgid "Int8ul, тип файла FileType.SLIM_ZST"
-msgstr "Int8ul, file type FileType.SLIM_ZST"
+msgstr ""
 
 #: ../../source/binary.rst:586 ../../source/binary.rst:614
 msgid "Сжатый по алгоритму zstandard файл типа SLIM без первого октета."
-msgstr "A zstandard-compressed SLIM file without the first octet."
+msgstr ""
 
 #: ../../source/binary.rst:592
 msgid "Файл tests/samples/section_slim_zst.blk"
-msgstr "File tests/samples/section_slim_zst.blk"
+msgstr ""
 
 #: ../../source/binary.rst:598
 msgid "Файл типа SLIM_ZST_DICT"
-msgstr "File type SLIM_ZST_DICT"
+msgstr ""
 
 #: ../../source/binary.rst:600
 msgid ""
 "Неавтономный файл, сжатый по алгоритму zstandard с использованием "
 "словаря. Имя словаря - дайджест словаря из файла nm в base16 с "
 "расширением ``.dict``."
-msgstr "An online zstandard-compressed file using a dictionary. Dictionary name - dictionary digest from nm file in base16 with ``.dict`` extension."
+msgstr ""
 
 #: ../../source/binary.rst:605
 msgid "``WarThunder/aces.vromfs.bin/_allowedconfigoverrides.blk``"
-msgstr "``WarThunder/aces.vromfs.bin/_allowedconfigoverrides.blk``"
+msgstr ""
 
 #: ../../source/binary.rst:606
 msgid "``tests/samples/section_slim_zst_dict.blk``"
-msgstr "``tests/samples/section_slim_zst_dict.blk``"
+msgstr ""
 
 #: ../../source/binary.rst:611
 msgid "Int8ul, тип файла FileType.SLIM_ZST_DICT"
-msgstr "Int8ul, file type FileType.SLIM_ZST_DICT"
+msgstr ""
 
 #: ../../source/binary.rst:620
 msgid "Файл tests/samples/section_slim_zst_dict.blk"
-msgstr "File tests/samples/section_slim_zst_dict.blk"
+msgstr ""
 
