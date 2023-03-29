@@ -13,11 +13,16 @@ Linux, Python 3.7 for PyPy3 compatibility.
 Diagrams built using [drawio](https://github.com/jgraph/drawio-desktop/)
 
 Available languages : 
-- Russian : "ru"
 - English : "en"
+- Russian : "ru"
 
 ```
 pip install -r requirements-docs.txt
 set SPHINXOPTS=-D language=[language]
 docs\make.bat html
 ```
+
+<p align="left">
+  <span>English</span> |
+  <a href="https://github.com/kotiq/blk/tree/docs/lang/russian#Вспомогательный-инcтрументарий-для-работы-с-файлами-конфигурации">Русский</a>
+</p>
