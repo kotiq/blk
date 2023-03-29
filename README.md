@@ -1,5 +1,10 @@
 # Documentation for BLK Files
 
+<p align="left">
+  <span>English</span> |
+  <a href="https://github.com/kotiq/blk/tree/docs/lang/russian#вспомогательный-инcтрументарий-для-работы-с-файлами-конфигурации">Русский</a>
+</p>
+
 ## Runtime
 
 Linux, Python 3.7 for PyPy3 compatibility.
@@ -21,8 +26,3 @@ pip install -r requirements-docs.txt
 set SPHINXOPTS=-D language=[language]
 docs\make.bat html
 ```
-
-<p align="left">
-  <span>English</span> |
-  <a href="https://github.com/kotiq/blk/tree/docs/lang/russian#вспомогательный-инcтрументарий-для-работы-с-файлами-конфигурации">Русский</a>
-</p>
