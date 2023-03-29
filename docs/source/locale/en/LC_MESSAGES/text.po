@@ -1,0 +1,528 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2022, kotiq
+# This file is distributed under the same license as the BLK Notes package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: BLK Notes \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-03-29 12:28+0600\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.10.3\n"
+
+#: ../../source/text.rst:3
+msgid "Текстовые файлы BLK"
+msgstr ""
+
+#: ../../source/text.rst:5
+msgid ""
+"Неформально описана упрощенная версия языка текстовых файлов BLK. Она "
+"подходит для большинства текстов из ``WarThunderCDK``."
+msgstr ""
+
+#: ../../source/text.rst:8
+msgid "Пример корневой секции в текстовом файле."
+msgstr ""
+
+#: ../../source/text.rst:31
+msgid "Отношения между классами сущностей в тексте:"
+msgstr ""
+
+#: ../../source/text.rst:36
+msgid "Комментарий (comment)"
+msgstr ""
+
+#: ../../source/text.rst:42
+msgid "Место комментария"
+msgstr ""
+
+#: ../../source/text.rst:53
+msgid ""
+"В случае комментария перед или после именованного значения или команды "
+"есть возможность его сохранить в упорядоченной секции в виде специального"
+" именованного строкового параметра."
+msgstr ""
+
+#: ../../source/text.rst:57
+msgid "Строчный комментарий (line comment)"
+msgstr ""
+
+#: ../../source/text.rst:59
+msgid "Комментарий С++."
+msgstr ""
+
+#: ../../source/text.rst:67
+msgid "Блочный комментарий (block comment)"
+msgstr ""
+
+#: ../../source/text.rst:69
+msgid "В файлах встречаются вложенные блочные комментарии."
+msgstr ""
+
+#: ../../source/text.rst:81
+msgid "Именованное значение (named value)"
+msgstr ""
+
+#: ../../source/text.rst:88
+msgid "Имя (name)"
+msgstr ""
+
+#: ../../source/text.rst:90
+msgid ""
+"Строка в двойных или одинарных кавычках или строка без кавычек. Имя в "
+"кавычках может содержать пробельные символы и комплементарные кавычки."
+msgstr ""
+
+#: ../../source/text.rst:110
+msgid "Именованный параметр (named parameter)"
+msgstr ""
+
+#: ../../source/text.rst:112
+msgid "Представляет пару имя-параметр."
+msgstr ""
+
+#: ../../source/text.rst:123
+msgid "Тег параметра (parameter tag)"
+msgstr ""
+
+#: ../../source/text.rst:125
+msgid "Тег параметра определяет тип следующего за ним значения параметра."
+msgstr ""
+
+#: ../../source/text.rst:136
+msgid "Теги параметра"
+msgstr ""
+
+#: ../../source/text.rst:140
+msgid "Тег"
+msgstr ""
+
+#: ../../source/text.rst:141
+msgid "Тип значения параметра"
+msgstr ""
+
+#: ../../source/text.rst:142
+msgid "b"
+msgstr ""
+
+#: ../../source/text.rst:143
+msgid "Булево"
+msgstr ""
+
+#: ../../source/text.rst:144
+msgid "t"
+msgstr ""
+
+#: ../../source/text.rst:145
+msgid "Строка"
+msgstr ""
+
+#: ../../source/text.rst:146
+msgid "i"
+msgstr ""
+
+#: ../../source/text.rst:147
+msgid "Целое"
+msgstr ""
+
+#: ../../source/text.rst:148
+msgid "i64"
+msgstr ""
+
+#: ../../source/text.rst:149
+msgid "Длинное целое"
+msgstr ""
+
+#: ../../source/text.rst:150
+msgid "r"
+msgstr ""
+
+#: ../../source/text.rst:151
+msgid "Рациональное"
+msgstr ""
+
+#: ../../source/text.rst:152
+msgid "ip2"
+msgstr ""
+
+#: ../../source/text.rst:153
+msgid "Вектор целых 1x2"
+msgstr ""
+
+#: ../../source/text.rst:154
+msgid "ip3"
+msgstr ""
+
+#: ../../source/text.rst:155
+msgid "Вектор целых 1x3"
+msgstr ""
+
+#: ../../source/text.rst:156 ../../source/text.rst:225
+msgid "c"
+msgstr ""
+
+#: ../../source/text.rst:157
+msgid "Цвет"
+msgstr ""
+
+#: ../../source/text.rst:158
+msgid "p2"
+msgstr ""
+
+#: ../../source/text.rst:159
+msgid "Вектор рациональных 1x2"
+msgstr ""
+
+#: ../../source/text.rst:160
+msgid "p3"
+msgstr ""
+
+#: ../../source/text.rst:161
+msgid "Вектор рациональных 1x3"
+msgstr ""
+
+#: ../../source/text.rst:162
+msgid "p4"
+msgstr ""
+
+#: ../../source/text.rst:163
+msgid "Вектор рациональных 1x4"
+msgstr ""
+
+#: ../../source/text.rst:164
+msgid "m"
+msgstr ""
+
+#: ../../source/text.rst:165
+msgid "Вектор рациональных 4x3"
+msgstr ""
+
+#: ../../source/text.rst:168
+msgid "Булево (bool)"
+msgstr ""
+
+#: ../../source/text.rst:170
+msgid "Двоичный флаг."
+msgstr ""
+
+#: ../../source/text.rst:187
+msgid "Строка (str)"
+msgstr ""
+
+#: ../../source/text.rst:189
+msgid ""
+"Строка в тройных двойных или одинарных кавычках или строка в двойных или "
+"одинарных кавычках или строка без кавычек. Строка в тройных кавычках "
+"может содержать кавычки, экранированные тройные кавычки ``~'''``, "
+"``~\"\"\"`` и неэкранированные пробельные символы. Строка в кавычках "
+"может содержать пробельные символы, экранированные последовательности и "
+"комплементарные кавычки."
+msgstr ""
+
+#: ../../source/text.rst:220
+msgid "Экранированные последовательности"
+msgstr ""
+
+#: ../../source/text.rst:224
+msgid "blk"
+msgstr ""
+
+#: ../../source/text.rst:226 ../../source/text.rst:404
+#: ../../source/text.rst:460
+msgid "Назначение"
+msgstr ""
+
+#: ../../source/text.rst:227
+msgid "``~~``"
+msgstr ""
+
+#: ../../source/text.rst:228
+msgid "``~``"
+msgstr ""
+
+#: ../../source/text.rst:229
+msgid "Тильда"
+msgstr ""
+
+#: ../../source/text.rst:230
+msgid "``~'``"
+msgstr ""
+
+#: ../../source/text.rst:231
+msgid "``'``"
+msgstr ""
+
+#: ../../source/text.rst:232
+msgid "Одинарная кавычка"
+msgstr ""
+
+#: ../../source/text.rst:233
+msgid "``~\"``"
+msgstr ""
+
+#: ../../source/text.rst:234
+msgid "``\"``"
+msgstr ""
+
+#: ../../source/text.rst:235
+msgid "Двойная кавычка"
+msgstr ""
+
+#: ../../source/text.rst:236
+msgid "``~t``"
+msgstr ""
+
+#: ../../source/text.rst:237
+msgid "``\\t``"
+msgstr ""
+
+#: ../../source/text.rst:238
+msgid "Горизонтальная табуляция"
+msgstr ""
+
+#: ../../source/text.rst:239
+msgid "``~n``"
+msgstr ""
+
+#: ../../source/text.rst:240
+msgid "``\\n``"
+msgstr ""
+
+#: ../../source/text.rst:241
+msgid "Перенос строки"
+msgstr ""
+
+#: ../../source/text.rst:242
+msgid "``~r``"
+msgstr ""
+
+#: ../../source/text.rst:243
+msgid "``\\r``"
+msgstr ""
+
+#: ../../source/text.rst:244
+msgid "Возврат каретки"
+msgstr ""
+
+#: ../../source/text.rst:246
+msgid ""
+"Прочие символы после ``~``, кроме ``\\t``, ``\\n``, ``\\r``, переходят в "
+"себя."
+msgstr ""
+
+#: ../../source/text.rst:249
+msgid "Целое (int)"
+msgstr ""
+
+#: ../../source/text.rst:251
+msgid "Знаковое 32-битное десятичное или шестнадцатеричное целое."
+msgstr ""
+
+#: ../../source/text.rst:262
+msgid "Длинное целое (long)"
+msgstr ""
+
+#: ../../source/text.rst:264
+msgid "Знаковое 64-битное десятичное или шестнадцатеричное целое."
+msgstr ""
+
+#: ../../source/text.rst:275
+msgid "Рациональное (float)"
+msgstr ""
+
+#: ../../source/text.rst:277
+msgid ""
+"Знаковое число с плавающей точкой одинарной точности, исключая "
+"бесконечности и не-число."
+msgstr ""
+
+#: ../../source/text.rst:291
+msgid "Вектор целых 1x2 (int2)"
+msgstr ""
+
+#: ../../source/text.rst:293
+msgid "Пара целых."
+msgstr ""
+
+#: ../../source/text.rst:305
+msgid "Вектор целых 1x3 (int3)"
+msgstr ""
+
+#: ../../source/text.rst:307
+msgid "Тройка целых."
+msgstr ""
+
+#: ../../source/text.rst:319
+msgid "Цвет (color)"
+msgstr ""
+
+#: ../../source/text.rst:321
+msgid "Четверка или тройка беззнаковых 8-битных целых."
+msgstr ""
+
+#: ../../source/text.rst:339
+msgid "Вектор рациональных 1x2 (float2)"
+msgstr ""
+
+#: ../../source/text.rst:341
+msgid "Пара рациональных."
+msgstr ""
+
+#: ../../source/text.rst:353
+msgid "Вектор рациональных 1x3 (float3)"
+msgstr ""
+
+#: ../../source/text.rst:355
+msgid "Тройка рациональных."
+msgstr ""
+
+#: ../../source/text.rst:367
+msgid "Вектор рациональных 1x4 (float4)"
+msgstr ""
+
+#: ../../source/text.rst:369
+msgid "Четверка рациональных."
+msgstr ""
+
+#: ../../source/text.rst:381
+msgid "Вектор рациональных 4x3 (float12)"
+msgstr ""
+
+#: ../../source/text.rst:383
+msgid "Двенадцать рациональных."
+msgstr ""
+
+#: ../../source/text.rst:395
+msgid "Специальные именованные параметры"
+msgstr ""
+
+#: ../../source/text.rst:397
+msgid ""
+"Специальные именованные параметры служат для представления всех классов "
+"элементов секции."
+msgstr ""
+
+#: ../../source/text.rst:399
+msgid "Специальные имена"
+msgstr ""
+
+#: ../../source/text.rst:403
+msgid "Имя"
+msgstr ""
+
+#: ../../source/text.rst:405
+msgid "``@commentCPP``"
+msgstr ""
+
+#: ../../source/text.rst:406
+msgid "Строчный комментарий"
+msgstr ""
+
+#: ../../source/text.rst:407
+msgid "``@commentC``"
+msgstr ""
+
+#: ../../source/text.rst:408
+msgid "Блочный комментарий"
+msgstr ""
+
+#: ../../source/text.rst:409
+msgid "``@include``"
+msgstr ""
+
+#: ../../source/text.rst:410
+msgid "Инструкция включения"
+msgstr ""
+
+#: ../../source/text.rst:426
+msgid "Именованная секция (named section)"
+msgstr ""
+
+#: ../../source/text.rst:428
+msgid "Представляет пару имя-секция."
+msgstr ""
+
+#: ../../source/text.rst:444
+msgid "Инструкция включения (include)"
+msgstr ""
+
+#: ../../source/text.rst:446
+msgid "Представляет путь к текстовому файлу BLK."
+msgstr ""
+
+#: ../../source/text.rst:452
+msgid "Разделители пути: ``/`` и ``\\``"
+msgstr ""
+
+#: ../../source/text.rst:454
+msgid "Префиксы"
+msgstr ""
+
+#: ../../source/text.rst:459
+msgid "Префикс"
+msgstr ""
+
+#: ../../source/text.rst:461
+msgid "``:``"
+msgstr ""
+
+#: ../../source/text.rst:462
+msgid ""
+"Директория ресурсов. Схема монтирования описана в "
+"``WarThunderCDK/application.blk``"
+msgstr ""
+
+#: ../../source/text.rst:463
+msgid "``#``"
+msgstr ""
+
+#: ../../source/text.rst:464
+msgid "Директория ``WarThunderCDK``"
+msgstr ""
+
+#: ../../source/text.rst:466
+msgid ""
+"Значения префиксов оканчиваются разделителем пути. Путь без префиксов "
+"считается относительно родительской директории обрабатываемого файла."
+msgstr ""
+
+#: ../../source/text.rst:480
+msgid "Разделители элементов секции"
+msgstr ""
+
+#: ../../source/text.rst:482
+msgid ""
+"Разделители элементов секции для случаев смешения имени и значения "
+"предыдущего параметра: значение, кроме bool и float12, и имя без кавычек "
+"или инструкция включения;"
+msgstr ""
+
+#: ../../source/text.rst:506
+msgid "Место разделителя элементов секции"
+msgstr ""
+
+#: ../../source/text.rst:514
+msgid "Разделители элементов вектора"
+msgstr ""
+
+#: ../../source/text.rst:526
+msgid "Место разделителя элементов вектора"
+msgstr ""
+
+#: ../../source/text.rst:534
+msgid "Разделители внутри параметров и секций"
+msgstr ""
+
+#: ../../source/text.rst:560
+msgid "Место разделителей"
+msgstr ""
+

@@ -1,0 +1,76 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2022, kotiq
+# This file is distributed under the same license as the BLK Notes package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: BLK Notes \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-03-29 12:28+0600\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.10.3\n"
+
+#: ../../source/section.rst:2
+msgid "Инструкции"
+msgstr ""
+
+#: ../../source/section.rst:5
+msgid "Включение секции из файла"
+msgstr ""
+
+#: ../../source/section.rst:7
+msgid ""
+"Используется для сборки секции из нескольких файлов. После исполнения в "
+"место именованного параметра включается секция из текстового blk файла, "
+"на который указывает путь."
+msgstr ""
+
+#: ../../source/section.rst:11
+msgid "Построение секции из пары файлов"
+msgstr ""
+
+#: ../../source/section.rst:13
+msgid "Пусть имеется структура директорий:"
+msgstr ""
+
+#: ../../source/section.rst:22
+msgid "Содержимое ``config_tpl.blk``"
+msgstr ""
+
+#: ../../source/section.rst:37
+msgid "Содержимое ``common/metadata.blk``"
+msgstr ""
+
+#: ../../source/section.rst:46
+msgid "Представление ``config_tpl.blk`` в виде секции до обработки."
+msgstr ""
+
+#: ../../source/section.rst:60
+msgid "Представление ``common/metadata.blk`` в виде секции до обработки."
+msgstr ""
+
+#: ../../source/section.rst:68
+msgid ""
+"Представление ``config_tpl.blk`` в виде секции после удаления "
+"комментариев."
+msgstr ""
+
+#: ../../source/section.rst:81
+msgid ""
+"Представление ``common/metadata.blk`` в виде секции после удаления "
+"комментариев."
+msgstr ""
+
+#: ../../source/section.rst:88
+msgid "Результирующая секция после включения секции из файла."
+msgstr ""
+
