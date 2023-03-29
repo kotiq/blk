@@ -24,5 +24,5 @@ docs\make.bat html
 
 <p align="left">
   <span>English</span> |
-  <a href="https://github.com/kotiq/blk/tree/docs/lang/russian#Вспомогательный-инcтрументарий-для-работы-с-файлами-конфигурации">Русский</a>
+  <a href="https://github.com/kotiq/blk/tree/docs/lang/russian#вспомогательный-инcтрументарий-для-работы-с-файлами-конфигурации">Русский</a>
 </p>
