@@ -2,7 +2,7 @@
 
 <p align="left">
   <span>English</span> |
-  <a href="https://github.com/kotiq/blk/tree/docs/lang/russian#вспомогательный-инcтрументарий-для-работы-с-файлами-конфигурации">Russian</a>
+  <a href="https://github.com/kotiq/blk/tree/dev/lang/russian#вспомогательный-инcтрументарий-для-работы-с-файлами-конфигурации">Russian</a>
 </p>
 
 ## Runtime
