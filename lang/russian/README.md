@@ -1,7 +1,7 @@
 # Вспомогательный инcтрументарий для работы с файлами конфигурации
 
 <p align="left">
-  <a href="https://github.com/kotiq/blk/tree/docs#documentation-for-blk-files">Английский</a> |
+  <a href="https://github.com/kotiq/blk/tree/dev#documentation-for-blk-files">Английский</a> |
   <span>Русский</span>
 </p>
 
