@@ -276,6 +276,7 @@ class Float(float, Scalar):
             raise ValueError('x: разрешены только конечные числа')
         return y
 
+    # todo: eq не переопределять. Перенести в close_to
     def __eq__(self, other: Number) -> bool:
         if self is other:
             return True
@@ -966,8 +967,10 @@ class ListSection(list, Section):
         elif isinstance(index, int):
             i = 0
             for n, v in self:
-                if n == name and i == index:
-                    return v
+                if n == name:
+                    if i == index:
+                        return v
+                    i += 1
             return default
         else:
             raise TypeError('index: ожидалось int | None: {!r}'.format(type(index)))
