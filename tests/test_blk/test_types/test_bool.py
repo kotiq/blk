@@ -1,5 +1,4 @@
-import pytest
-from pytest import param as _
+from pytest import mark, param as _
 from blk.types import false, true
 
 
@@ -8,7 +7,7 @@ def test_bool():
     assert not false
 
 
-@pytest.mark.parametrize(['value', 'text'], [
+@mark.parametrize(['value', 'text'], [
     _(false, 'false', id='false'),
     _(true, 'true', id='true'),
 ])

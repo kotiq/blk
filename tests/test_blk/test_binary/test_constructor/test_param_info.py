@@ -1,11 +1,10 @@
-import pytest
-from pytest import param as _
+from pytest import mark, param as _
 from blk.types import Bool, Color, Int, Int2, Int3, Float, Float2, Float3, Float4, Float12, Long, Str
 from blk.binary.constructor import ParamInfoCon, types_codes_map
 from . import _test_parse_all
 
 
-@pytest.mark.parametrize(['bs_hex', 'info'], [
+@mark.parametrize(['bs_hex', 'info'], [
     _('012345 01 01234567', (0x452301, Str, '01234567'), id='Str'),
     _('6789ab 02 89abcdef', (0xab8967, Int, '89abcdef'), id='Int'),
     _('cdef01 03 01234567', (0x01efcd, Float, '01234567'), id='Float'),

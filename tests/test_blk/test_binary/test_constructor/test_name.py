@@ -1,10 +1,9 @@
-import pytest
-from pytest import param as _
+from pytest import mark, param as _
 from blk.types import Name
 from blk.binary.constructor import NameCon
 
 
-@pytest.mark.parametrize(['init', 'parse_bs', 'build_bs'], [
+@mark.parametrize(['init', 'parse_bs', 'build_bs'], [
     _('hello', b'hello\x00', b'hello\x00', id='ascii'),
     _('привет',
       b'\xd0\xbf\xd1\x80\xd0\xb8\xd0\xb2\xd0\xb5\xd1\x82\x00',

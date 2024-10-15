@@ -1,11 +1,10 @@
 # to remove comments https://github.com/jleffler/scc-snapshots
 
 from argparse import ArgumentParser, Namespace
-from io import BytesIO, StringIO
+from io import BytesIO
 from pathlib import Path
-from re import compile
-from subprocess import CalledProcessError, PIPE, run
-from typing import BinaryIO, Iterable, TextIO
+from subprocess import PIPE, run
+from typing import Iterable, TextIO
 import sys
 
 
@@ -78,5 +77,3 @@ def main() -> int:
 
 if __name__ == '__main__':
     sys.exit(main())
-
-

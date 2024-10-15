@@ -1,10 +1,9 @@
-import pytest
-from pytest import param as _
+from pytest import mark, param as _
 from blk.types import (Float, Int, ListSection, Name, Str)
 from blk.text.composer import items
+from test_blk.test_text.test_composer.test_item import like
 
-
-@pytest.mark.parametrize(['text', 'value'], [
+@mark.parametrize(['text', 'items_'], [
     _('', ListSection(), id='empty'),
     _('"int":i = 42',
       ListSection([(Name('int'), Int(42))]), id='single'),
@@ -19,7 +18,7 @@ from blk.text.composer import items
     _('include file.blk\n"int":i = 42',
       ListSection([(Name('@include'), Str('file.blk')), (Name('int'), Int(42))]), id='include'),
 ])
-def test_items(text, value):
+def test_compose_items(text, items_):
     parsed = items.parse(text)
     assert isinstance(parsed, ListSection)
-    assert parsed == value
+    assert all(like(p, q) for p, q in zip(parsed.pairs(), items_.pairs()))

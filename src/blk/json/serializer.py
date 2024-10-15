@@ -2,7 +2,7 @@ import platform
 import re
 import json
 from typing import Any, Iterator, Mapping, Sequence, TextIO, Tuple, Union
-from blk.format_ import Format, dgen_float, dgen_float_element
+from blk.format_ import Format
 from blk.types import (Bool, Color, DictSection, Float, Float2, Float3, Float4, Float12, Int2, Int3, ListSection,
                        Section, Var, Value)
 
@@ -66,6 +66,14 @@ elif implementation == 'PyPy':
                     text = json.dumps(value, **self.kwargs)
                     s = s.replace(f'"{self.fmt.format(id_)}"', text)
                 yield s
+
+
+def dgen_float(x: float) -> float:
+    return round(x, 4)
+
+
+def dgen_float_element(x: float) -> float:
+    return float(format(x, 'e'))
 
 
 class Mapper:

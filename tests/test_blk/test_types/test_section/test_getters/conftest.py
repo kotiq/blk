@@ -17,7 +17,7 @@ def list_section():
 def dict_section():
     return DictSection([
         (Name('x'), [Int(1), Int(2)]),
-        (Name('y'), [Float(1.0), Float(1.0)]),
+        (Name('y'), [Float(1.0), Float(2.0)]),
     ])
 
 

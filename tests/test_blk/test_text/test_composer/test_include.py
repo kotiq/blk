@@ -1,11 +1,10 @@
 import parsy as ps
-import pytest
-from pytest import param as _, raises
+from pytest import mark, param as _, raises
 from blk.types import Include
 from blk.text.composer import include
 
 
-@pytest.mark.parametrize(['text', 'item'], [
+@mark.parametrize(['text', 'item'], [
     _('include file.blk', Include('file.blk'), id='unquoted'),
     _('include "file.blk"', Include('file.blk'), id='quoted'),
     _('include "common/file.blk"', Include('common/file.blk'), id='slash'),
@@ -23,7 +22,7 @@ def test_include(text, item):
     assert parsed == item
 
 
-@pytest.mark.parametrize('text', [
+@mark.parametrize('text', [
     _('include', id='empty'),
     _('include ""', id='quoted empty'),
 ])

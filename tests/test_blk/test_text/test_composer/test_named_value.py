@@ -1,6 +1,5 @@
-from pytest import mark, raises, param as _
-import parsy as ps
-from blk.types import Int, ListSection, Name, Str
+from pytest import mark, param as _
+from blk.types import Int, Name
 from blk.text.composer import named_value
 
 
@@ -11,7 +10,7 @@ from blk.text.composer import named_value
     _('"int":i /*comment*/ = 42', [Name('int'), Int(42)], id='ignored comment after tag'),
     _('"int":i = /*comment*/ 42', [Name('int'), Int(42)], id='ignored comment after equals'),
 ])
-def test_named_parameter(text, value):
+def test_compose_named_parameter(text, value):
     parsed = named_value.parse(text)
     assert isinstance(parsed, list)
     assert parsed == value

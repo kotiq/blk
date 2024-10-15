@@ -1,7 +1,5 @@
-import os
 from pathlib import Path
-from typing import TextIO, Union
-import pytest
+from pytest import fixture
 
 
 def _outdir_rpath(name):
@@ -9,8 +7,8 @@ def _outdir_rpath(name):
 
 
 def make_outpath(name):
-    @pytest.fixture(scope='module')
-    def outpath(buildpath: Path):
+    @fixture(scope='module')
+    def outpath(buildpath):
         path = buildpath / _outdir_rpath(name)
         path.mkdir(parents=True, exist_ok=True)
         return path
@@ -19,12 +17,12 @@ def make_outpath(name):
 
 
 def make_tmppath(name):
-    @pytest.fixture(scope='module')
+    @fixture(scope='module')
     def tmppath(tmp_path_factory):
         return tmp_path_factory.mktemp(name)
 
     return tmppath
 
 
-def create_text(path: Union[str, os.PathLike]) -> TextIO:
+def create_text(path):
     return open(path, 'w', newline='', encoding='utf8')

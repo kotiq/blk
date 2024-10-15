@@ -10,7 +10,8 @@ class ConstructError(Exception):
 
 
 class ComposeError(ConstructError):
-    pass
+    def __init__(self):
+        super().__init__('Ошибка при сборке секции из потока.')
 
 
 class SerializeError(ConstructError):

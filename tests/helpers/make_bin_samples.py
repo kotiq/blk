@@ -1,3 +1,4 @@
+from importlib import resources
 from hashlib import sha256
 from pathlib import Path
 import sys
@@ -8,10 +9,10 @@ sys.path.append(str(tests_dir))
 from zstandard import ZstdCompressor, ZstdCompressionDict, train_dictionary
 from blk import binary
 from blk import text
-import samples
 from samples.section import section
 
-samples_dir = Path(samples.__path__[0])
+with resources.path('samples', '') as p:
+    samples_dir = p
 
 dict_digest: bytes = ...
 inv_names: binary.InvNames = ...
@@ -50,7 +51,7 @@ def make_fat_zst_set_no_dict_compressor():
 
 def make_slim_set_nm_dict_dict_compressor():
     global inv_names
-    inv_names = binary.InvNames.of(section, include_strings=True)git diff
+    inv_names = binary.InvNames.of(section, include_strings=True)
 
     with open(samples_dir / 'section_slim.blk', 'wb') as ostream:
         binary.serialize_slim(section, inv_names, ostream)

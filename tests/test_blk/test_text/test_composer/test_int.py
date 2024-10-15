@@ -1,10 +1,9 @@
-import pytest
-from pytest import param as _
+from pytest import mark, param as _
 from blk.types import Int, Long, UByte
 from blk.text.composer import integer, long, ubyte
 
 
-@pytest.mark.parametrize(['text', 'value'], [
+@mark.parametrize(['text', 'value'], [
     _('1024', Int(1024), id='unsigned dec'),
     _('+1024', Int(1024), id='pos dec'),
     _('-1024', Int(-1024), id='neg dec'),
@@ -16,7 +15,7 @@ def test_compose_integer(text, value):
     assert parsed == value
 
 
-@pytest.mark.parametrize(['text', 'value'], [
+@mark.parametrize(['text', 'value'], [
     _('1024', Long(1024), id='unsigned dec'),
     _('+1024', Long(1024), id='signed pos dec'),
     _('-1024', Long(-1024), id='signed neg dec'),
@@ -28,7 +27,7 @@ def test_compose_long(text, value):
     assert parsed == value
 
 
-@pytest.mark.parametrize(['text', 'value'], [
+@mark.parametrize(['text', 'value'], [
     _('127', UByte(127), id='unsigned dec'),
     _('+127', UByte(127), id='signed dec'),
     _('0xff', UByte(0xff), id='unsigned hex'),

@@ -3,7 +3,6 @@
 import re
 from functools import partial
 from typing import Iterable, TextIO, Tuple, Type, cast
-from blk.format_ import dgen_float, dgen_float_element
 from blk.types import (BlockComment, Bool, Color, Float, Float2, Float3, Float4, Float12, Include, Int, Int2, Int3,
                        Item, Section, Str, LineComment, Long, Vector)
 from .dialect import DefaultDialect, DGEN, DQN, VQN, DQS, VQS, bool_map, float_map, int_map
@@ -13,6 +12,14 @@ from .error import SerializeError
 __all__ = [
     'serialize',
 ]
+
+
+def dgen_float(x: float) -> float:
+    return round(x, 4)
+
+
+def dgen_float_element(x: float) -> float:
+    return float(format(x, 'e'))
 
 
 def quoted_text(inst: str, quote: str) -> str:

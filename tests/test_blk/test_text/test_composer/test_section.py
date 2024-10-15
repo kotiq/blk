@@ -1,25 +1,15 @@
-from pytest import mark, raises, param as _
-import parsy as ps
-from blk.types import Int, ListSection, Name, Str
-from blk.text.composer import root_section
-
+from pytest import mark, param as _
+from pytest_lazyfixture import lazy_fixture as lf
+from blk.types import ListSection
+from blk.text.composer import section
 
 @mark.parametrize(['text', 'value'], [
-    _('', ListSection(), id='empty'),
-    _('"int":i = 42', ListSection([(Name('int'), Int(42))]), id='oneline param'),
-    _('"int":i = 42  // integer', ListSection([(Name('int'), Int(42)), (Name('@commentCPP'), Str('integer'))]), id='oneline param with comment'),
+    _('{\nint:i=42\n}', lf('section_oneline_param'), id='oneline param newline items sep'),
+    _('{int:i=42}', lf('section_oneline_param'), id='oneline param compact'),
+    _('{int:i=42;}', lf('section_oneline_param'), id='oneline param compact semicolon line terminator'),
+    _('{int:i=42//integer\n}', lf('section_oneline_param_with_line_comment'), id='oneline param compact with comment no space'),
 ])
-def test_section(text, value):
-    parsed = root_section.parse(text)
+def test_compose_section(text, value):
+    parsed = section.parse(text)
     assert isinstance(parsed, ListSection)
     assert parsed == value
-
-
-@mark.xfail(reason='Упрощенная грамматика')
-@mark.parametrize('text', [
-    _('"x":i = 1/*comment*/"y":i = 2', id='null'),
-    _('"x":i = 1 "y":i = 2', id='space')
-])
-def test_named_params_separator_raises_parse_error(text):
-    with raises(ps.ParseError):
-        root_section.parse(text)

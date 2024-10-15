@@ -1,10 +1,10 @@
 from io import BytesIO
-import pytest
+from pytest import fixture
 from blk.types import Color, DictSection, Float, Float2, Float3, Float4, Float12, Int, Int2, Long, Name, Str, true
 from blk.binary.constructor import InvNames
 
 
-@pytest.fixture(scope='module')
+@fixture(scope='module')
 def dict_sections_only_dict_section():
     a = DictSection()
     b = DictSection()
@@ -37,7 +37,7 @@ def dict_sections_only_dict_section():
     return a
 
 
-@pytest.fixture(scope='module')
+@fixture(scope='module')
 def all_params_dict_section():
     root = DictSection()
 
@@ -69,7 +69,7 @@ def all_params_dict_section():
     return root
 
 
-@pytest.fixture(scope='module')
+@fixture(scope='module')
 def dict_sections_only_dict_section_fat_data_bs():
     return bytes.fromhex(
         '0b'  # names_count
@@ -93,7 +93,7 @@ def dict_sections_only_dict_section_fat_data_bs():
     )
 
 
-@pytest.fixture(scope='module')
+@fixture(scope='module')
 def all_params_dict_section_fat_data_bs():
     return bytes.fromhex(
         # names
@@ -150,7 +150,7 @@ def all_params_dict_section_fat_data_bs():
 )
 
 
-@pytest.fixture(scope='module')
+@fixture(scope='module')
 def all_params_dict_section_fat_s_data_bs():
     return bytes.fromhex(
         # names
@@ -205,7 +205,7 @@ def all_params_dict_section_fat_s_data_bs():
     )
 
 
-@pytest.fixture(scope='module')
+@fixture(scope='module')
 def all_params_dict_section_slim_data_bs():
     return bytes.fromhex(
         # external names
@@ -243,17 +243,17 @@ def all_params_dict_section_slim_data_bs():
     )
 
 
-@pytest.fixture(scope='module')
+@fixture(scope='module')
 def all_params_dict_section_fat_bs(all_params_dict_section_fat_data_bs):
     return b'\x01' + all_params_dict_section_fat_data_bs
 
 
-@pytest.fixture(scope='module')
+@fixture(scope='module')
 def all_params_dict_section_fat_s_bs(all_params_dict_section_fat_s_data_bs):
     return b'\x01' + all_params_dict_section_fat_s_data_bs
 
 
-@pytest.fixture(scope='module')
+@fixture(scope='module')
 def all_params_dict_section_names_seq():
     return [Name(t) for t in (
         'vec4f', 'int', 'long', 'alpha', 'str', 'bool', 'color', 'gamma', 'vec2i', 'vec2f', 'transform', 'beta',
@@ -261,62 +261,61 @@ def all_params_dict_section_names_seq():
     )]
 
 
-@pytest.fixture(scope='module')
+@fixture(scope='module')
 def all_params_dict_section_inv_names(all_params_dict_section_names_seq):
     return InvNames(all_params_dict_section_names_seq)
 
 
-@pytest.fixture
+@fixture
 def empty_inv_names():
     return InvNames()
 
 
-@pytest.fixture(scope='module')
+@fixture(scope='module')
 def all_params_dict_section_slim_bs(all_params_dict_section_slim_data_bs):
     return b'\x03' + all_params_dict_section_slim_data_bs
 
 
-@pytest.fixture
+@fixture
 def dict_sections_only_dict_section_fat_data_istream(dict_sections_only_dict_section_fat_data_bs):
     return BytesIO(dict_sections_only_dict_section_fat_data_bs)
 
 
-@pytest.fixture
+@fixture
 def all_params_dict_section_fat_data_istream(all_params_dict_section_fat_data_bs):
     return BytesIO(all_params_dict_section_fat_data_bs)
 
 
-@pytest.fixture
+@fixture
 def all_params_dict_section_fat_s_data_istream(all_params_dict_section_fat_s_data_bs):
     return BytesIO(all_params_dict_section_fat_s_data_bs)
 
 
-@pytest.fixture
+@fixture
 def all_params_dict_section_fat_istream(all_params_dict_section_fat_bs):
     return BytesIO(all_params_dict_section_fat_bs)
 
 
-@pytest.fixture
+@fixture
 def all_params_dict_section_fat_s_istream(all_params_dict_section_fat_s_bs):
     return BytesIO(all_params_dict_section_fat_s_bs)
 
 
-@pytest.fixture
+@fixture
 def all_params_dict_section_slim_data_istream(all_params_dict_section_slim_data_bs):
     return BytesIO(all_params_dict_section_slim_data_bs)
 
 
-@pytest.fixture
+@fixture
 def all_params_dict_section_slim_istream(all_params_dict_section_slim_bs):
     return BytesIO(all_params_dict_section_slim_bs)
 
 
-@pytest.fixture
+@fixture
 def ostream():
     return BytesIO()
 
 
-@pytest.fixture()
+@fixture()
 def iostream():
     return BytesIO()
-

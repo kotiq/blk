@@ -1,9 +1,9 @@
 from textwrap import dedent
-import pytest
+from pytest import fixture
 from blk.types import DictSection, Float, Float12, Name, Str
 
 
-@pytest.fixture(scope='module')
+@fixture(scope='module')
 def json():
     text = """\
     [
@@ -19,10 +19,10 @@ def json():
         "entity": {
           "_template": "way_point",
           "way_point.transform": [
-            [1.0,0.0,0.0],
-            [0.0,1.0,0.0],
-            [0.0,0.0,1.0],
-            [14.74,46.53,-625.89]
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [14.74, 46.53, -625.89]
           ],
           "waypoint.name": "wp_01",
           "way_point.moveType": "MOVE_TO_STRAIGHT",
@@ -47,7 +47,7 @@ def json():
     return dedent(text)
 
 
-@pytest.fixture(scope='module')
+@fixture(scope='module')
 def json_2():
     text = """\
     {
@@ -72,10 +72,10 @@ def json_2():
           ],
           "way_point.transform": [
             [
-              [1.0,0.0,0.0],
-              [0.0,1.0,0.0],
-              [0.0,0.0,1.0],
-              [14.74,46.53,-625.89]
+              [1.0, 0.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.0, 0.0, 1.0],
+              [14.74, 46.53, -625.89]
             ]
           ],
           "waypoint.name": [
@@ -109,7 +109,7 @@ def json_2():
     return dedent(text)
 
 
-@pytest.fixture(scope='module')
+@fixture(scope='module')
 def json_3():
     text = """\
     {
@@ -123,10 +123,10 @@ def json_3():
         {
           "_template": "way_point",
           "way_point.transform": [
-            [1.0,0.0,0.0],
-            [0.0,1.0,0.0],
-            [0.0,0.0,1.0],
-            [14.74,46.53,-625.89]
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [14.74, 46.53, -625.89]
           ],
           "waypoint.name": "wp_01",
           "way_point.moveType": "MOVE_TO_STRAIGHT",
@@ -147,7 +147,7 @@ def json_3():
     return dedent(text)
 
 
-@pytest.fixture(scope='module')
+@fixture(scope='module')
 def dict_section():
     root = DictSection()
     entity0 = DictSection()

@@ -1,9 +1,9 @@
 from io import StringIO
 from textwrap import dedent
-import pytest
+from pytest import fixture
 
 
-@pytest.fixture(scope='session')
+@fixture(scope='session')
 def json_mixed_dict_section_json_2():
     json = """\
     {
@@ -24,29 +24,29 @@ def json_mixed_dict_section_json_2():
         3.0
       ],
       "int2": [
-        [1,2]
+        [1, 2]
       ],
       "int3": [
-        [1,2,3]
+        [1, 2, 3]
       ],
       "color": [
         "#01020304"
       ],
       "float2": [
-        [1.0,2.0]
+        [1.0, 2.0]
       ],
       "float3": [
-        [1.0,2.0,3.0]
+        [1.0, 2.0, 3.0]
       ],
       "float4": [
-        [1.0,2.0,3.0,4.0]
+        [1.0, 2.0, 3.0, 4.0]
       ],
       "float12": [
         [
-          [1.0,2.0,3.0],
-          [4.0,5.0,6.0],
-          [7.0,8.0,9.0],
-          [10.0,11.0,12.0]
+          [1.0, 2.0, 3.0],
+          [4.0, 5.0, 6.0],
+          [7.0, 8.0, 9.0],
+          [10.0, 11.0, 12.0]
         ]
       ],
       "inner": [
@@ -63,7 +63,7 @@ def json_mixed_dict_section_json_2():
     return dedent(json)
 
 
-@pytest.fixture(scope='session')
+@fixture(scope='session')
 def json_dict_sections_only_dict_section_json_2():
     json = """\
     {
@@ -77,7 +77,7 @@ def json_dict_sections_only_dict_section_json_2():
     return dedent(json)
 
 
-@pytest.fixture(scope='session')
+@fixture(scope='session')
 def json_dict_section_with_same_id_sub_json_2():
     json = """\
     {
@@ -99,7 +99,7 @@ def json_dict_section_with_same_id_sub_json_2():
     return dedent(json)
 
 
-@pytest.fixture(scope='session')
+@fixture(scope='session')
 def json_dict_section_with_same_id_sub_deep_json_2():
     json = """\
     {
@@ -129,6 +129,6 @@ def json_dict_section_with_same_id_sub_deep_json_2():
     return dedent(json)
 
 
-@pytest.fixture()
+@fixture()
 def ostream():
     return StringIO()

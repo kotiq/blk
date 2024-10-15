@@ -1,10 +1,8 @@
-from pprint import pprint
-import pytest
-from pytest import param as _
+from pytest import mark, param as _
 from blk.json.serializer import JSON2Mapper, JSONMapper
 
 
-@pytest.mark.parametrize(['dict_section', 'expected'], [
+@mark.parametrize(['dict_section', 'expected'], [
     _({}, [], id='empty'),
     _({'a': [1]}, {'a': [1]}, id='single param'),
     _({'a': [1], 'b': [2]}, {'a': [1], 'b': [2]}, id='single params'),
@@ -16,7 +14,7 @@ def test_json2_map_section(dict_section, expected):
     assert mapped == expected
 
 
-@pytest.mark.parametrize(['dict_section', 'expected'], [
+@mark.parametrize(['dict_section', 'expected'], [
     _({}, [], id='empty'),
     _({'a': [1]}, {'a': 1}, id='single param'),
     _({'a': [1], 'b': [2]}, {'a': 1, 'b': 2}, id='single params'),
@@ -28,5 +26,4 @@ def test_json2_map_section(dict_section, expected):
 ])
 def test_json_map_section(dict_section, expected):
     mapped = JSONMapper._map_section(dict_section)
-    pprint(mapped)
     assert mapped == expected

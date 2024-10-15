@@ -1,6 +1,83 @@
 [build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
 build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools>=64",
+    "setuptools-scm>=7",
+]
+
+[project]
+name = "blk"
+authors = [
+    { name = "kotiq", email = "courier.yeti@gmail.com" },
+    { name = "OshidaBCF", email = "swann.sanchez9@outlook.fr" },
+]
+requires-python = ">=3.7"
+dynamic = [
+    "version",
+]
+dependencies = [
+    "construct==2.9.44",
+    "parsy==2.1",
+    "typing_extensions==4.7.1",
+    "zstandard==0.15.1",
+]
+optional-dependencies.tests = [
+    "pexpect==4.8.0",
+    "pytest==6.0.0",
+    "pytest-lazy-fixture==0.6.3",
+]
+optional-dependencies.docs = [
+    "sphinx==4.1.2",
+    "sphinxcontrib-drawio==0.0.16",
+    "sphinx-intl==2.1.0",
+]
+optional-dependencies.dev = [
+    "blk[tests,docs]",
+]
+
+urls.Source = "https://github.com/kotiq/blk"
+urls.Tracker = "https://github.com/kotiq/blk/issues"
+scripts.blk_unpacker = "blk.demo.blk_unpacker:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+"blk" = [
+    "types.pyi",
+    "py.typed",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.setuptools_scm]
 write_to = "src/blk/_version.py"
+
+[tool.pytest.ini_options]
+addopts = "-vrsxX -l --tb=short --strict-markers"
+xfail_strict = true
+junit_family = "xunit1"
+junit_duration_report = "call"
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+testpaths = [
+    "tests",
+    "tests/unit",
+    "tests/integration",
+]
+norecursedirs = [
+    ".*",
+    "venv",
+    "src",
+    "dist",
+    "build",
+    "tests/helpers",
+    "tests/demo",
+]
+currespath = "/media/shared/resources/blk/cur/"
+bbfrespath = "/media/shared/resources/blk/bbf/"
+buildpath = "/home/kotiq/src/games/WarThunder/blk/build/"
+cdkpath = "/media/games/WarThunder/WarThunderCDK/"

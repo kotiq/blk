@@ -1,10 +1,9 @@
-import pytest
-from pytest import param as _
+from pytest import mark, param as _
 from blk.binary.constructor import BlockInfoCon
 from . import _test_parse_all
 
 
-@pytest.mark.parametrize(['bs_hex', 'info'], [
+@mark.parametrize(['bs_hex', 'info'], [
     _('00 00 00', (None, 0, 0, None), id='empty root'),
     _('00 c001 00', (None, 192, 0, None), id='params only root'),
     _('00 00 8002 c002', (None, 0, 256, 320), id='block only root'),

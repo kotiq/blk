@@ -1,7 +1,7 @@
 from io import BytesIO
-import pytest
+from pytest import fixture
 
 
-@pytest.fixture
+@fixture
 def iostream():
     return BytesIO()
