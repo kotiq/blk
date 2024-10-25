@@ -10,6 +10,12 @@ def list_section():
         (Name('x'), Int(2)),
         (Name('y'), Float(1.0)),
         (Name('y'), Float(2.0)),
+        (Name('map'), ListSection([
+            (Name('x'), Int(1)),
+        ])),
+        (Name('map'), ListSection([
+            (Name('y'), Float(1.0)),
+        ])),
     ])
 
 
@@ -18,6 +24,14 @@ def dict_section():
     return DictSection([
         (Name('x'), [Int(1), Int(2)]),
         (Name('y'), [Float(1.0), Float(2.0)]),
+        (Name('map'), [
+            DictSection([
+                (Name('x'), [Int(1)])
+            ]),
+            DictSection([
+                (Name('y'), [Float(1.0)])
+            ])
+        ])
     ])
 
 

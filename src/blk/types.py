@@ -409,8 +409,13 @@ class add:
     def _make_all_insts__abc_getter_name(cls):
         return f'get_all_{cls.__name__.lower()}s'
 
-    _make_all_insts__dict_getter_name = _make_all_insts__abc_getter_name
-    _make_all_insts__list_getter_name = _make_all_insts__abc_getter_name
+    @staticmethod
+    def _make_all_insts_getter_name(cls):
+        name = cls.__name__.lower()
+        type_name = 'section' if name in ('listsection', 'dictsection') else name
+        return f'get_all_{type_name}s'
+
+    _make_all_insts__dict_getter_name = _make_all_insts__list_getter_name = _make_all_insts_getter_name
 
     @staticmethod
     def _make_inst_getter(cls):
@@ -776,43 +781,43 @@ class DictSection(OrderedDict, Section):
         except KeyError:
             return [] if default is _default else default
 
-    def get_all_sections(self, name, default):
+    def get_all_sections(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_strs(self, name, default):
+    def get_all_strs(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_ints(self, name, default):
+    def get_all_ints(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_floats(self, name, default):
+    def get_all_floats(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_float2s(self, name, default):
+    def get_all_float2s(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_float3s(self, name, default):
+    def get_all_float3s(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_float4s(self, name, default):
+    def get_all_float4s(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_int2s(self, name, default):
+    def get_all_int2s(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_int3s(self, name, default):
+    def get_all_int3s(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_bools(self, name, default):
+    def get_all_bools(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_colors(self, name, default):
+    def get_all_colors(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_float12s(self, name, default):
+    def get_all_float12s(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_longs(self, name, default):
+    def get_all_longs(self, name, default = ...):
         raise NotImplementedError
 
     def pairs(self):
@@ -1121,43 +1126,43 @@ class ListSection(list, Section):
 
         return [] if default is _default else default
 
-    def get_all_sections(self, name, default):
+    def get_all_sections(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_strs(self, name, default):
+    def get_all_strs(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_ints(self, name, default):
+    def get_all_ints(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_floats(self, name, default):
+    def get_all_floats(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_float2s(self, name, default):
+    def get_all_float2s(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_float3s(self, name, default):
+    def get_all_float3s(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_float4s(self, name, default):
+    def get_all_float4s(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_int2s(self, name, default):
+    def get_all_int2s(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_int3s(self, name, default):
+    def get_all_int3s(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_bools(self, name, default):
+    def get_all_bools(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_colors(self, name, default):
+    def get_all_colors(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_float12s(self, name, default):
+    def get_all_float12s(self, name, default = ...):
         raise NotImplementedError
 
-    def get_all_longs(self, name, default):
+    def get_all_longs(self, name, default = ...):
         raise NotImplementedError
 
     def remove_comments(self):
